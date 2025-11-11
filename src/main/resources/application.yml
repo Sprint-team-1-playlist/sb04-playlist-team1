@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: playlist
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+  profiles:
+    active:
+      - dev
+  config:
+    import: optional:file:.env[.properties]
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers,caches
+  endpoint:
+    health:
+      show-details: always
+  observations:
+    annotations:
+      enabled: true
