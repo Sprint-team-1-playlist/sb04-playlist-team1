@@ -1,5 +1,6 @@
 package com.codeit.playlist.domain.review.dto.response;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 
 import java.util.List;
@@ -11,7 +12,7 @@ public record CursorResponseReviewDto(
         UUID nextIdAfter,
         Boolean hasNext,
         Long totalCount,
-        String sortBy
-//        , SortDirection sortDirection
+        String sortBy,
+        SortDirection sortDirection
 ) {
 }

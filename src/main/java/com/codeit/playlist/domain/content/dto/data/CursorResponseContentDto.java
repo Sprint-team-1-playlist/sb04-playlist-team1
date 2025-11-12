@@ -1,6 +1,7 @@
 package com.codeit.playlist.domain.content.dto.data;
 
-import java.lang.reflect.Array;
+import com.codeit.playlist.domain.base.SortDirection;
+
 import java.util.List;
 
 public record CursorResponseContentDto(
@@ -10,6 +11,6 @@ public record CursorResponseContentDto(
         Boolean hasNext,
         Integer totalCount,
         String sortBy,
-        String sortDirection
+        SortDirection sortDirection
 ) {
 }
