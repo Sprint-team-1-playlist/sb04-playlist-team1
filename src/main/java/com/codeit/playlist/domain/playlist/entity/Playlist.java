@@ -3,24 +3,19 @@ package com.codeit.playlist.domain.playlist.entity;
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.beans.ConstructorProperties;
 
 @Entity
 @Table(name = "play_lists")
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Playlist extends BaseEntity {
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
+    @ManyToOne(optional = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = true) //임시로 nullable 허용
     private User owner;
 
     @Column(nullable = false, length = 255)
@@ -30,7 +25,17 @@ public class Playlist extends BaseEntity {
     private String description;
 
     @Column(name = "subscriber_count", nullable = false)
-    @Builder.Default
     private Long subscriberCount = 0L;
 
+    @ConstructorProperties({"owner","title","description"})
+    public Playlist(User owner, String title, String description) {
+        this.owner = owner;
+        this.title = title;
+        this.description = description;
+        this.subscriberCount = 0L;
+    }
+
+    public Playlist(String title, String description) {
+        this(null, title, description);
+    }
 }
