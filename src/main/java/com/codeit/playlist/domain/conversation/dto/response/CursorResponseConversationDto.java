@@ -1,6 +1,5 @@
 package com.codeit.playlist.domain.conversation.dto.response;
 
-import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
 import java.util.List;
 import java.util.UUID;
@@ -12,7 +11,7 @@ public record CursorResponseConversationDto(
     boolean hasNext,
     long totalCount,
     String sortBy,
-    SortDirection sortDirection
+    String sortDirection
 ) {
 
 }
