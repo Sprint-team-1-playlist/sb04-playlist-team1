@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.conversation.exception;
+package com.codeit.playlist.domain.conversation.exception.conversation;
 
 import com.codeit.playlist.global.constant.ErrorCode;
 import com.codeit.playlist.global.error.BusinessException;

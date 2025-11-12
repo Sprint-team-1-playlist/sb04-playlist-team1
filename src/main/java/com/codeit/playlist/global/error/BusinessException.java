@@ -1,11 +1,10 @@
 package com.codeit.playlist.global.error;
 
 import com.codeit.playlist.global.constant.ErrorCode;
-import lombok.Getter;
-
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
 
 @Getter
 public class BusinessException extends RuntimeException {
@@ -34,10 +33,6 @@ public class BusinessException extends RuntimeException {
 
     public int getStatus() {
         return errorCode.getStatus();
-    }
-
-    public String getMessage() {
-        return errorCode.getMessage();
     }
 
     public String getErrorCodeName() {

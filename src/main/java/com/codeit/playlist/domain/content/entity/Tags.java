@@ -10,7 +10,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class tags extends BaseEntity {
+public class Tags extends BaseEntity {
 
     /**
      * 콘텐츠 ID
