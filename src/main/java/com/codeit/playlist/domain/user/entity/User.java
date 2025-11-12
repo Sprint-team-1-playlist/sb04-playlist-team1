@@ -10,6 +10,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,12 +18,13 @@ import lombok.NoArgsConstructor;
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class User extends BaseUpdatableEntity {
 
   @Column(nullable = false, unique = true)
   private String email;
 
-  @Column(nullable = false, length = 50)
+  @Column(nullable = false, length = 100)
   private String password;
 
   @Column (nullable = false)
@@ -33,10 +35,10 @@ public class User extends BaseUpdatableEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 10)
-  private Role role;
+  private Role role = Role.USER;
 
   @Column(name = "is_locked", nullable = false)
-  private boolean isLocked;
+  private boolean isLocked = false;
 
   @Column(name = "follow_count")
   private Long followCount;
@@ -75,5 +77,15 @@ public class User extends BaseUpdatableEntity {
 
   //  @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
   //  private List<DirectMessage> receivedMessages = new ArrayList<>();
+
+  public void updatePassword(String password) {
+    this.password = password;
+  }
+
+  public void updateRole(Role newRole) {
+    if (this.role != newRole) {
+      this.role = newRole;
+    }
+  }
 
 }

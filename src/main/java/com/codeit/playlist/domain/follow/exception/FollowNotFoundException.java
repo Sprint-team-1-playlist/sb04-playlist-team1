@@ -1,6 +1,5 @@
 package com.codeit.playlist.domain.follow.exception;
 
-import com.codeit.playlist.global.constant.ErrorCode;
 import java.util.UUID;
 
 public class FollowNotFoundException extends FollowException {
