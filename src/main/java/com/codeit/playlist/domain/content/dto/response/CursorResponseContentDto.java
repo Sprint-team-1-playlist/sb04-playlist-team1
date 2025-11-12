@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.content.dto.data;
+package com.codeit.playlist.domain.content.dto.response;
 
 import com.codeit.playlist.domain.base.SortDirection;
 
