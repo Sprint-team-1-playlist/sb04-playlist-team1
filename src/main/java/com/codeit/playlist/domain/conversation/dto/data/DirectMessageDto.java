@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.message.dto.data;
+package com.codeit.playlist.domain.conversation.dto.data;
 
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import java.time.LocalDateTime;

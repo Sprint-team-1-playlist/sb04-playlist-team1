@@ -1,6 +1,5 @@
-package com.codeit.playlist.domain.conversation.exception;
+package com.codeit.playlist.domain.conversation.exception.conversation;
 
-import com.codeit.playlist.global.constant.ErrorCode;
 import java.util.UUID;
 
 public class ConversationNotFoundException extends ConversationException{
