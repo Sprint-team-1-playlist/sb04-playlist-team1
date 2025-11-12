@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FollowRepository extends JpaRepository<Follow, UUID> {
 
+  boolean existsByFollowerIdAndFolloweeId(UUID testFollowerId, UUID id);
 }

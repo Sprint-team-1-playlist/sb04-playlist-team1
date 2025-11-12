@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 import com.codeit.playlist.domain.follow.dto.data.FollowDto;
 import com.codeit.playlist.domain.follow.dto.request.FollowRequest;
 import com.codeit.playlist.domain.follow.entity.Follow;
+import com.codeit.playlist.domain.follow.exception.FollowAlreadyExistsException;
+import com.codeit.playlist.domain.follow.exception.FollowSelfNotAllowedException;
 import com.codeit.playlist.domain.follow.mapper.FollowMapper;
 import com.codeit.playlist.domain.follow.repository.FollowRepository;
 import com.codeit.playlist.domain.follow.service.basic.BasicFollowService;
@@ -86,5 +88,22 @@ public class BasicFollowServiceTest {
     assertThrows(UserNotFoundException.class, () -> followService.create(followRequest));
 
     verify(userRepository, times(1)).findById(followeeId);
+  }
+
+  @Test
+  @DisplayName("자기 자신을 팔로우할 경우 400 예외 발생")
+  void createFollow_SelfFollowNotAllowed() {
+    FollowRequest selfRequest = new FollowRequest(followerId);
+
+    assertThrows(FollowSelfNotAllowedException.class, () -> followService.create(selfRequest));
+  }
+
+  @Test
+  @DisplayName("이미 팔로우 중일 경우 400 예외 발생")
+  void createFollow_AlreadyFollowing() {
+    when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
+    when(followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)).thenReturn(true);
+
+    assertThrows(FollowAlreadyExistsException.class, () -> followService.create(followRequest));
   }
 }

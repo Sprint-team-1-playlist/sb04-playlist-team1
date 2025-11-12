@@ -3,6 +3,8 @@ package com.codeit.playlist.domain.follow.service.basic;
 import com.codeit.playlist.domain.follow.dto.data.FollowDto;
 import com.codeit.playlist.domain.follow.dto.request.FollowRequest;
 import com.codeit.playlist.domain.follow.entity.Follow;
+import com.codeit.playlist.domain.follow.exception.FollowAlreadyExistsException;
+import com.codeit.playlist.domain.follow.exception.FollowSelfNotAllowedException;
 import com.codeit.playlist.domain.follow.mapper.FollowMapper;
 import com.codeit.playlist.domain.follow.repository.FollowRepository;
 import com.codeit.playlist.domain.follow.service.FollowService;
@@ -12,12 +14,12 @@ import com.codeit.playlist.domain.user.repository.UserRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RequiredArgsConstructor
+@Transactional
 @Service
 public class BasicFollowService implements FollowService {
 
@@ -29,15 +31,25 @@ public class BasicFollowService implements FollowService {
   public FollowDto create(FollowRequest followRequest) {
     log.debug("팔로우 생성 시작: {}", followRequest);
 
+    //    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    //    PlaylistUserDetails userDetails = (PlaylistUserDetails) authentication.getPrincipal();
+    //    User follower = userRepository.findById(userDetails.getId())
+    //        .orElseThrow(() -> UserNotFoundException.withId(userDetails.getId()));
+
+    UUID testFollowerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+    if (testFollowerId.equals(followRequest.followeeId())) {
+      throw FollowSelfNotAllowedException.withId(followRequest.followeeId());
+    }
+
     User followee = userRepository.findById(followRequest.followeeId())
         .orElseThrow(() -> UserNotFoundException.withId(followRequest.followeeId()));
 
-//    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//    PlaylistUserDetails userDetails = (PlaylistUserDetails) authentication.getPrincipal();
-//    User follower = userRepository.findById(userDetails.getId())
-//        .orElseThrow(() -> UserNotFoundException.withId(userDetails.getId()));
-
-    UUID testFollowerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    boolean alreadyFollowing = followRepository.existsByFollowerIdAndFolloweeId(
+        testFollowerId, followRequest.followeeId());
+    if (alreadyFollowing) {
+      throw FollowAlreadyExistsException.withId(followRequest.followeeId());
+    }
 
     User follower = userRepository.findById(testFollowerId)
         .orElseThrow(() -> UserNotFoundException.withId(testFollowerId));
