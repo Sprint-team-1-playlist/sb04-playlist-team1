@@ -32,7 +32,7 @@ public class BasicUserService implements UserService {
     User newUser = userMapper.toEntity(request);
 
     if(userRepository.existsByEmail(newUser.getEmail())) {
-      throw new EmailAlreadyExistsException();
+      throw EmailAlreadyExistsException.withEmail(newUser.getEmail());
     }
 
     //auth 구현하면서 USER 와 ADMIN 관련 역할 부여할때 수정 예정
