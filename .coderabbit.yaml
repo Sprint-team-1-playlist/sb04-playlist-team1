@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
-language: "ko-KR" # 한국말로 설정
+language: ko # 한국말로 설정
 early_access: false
 reviews:
   profile: "chill" # 리뷰 적당하게 한다는 뜻
@@ -11,6 +11,6 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    base_branches: [] # 빈 배열로 설정하면 모든 브랜치 자동 리뷰 활성화
 chat:
   auto_reply: true
-  
