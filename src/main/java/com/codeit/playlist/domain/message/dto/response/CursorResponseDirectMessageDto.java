@@ -1,5 +1,6 @@
 package com.codeit.playlist.domain.message.dto.response;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import java.util.List;
 import java.util.UUID;
@@ -11,7 +12,7 @@ public record CursorResponseDirectMessageDto(
     boolean hasNext,
     long totalCount,
     String sortBy,
-    String sortDirection
+    SortDirection sortDirection
 ) {
 
 }
