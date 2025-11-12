@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequiredArgsConstructor
 public class UserController {
 
-  private final BasicUserService userService;
+  private final UserService userService;
 
   @PostMapping
   public ResponseEntity<UserDto> register(@Valid @RequestBody UserCreateRequest userCreateRequest) {

@@ -39,6 +39,9 @@ public class BasicUserService implements UserService {
       throw EmailAlreadyExistsException.withEmail(newUser.getEmail());
     }
 
+    if(newUser.getEmail().equals("admin@admin.com")){
+      newUser.updateRole(Role.ADMIN);
+    }
     //auth 구현하면서 USER 와 ADMIN 관련 역할 부여할때 수정 예정
     if (newUser.getRole() == null) {
       newUser.updateRole(Role.USER);

@@ -24,3 +24,9 @@ management:
   observations:
     annotations:
       enabled: true
+
+playlist:
+  admin:
+    username: admin
+    email: admin@admin.com
+    password: admin123

@@ -1,0 +1,16 @@
+reviews:
+  auto_review: true        # PR 생성 시 자동 리뷰
+  review_on_open: true     # PR 열릴 때 리뷰 시작
+  review_on_push: true     # 커밋 추가 시 재리뷰
+  style: balanced          # 리뷰 강도: light, balanced, strict 중 선택
+  language: ko             # 한국어로 리뷰 받기
+
+comments:
+  level: detailed           # 코멘트 스타일: concise(간결) / detailed(상세)
+  include_style_suggestions: true
+  include_test_suggestions: true
+  max_comments: 15          # PR당 최대 코멘트 수
+
+  deduplicate: true
+
+summary: true               # 요약 코멘트 추가
