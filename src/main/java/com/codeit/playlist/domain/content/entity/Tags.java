@@ -24,4 +24,8 @@ public class Tags extends BaseEntity {
      */
     @Column(nullable = false, length = 50)
     private String items;
+
+    public Tags(String items) {
+        this.items = items;
+    }
 }
