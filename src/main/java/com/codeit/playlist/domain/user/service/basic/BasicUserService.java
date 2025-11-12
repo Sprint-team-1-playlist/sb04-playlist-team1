@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BasicUserService implements UserService {
 
   private final UserRepository userRepository;
-//  private final PasswordEncoder passwordEncoder;
+  private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
 
 
@@ -35,9 +35,13 @@ public class BasicUserService implements UserService {
       throw new EmailAlreadyExistsException();
     }
 
-    // passwordEncoder 로 암호화 해야함 추후 적용 예정
-    // String encodedPassword = passwordEncoder.encode(newUser.getPassword);
-    //newUser.updatePassword(encodedPassword)
+    //auth 구현하면서 USER 와 ADMIN 관련 역할 부여할때 수정 예정
+    if (newUser.getRole() == null) {
+      newUser.updateRole(Role.USER);
+    }
+
+    String encodedPassword = passwordEncoder.encode(newUser.getPassword());
+    newUser.updatePassword(encodedPassword);
 
     log.info("[사용자 관리] 사용자 등록 완료 : email = {}", request.email());
 
