@@ -1,8 +1,5 @@
 package com.codeit.playlist.domain.notification.exception;
 
-import com.codeit.playlist.domain.conversation.exception.ConversationErrorCode;
-import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
-
 import java.util.UUID;
 
 public class NotificationNotFoundException extends NotificationException{
