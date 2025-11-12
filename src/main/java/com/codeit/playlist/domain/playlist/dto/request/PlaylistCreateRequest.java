@@ -1,7 +1,9 @@
 package com.codeit.playlist.domain.playlist.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+
 public record PlaylistCreateRequest(
-        String title,
-        String description
+        @NotBlank String title,
+        @NotBlank String description
 ) {
 }
