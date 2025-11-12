@@ -9,11 +9,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-  @Mapping(target = "id", ignore = true)
-  @Mapping(target = "email")
-  @Mapping(target = "password")
-  @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "isLocked", ignore = true)
   @Mapping(target = "profileImageUrl", ignore = true)
   @Mapping(target = "role", ignore = true)
   @Mapping(target = "followCount", ignore = true)
