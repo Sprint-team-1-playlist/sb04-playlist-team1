@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("api/users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -30,4 +30,9 @@ public class UserController {
     return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerUser(userCreateRequest));
   }
 
+  @GetMapping("/{userId}")
+  public ResponseEntity<UserDto> find(@PathVariable UUID userId) {
+    UserDto user = userService.find(userId);
+    return ResponseEntity.ok(user);
+  }
 }

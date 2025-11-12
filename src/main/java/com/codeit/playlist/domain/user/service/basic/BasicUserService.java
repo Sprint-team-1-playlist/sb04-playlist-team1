@@ -5,11 +5,15 @@ import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
+import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.service.UserService;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.annotations.DialectOverride.Version;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +49,23 @@ public class BasicUserService implements UserService {
 
     log.info("[사용자 관리] 사용자 등록 완료 : email = {}", request.email());
 
-    return userMapper.toDto(userRepository.save(newUser));
+    userRepository.save(newUser);
+
+    UserDto userDto = userMapper.toDto(newUser);
+
+    return userDto;
+  }
+
+  @Transactional(readOnly = true)
+  @Override
+  public UserDto find(UUID userId){
+    log.debug("[사용자 관리] 사용자 조회 시작 : userId = {}", userId);
+    UserDto userDto = userRepository.findById(userId)
+        .map(userMapper::toDto)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    log.debug("[사용자 관리] 사용자 조회 완료 : userId = {}", userId);
+    return userDto;
   }
 
 }
