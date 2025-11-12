@@ -8,11 +8,4 @@ reviews:
   style: balanced          # 리뷰 강도: light, balanced, strict 중 선택
   allow_non_default_branches: true  # main 이 아닌 브랜치에서도 자동 리뷰
   language: ko             # 한국어로 리뷰 받기
-
-review_preferences:
-  comment_level: detailed           # 코멘트 스타일: concise(간결) / detailed(상세)
-  include_style_suggestions: true
-  include_test_suggestions: true
-  max_comments: 15          # PR당 최대 코멘트 수
-  deduplicate: true
-  include_summary:       # 요약 코멘트 추가
+  review_status: true
