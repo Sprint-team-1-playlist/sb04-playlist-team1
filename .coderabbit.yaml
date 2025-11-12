@@ -12,5 +12,6 @@ reviews:
     enabled: true
     drafts: false
     base_branches: [] # 빈 배열로 설정하면 모든 브랜치 자동 리뷰 활성화
+    automatic_incremental_review: true # PR 에 새로운 commit 추가시 재리뷰
 chat:
   auto_reply: true
