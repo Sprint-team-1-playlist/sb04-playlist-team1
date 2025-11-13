@@ -9,4 +9,6 @@ public interface FollowService {
   FollowDto create(FollowRequest followRequest);
 
   Boolean followedByMe(UUID followeeId);
+
+  Long countFollowers(UUID followeeId);
 }

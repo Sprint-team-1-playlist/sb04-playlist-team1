@@ -30,7 +30,7 @@ public class User extends BaseUpdatableEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 10)
-  private Role role;
+  private Role role = Role.USER;
 
   @Column(name = "is_locked", nullable = false)
   private boolean locked;
@@ -38,12 +38,12 @@ public class User extends BaseUpdatableEntity {
   @Column(name = "follow_count", nullable = false)
   private Long followCount;
 
-  public User(String email, String password, String name, String profileImageUrl) {
+  public User(String email, String password, String name, String profileImageUrl, Role role) {
     this.email = email;
     this.password = password;
     this.name = name;
     this.profileImageUrl = profileImageUrl;
-    this.role = Role.USER;
+    this.role = role;
     this.locked = false;
     this.followCount = 0L;
   }
@@ -61,14 +61,6 @@ public class User extends BaseUpdatableEntity {
     } else {
       followCount--;
     }
-  }
-
-  public void updateRole(Role newRole) {
-    this.role = newRole;
-  }
-
-  public void updatePassword(String password) {
-    this.password = password;
   }
 
   // 여기부터 연관관계, 초반 설계단계 에러 방지를 위해 주석처리, 각 개발 과정에서 필요한부분 주석 제거하여 사용할것
@@ -105,5 +97,15 @@ public class User extends BaseUpdatableEntity {
 
   //  @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
   //  private List<DirectMessage> receivedMessages = new ArrayList<>();
+
+  public void updatePassword(String password) {
+    this.password = password;
+  }
+
+  public void updateRole(Role newRole) {
+    if (this.role != newRole) {
+      this.role = newRole;
+    }
+  }
 
 }
