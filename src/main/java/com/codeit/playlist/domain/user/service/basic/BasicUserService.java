@@ -27,7 +27,7 @@ public class BasicUserService implements UserService {
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
 
-  @Value("${ADMIN_EMAIL:admin@admin.com}")
+  @Value("${ADMIN_EMAIL}")
   private String adminEmail;
 
 

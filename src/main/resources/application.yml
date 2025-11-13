@@ -27,6 +27,6 @@ management:
 
 playlist:
   admin:
-    username: ${ADMIN_USERNAME}
+    username: ${ADMIN_USER}
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}

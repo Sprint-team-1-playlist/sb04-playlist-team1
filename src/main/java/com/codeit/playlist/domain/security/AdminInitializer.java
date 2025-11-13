@@ -5,6 +5,7 @@ import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
+import com.codeit.playlist.domain.user.exception.RequestInValidUuidFormat;
 import com.codeit.playlist.domain.user.service.AuthService;
 import com.codeit.playlist.domain.user.service.UserService;
 import java.util.UUID;
@@ -21,11 +22,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class AdminInitializer implements ApplicationRunner {
 
-  @Value("${ADMIN_USER:admin}")
+  @Value("${ADMIN_USER}")
   private String name;
   @Value("${ADMIN_PASSWORD}")
   private String password;
-  @Value("${ADMIN_EMAIL:admin@admin.com}")
+  @Value("${ADMIN_EMAIL}")
   private String email;
 
   private final AuthService authService;
@@ -39,9 +40,9 @@ public class AdminInitializer implements ApplicationRunner {
       UUID adminId;
       try{
         adminId = UUID.fromString(admin.id());
-              } catch (IllegalArgumentException e) {
+              } catch (RequestInValidUuidFormat e) {
                 log.error("유효하지 않은 UUID 형식입니다: {}", admin.id());
-                throw new IllegalStateException("관리자 계정 생성 중 ID 파싱 오류", e);
+                throw e;
               }
       authService.updateRoleInternal(new UserRoleUpdateRequest(Role.ADMIN),
           adminId);

@@ -1,16 +1,12 @@
 package com.codeit.playlist.domain.user.entity;
 
 import com.codeit.playlist.domain.base.BaseUpdatableEntity;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import java.util.ArrayList;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,7 +14,6 @@ import lombok.NoArgsConstructor;
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 public class User extends BaseUpdatableEntity {
 
   @Column(nullable = false, unique = true)
@@ -35,13 +30,46 @@ public class User extends BaseUpdatableEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 10)
-  private Role role = Role.USER;
+  private Role role;
 
   @Column(name = "is_locked", nullable = false)
-  private boolean isLocked = false;
+  private boolean locked;
 
-  @Column(name = "follow_count")
+  @Column(name = "follow_count", nullable = false)
   private Long followCount;
+
+  public User(String email, String password, String name, String profileImageUrl) {
+    this.email = email;
+    this.password = password;
+    this.name = name;
+    this.profileImageUrl = profileImageUrl;
+    this.role = Role.USER;
+    this.locked = false;
+    this.followCount = 0L;
+  }
+
+  public void increaseFollowCount() {
+    if (followCount == null) {
+      followCount = 0L;
+    }
+    followCount++;
+  }
+
+  public void decreaseFollowCount() {
+    if (followCount == null || followCount <= 0) {
+      followCount = 0L;
+    } else {
+      followCount--;
+    }
+  }
+
+  public void updateRole(Role newRole) {
+    this.role = newRole;
+  }
+
+  public void updatePassword(String password) {
+    this.password = password;
+  }
 
   // 여기부터 연관관계, 초반 설계단계 에러 방지를 위해 주석처리, 각 개발 과정에서 필요한부분 주석 제거하여 사용할것
 
@@ -77,15 +105,5 @@ public class User extends BaseUpdatableEntity {
 
   //  @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
   //  private List<DirectMessage> receivedMessages = new ArrayList<>();
-
-  public void updatePassword(String password) {
-    this.password = password;
-  }
-
-  public void updateRole(Role newRole) {
-    if (this.role != newRole) {
-      this.role = newRole;
-    }
-  }
 
 }
