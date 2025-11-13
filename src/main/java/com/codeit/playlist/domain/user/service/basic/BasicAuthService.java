@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class BasicAuthService implements AuthService {
 
   private final UserRepository userRepository;
@@ -25,7 +26,6 @@ public class BasicAuthService implements AuthService {
 
   @Override
   @PreAuthorize("hasRole('ADMIN')")
-  @Transactional
   public UserDto updateRole(UserRoleUpdateRequest request, UUID userId) { // 권한 업데이트 로직, ADMIN 만 가능
     return updateRoleInternal(request, userId);
   }
@@ -41,9 +41,12 @@ public class BasicAuthService implements AuthService {
 
     if(!oldRole.equals(newRole)) {
       user.updateRole(newRole);
+      log.debug("[사용자 관리] 사용자 권한 변경 : userId={}, {} -> {}", userId, oldRole, newRole);
     }
 
-    //JWT 토큰 확인하는 로직 필요
+        //JWT 토큰 확인하는 로직 필요
+        // TODO: JWT 토큰 무효화 로직 구현
+        // 역할이 변경되면 해당 사용자의 모든 JWT 토큰을 무효화해야 합니다.
 
     return userMapper.toDto(user);
   }

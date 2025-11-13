@@ -5,14 +5,16 @@ early_access: false
 reviews:
   profile: "chill" # 리뷰 적당하게 한다는 뜻
   request_changes_workflow: true # 코드래빗이 리뷰 끝나면 알아서 PR 승인하게끔
-  high_level_summary: true # 전체 요약 코멘트 작성
+  high_level_summary: false # 전체 요약 코멘트 작성 X
   review_status: false # 각 파일/라인에 대해 "좋음 / 개선 필요 " 등 뱃지 표시
   collapse_walkthrough: false
+  poem: false
+  sequence_diagrams: false
   auto_review:
     enabled: true
     drafts: false
     base_branches:
-      - "/*"
+      - ".*"
     automatic_incremental_review: true # PR 에 새로운 commit 추가시 재리뷰
 chat:
   auto_reply: true

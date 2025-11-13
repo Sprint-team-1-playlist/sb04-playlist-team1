@@ -4,9 +4,9 @@ import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
+import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.service.AuthService;
 import com.codeit.playlist.domain.user.service.UserService;
-import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,11 +21,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class AdminInitializer implements ApplicationRunner {
 
-  @Value("${playlist.admin.username}")
+  @Value("${ADMIN_USER:admin}")
   private String name;
-  @Value("${playlist.admin.password}")
+  @Value("${ADMIN_PASSWORD}")
   private String password;
-  @Value("${playlist.admin.email}")
+  @Value("${ADMIN_EMAIL:admin@admin.com}")
   private String email;
 
   private final AuthService authService;
@@ -36,13 +36,21 @@ public class AdminInitializer implements ApplicationRunner {
     UserCreateRequest request = new UserCreateRequest(name, email, password);
     try {
       UserDto admin = userService.registerUser(request);
+      UUID adminId;
+      try{
+        adminId = UUID.fromString(admin.id());
+              } catch (IllegalArgumentException e) {
+                log.error("유효하지 않은 UUID 형식입니다: {}", admin.id());
+                throw new IllegalStateException("관리자 계정 생성 중 ID 파싱 오류", e);
+              }
       authService.updateRoleInternal(new UserRoleUpdateRequest(Role.ADMIN),
-          UUID.fromString(admin.id()));
+          adminId);
       log.info("관리자 계정이 성공적으로 생성되었습니다.");
-    } catch (RuntimeException e) { // UserAlreadyExistsException 으로 변경할 것
+    } catch (EmailAlreadyExistsException e) {
       log.warn("관리자 계정이 이미 존재합니다");
     } catch (Exception e) {
       log.error("관리자 계정 생성 중 오류가 발생했습니다.: {}", e.getMessage());
+      throw e;
     }
   }
 }
