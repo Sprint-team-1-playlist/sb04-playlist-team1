@@ -2,15 +2,21 @@ package com.codeit.playlist.domain.playlist.entity;
 
 import com.codeit.playlist.domain.base.BaseUpdatableEntity;
 import com.codeit.playlist.domain.user.entity.User;
-import jakarta.persistence.*;
-import lombok.*;
-
-import java.beans.ConstructorProperties;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "playlists")
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class Playlist extends BaseUpdatableEntity {
 
@@ -27,11 +33,8 @@ public class Playlist extends BaseUpdatableEntity {
     @Column(name = "subscriber_count", nullable = false)
     private Long subscriberCount = 0L;
 
-    @ConstructorProperties({"owner","title","description"})
-    public Playlist(User owner, String title, String description) {
-        this.owner = owner;
+    public void updateInfo(String title, String description) {
         this.title = title;
         this.description = description;
-        this.subscriberCount = 0L;
     }
 }
