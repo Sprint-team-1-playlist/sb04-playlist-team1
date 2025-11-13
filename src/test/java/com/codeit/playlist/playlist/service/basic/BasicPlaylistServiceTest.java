@@ -2,31 +2,48 @@ package com.codeit.playlist.playlist.service.basic;
 
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
+import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
 import com.codeit.playlist.domain.playlist.entity.Playlist;
+import com.codeit.playlist.domain.playlist.exception.PlaylistAccessDeniedException;
 import com.codeit.playlist.domain.playlist.mapper.PlaylistMapper;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.service.basic.BasicPlaylistService;
+import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.lang.reflect.Constructor;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicPlaylistServiceTest {
+
+    private static final UUID CURRENT_USER_ID =
+            UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     @Mock
     private PlaylistRepository playlistRepository;
@@ -39,6 +56,11 @@ public class BasicPlaylistServiceTest {
 
     @InjectMocks
     BasicPlaylistService basicPlaylistService;
+
+    @BeforeEach
+    void setUp() {
+        basicPlaylistService = new BasicPlaylistService(playlistRepository, userRepository, playlistMapper);
+    }
 
     @Test
     @DisplayName("ownerId가 있을 때 사용자가 포함된 플레이리스트 생성 성공")
@@ -92,5 +114,89 @@ public class BasicPlaylistServiceTest {
         assertTrue(ex.getMessage().contains("사용자를 찾을 수 없습니다"));
         verify(userRepository).findById(ownerId);
         verifyNoInteractions(playlistMapper, playlistRepository);
+    }
+
+    @Test
+    @DisplayName("소유자ID와 접속자ID가 같을 때 플레이리스트 수정 성공")
+    void updatePlaylistSuccessWhenOwnerEqualsCurrentUser() {
+        // given
+        UUID playlistId = UUID.randomUUID();
+        User owner = createUserWithId(CURRENT_USER_ID);  // owner == currentUser
+
+        Playlist playlist = new Playlist(owner, "old title", "old description", 0L);
+
+        PlaylistUpdateRequest request = new PlaylistUpdateRequest("new title", "new description");
+
+        UserSummary ownerSummary = new UserSummary(
+                CURRENT_USER_ID,
+                "ownerName",
+                null
+        );
+
+        PlaylistDto expectedDto = new PlaylistDto(
+                playlistId,
+                ownerSummary,
+                "new title",
+                "new description",
+                LocalDateTime.now(),
+                0L,
+                false,
+                List.of()
+        );
+
+        given(playlistRepository.findById(playlistId)).willReturn(Optional.of(playlist));
+        given(playlistMapper.toDto(playlist)).willReturn(expectedDto);
+
+        // when
+        PlaylistDto result = basicPlaylistService.updatePlaylist(playlistId, request);
+
+        // then
+        assertThat(result.title()).isEqualTo("new title");
+        assertThat(result.description()).isEqualTo("new description");
+
+        assertThat(playlist.getTitle()).isEqualTo("new title");
+        assertThat(playlist.getDescription()).isEqualTo("new description");
+
+        then(playlistRepository).should().findById(playlistId);
+        then(playlistMapper).should().toDto(playlist);
+    }
+
+    @Test
+    @DisplayName("소유자ID와 접속자ID가 다를 때 플레이리스트 수정 시 PlaylistAccessDeniedException 발생")
+    void updatePlaylistFailWhenOwnerIsDifferentFromCurrentUser() {
+
+        UUID playlistId = UUID.randomUUID();
+
+        UUID ownerId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        User owner = createUserWithId(ownerId);
+
+        Playlist playlist = new Playlist(owner, "old title", "old description", 0L);
+
+        PlaylistUpdateRequest request =
+                new PlaylistUpdateRequest("new title", "new description");
+
+        given(playlistRepository.findById(playlistId))
+                .willReturn(Optional.of(playlist));
+
+        // when & then
+        assertThrows(PlaylistAccessDeniedException.class,
+                () -> basicPlaylistService.updatePlaylist(playlistId, request));
+
+        then(playlistRepository).should().findById(playlistId);
+        then(playlistMapper).shouldHaveNoInteractions();
+    }
+
+    private User createUserWithId(UUID id) {
+        try {
+            Constructor<User> constructor = User.class.getDeclaredConstructor();
+            constructor.setAccessible(true);   // private/protected 생성자 열기
+            User user = constructor.newInstance();
+
+            ReflectionTestUtils.setField(user, "id", id);
+            return user;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
