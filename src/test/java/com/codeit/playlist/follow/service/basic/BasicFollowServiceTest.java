@@ -1,15 +1,22 @@
-package com.codeit.playlist.follow.basic;
+package com.codeit.playlist.follow.service.basic;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.codeit.playlist.domain.follow.dto.data.FollowDto;
 import com.codeit.playlist.domain.follow.dto.request.FollowRequest;
 import com.codeit.playlist.domain.follow.entity.Follow;
 import com.codeit.playlist.domain.follow.exception.FollowAlreadyExistsException;
+import com.codeit.playlist.domain.follow.exception.FollowNotFoundException;
 import com.codeit.playlist.domain.follow.exception.FollowSelfNotAllowedException;
 import com.codeit.playlist.domain.follow.mapper.FollowMapper;
 import com.codeit.playlist.domain.follow.repository.FollowRepository;
@@ -56,8 +63,8 @@ public class BasicFollowServiceTest {
     followeeId = UUID.randomUUID();
     followRequest = new FollowRequest(followeeId);
 
-    follower = new User("follower@test.com", "1234", "follower", null, Role.USER, false, 0L);
-    followee = new User("followee@test.com", "1234", "followee", null, Role.USER, false, 0L);
+    follower = new User("follower@test.com", "1234", "follower", null, Role.USER);
+    followee = new User("followee@test.com", "1234", "followee", null, Role.USER);
 
     follow = new Follow(followee, follower);
   }
@@ -153,7 +160,8 @@ public class BasicFollowServiceTest {
   void countFollowersSuccess() {
     // given
     UUID followeeId = UUID.randomUUID();
-    User followee = new User("followee@test.com", "1234", "followee", null, Role.USER, false, 5L);
+    User followee = new User("followee@test.com", "1234", "followee", null, Role.USER);
+    followee.increaseFollowCount();
 
     when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
 
@@ -163,7 +171,7 @@ public class BasicFollowServiceTest {
     // then
     assertNotNull(result);
     assertTrue(result >= 0);
-    assertTrue(result == 5L);
+    assertTrue(result == 1L);
     verify(userRepository, times(1)).findById(followeeId);
   }
 
@@ -178,4 +186,41 @@ public class BasicFollowServiceTest {
     assertThrows(UserNotFoundException.class, () -> followService.countFollowers(invalidId));
     verify(userRepository, times(1)).findById(invalidId);
   }
+
+  @Test
+  @DisplayName("팔로우 삭제 성공 시 followee의 팔로워 수 감소")
+  void deleteFollowSuccess() {
+    // given
+    UUID followId = UUID.randomUUID();
+    User followee = new User("followee@test.com", "1234", "followee", null, Role.USER);
+    User follower = new User("follower@test.com", "1234", "follower", null, Role.USER);
+    Follow follow = new Follow(followee, follower);
+    follow.getFollowee().increaseFollowCount();
+
+    when(followRepository.findById(followId)).thenReturn(Optional.of(follow));
+    doNothing().when(followRepository).deleteById(followId);
+
+    // when
+    followService.delete(followId);
+
+    // then
+    assertEquals(0L, follow.getFollowee().getFollowCount());
+    verify(followRepository, times(1)).findById(followId);
+    verify(followRepository, times(1)).deleteById(followId);
+  }
+
+  @Test
+  @DisplayName("팔로우 삭제 시 존재하지 않는 followId면 FollowNotFoundException 발생")
+  void deleteFollowNotFound() {
+    // given
+    UUID followId = UUID.randomUUID();
+    when(followRepository.findById(followId)).thenReturn(Optional.empty());
+
+    // when & then
+    assertThrows(FollowNotFoundException.class, () -> followService.delete(followId));
+    verify(followRepository, times(1)).findById(followId);
+    verify(followRepository, never()).deleteById(any());
+  }
+
+
 }

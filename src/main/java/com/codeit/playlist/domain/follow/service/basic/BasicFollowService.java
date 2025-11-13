@@ -4,6 +4,7 @@ import com.codeit.playlist.domain.follow.dto.data.FollowDto;
 import com.codeit.playlist.domain.follow.dto.request.FollowRequest;
 import com.codeit.playlist.domain.follow.entity.Follow;
 import com.codeit.playlist.domain.follow.exception.FollowAlreadyExistsException;
+import com.codeit.playlist.domain.follow.exception.FollowNotFoundException;
 import com.codeit.playlist.domain.follow.exception.FollowSelfNotAllowedException;
 import com.codeit.playlist.domain.follow.mapper.FollowMapper;
 import com.codeit.playlist.domain.follow.repository.FollowRepository;
@@ -82,6 +83,14 @@ public class BasicFollowService implements FollowService {
     long followersCount = followee.getFollowCount();
     log.info("특정 유저의 팔로워 수 조회 완료: {}", followersCount);
     return followersCount;
+  }
+
+  @Override
+  public void delete(UUID followId) {
+    Follow follow = followRepository.findById(followId)
+        .orElseThrow(() -> FollowNotFoundException.withId(followId));
+    follow.getFollowee().decreaseFollowCount();
+    followRepository.deleteById(followId);
   }
 
   private UUID getCurrentUserId() {
