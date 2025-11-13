@@ -31,10 +31,7 @@ public class BasicFollowService implements FollowService {
   public FollowDto create(FollowRequest followRequest) {
     log.debug("팔로우 생성 시작: {}", followRequest);
 
-    //    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    //    PlaylistUserDetails userDetails = (PlaylistUserDetails) authentication.getPrincipal();
-    //    User follower = userRepository.findById(userDetails.getId())
-    //        .orElseThrow(() -> UserNotFoundException.withId(userDetails.getId()));
+//    UUID followerId = getCurrentUserId();
 
     UUID testFollowerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
@@ -60,5 +57,25 @@ public class BasicFollowService implements FollowService {
     log.info("팔로우 생성 완료: {} -> {}", follower.getId(), followee.getId());
     FollowDto followDto = followMapper.toDto(follow);
     return followDto;
+  }
+
+  @Override
+  public Boolean followedByMe(UUID followeeId) {
+    log.debug("특정 유저를 내가 팔로우하는지 여부 조회 시작: {}", followeeId);
+    //    UUID followerId = getCurrentUserId();
+    UUID testFollowerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    if (testFollowerId.equals(followeeId)) {
+      throw FollowSelfNotAllowedException.withId(followeeId);
+    }
+    boolean isFollowing = followRepository.existsByFollowerIdAndFolloweeId(testFollowerId, followeeId);
+    log.info("특정 유저를 내가 팔로우하는지 여부 조회 완료: {} -> {}", followeeId, isFollowing);
+    return isFollowing;
+  }
+
+  private UUID getCurrentUserId() {
+    //    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    //    PlaylistUserDetails userDetails = (PlaylistUserDetails) authentication.getPrincipal();
+    //    return userDetails.getId();
+    return null;
   }
 }

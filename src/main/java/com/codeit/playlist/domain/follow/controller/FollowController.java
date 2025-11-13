@@ -32,10 +32,14 @@ public class FollowController {
         .status(HttpStatus.OK)
         .body(createdFollow);
   }
-//
-//  @GetMapping("/followed-by-me")
-//  public ResponseEntity<Boolean> followedByMe(@RequestParam UUID followeeId) {
-//
-//  }
 
+  @GetMapping("/followed-by-me")
+  public ResponseEntity<Boolean> followedByMe(@RequestParam UUID followeeId) {
+    log.info("[Follow] 특정 유저를 내가 팔로우하는지 여부 조회 요청: {}", followeeId);
+    Boolean isUserFollowedByMe = followService.followedByMe(followeeId);
+    log.debug("[Follow] 특정 유저를 내가 팔로우하는지 여부 조회 응답: {}", followeeId);
+    return ResponseEntity
+        .status(HttpStatus.OK)
+        .body(isUserFollowedByMe);
+  }
 }
