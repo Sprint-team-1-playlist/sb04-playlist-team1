@@ -1,16 +1,12 @@
 package com.codeit.playlist.domain.user.entity;
 
 import com.codeit.playlist.domain.base.BaseUpdatableEntity;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import java.util.ArrayList;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,7 +14,6 @@ import lombok.NoArgsConstructor;
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 public class User extends BaseUpdatableEntity {
 
   @Column(nullable = false, unique = true)
@@ -40,8 +35,33 @@ public class User extends BaseUpdatableEntity {
   @Column(name = "is_locked", nullable = false)
   private boolean isLocked;
 
-  @Column(name = "follow_count")
+  @Column(name = "follow_count", nullable = false)
   private Long followCount;
+
+  public User(String email, String password, String name, String profileImageUrl, Role role) {
+    this.email = email;
+    this.password = password;
+    this.name = name;
+    this.profileImageUrl = profileImageUrl;
+    this.role = role;
+    this.isLocked = false;
+    this.followCount = 0L;
+  }
+
+  public void increaseFollowCount() {
+    if (followCount == null) {
+      followCount = 0L;
+    }
+    followCount++;
+  }
+
+  public void decreaseFollowCount() {
+    if (followCount == null || followCount <= 0) {
+      followCount = 0L;
+    } else {
+      followCount--;
+    }
+  }
 
   // 여기부터 연관관계, 초반 설계단계 에러 방지를 위해 주석처리, 각 개발 과정에서 필요한부분 주석 제거하여 사용할것
 

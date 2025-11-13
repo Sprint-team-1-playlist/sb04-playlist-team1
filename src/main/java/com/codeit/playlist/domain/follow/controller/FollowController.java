@@ -42,4 +42,14 @@ public class FollowController {
         .status(HttpStatus.OK)
         .body(isUserFollowedByMe);
   }
+
+  @GetMapping("/count")
+  public ResponseEntity<Long> countFollowers(@RequestParam UUID followeeId) {
+    log.debug("[Follow] 특정 유저의 팔로워 수 조회 요청: {}", followeeId);
+    Long followersCount = followService.countFollowers(followeeId);
+    log.info("[Follow] 특정 유저의 팔로워 수 조회 응답: {}", followersCount);
+    return ResponseEntity
+        .status(HttpStatus.OK)
+        .body(followersCount);
+  }
 }
