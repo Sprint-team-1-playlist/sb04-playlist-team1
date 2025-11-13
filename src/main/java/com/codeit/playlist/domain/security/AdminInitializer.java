@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class AdminInitializer implements ApplicationRunner {
 
+  // .env 파일에 개인이 사용할 환경변수 선언, CI/CD 배포 구축 후에 github secret 에 추후 수정할 것
+
   @Value("${ADMIN_USER}")
   private String name;
   @Value("${ADMIN_PASSWORD}")
