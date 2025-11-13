@@ -14,8 +14,8 @@ import java.beans.ConstructorProperties;
 @AllArgsConstructor
 public class Playlist extends BaseEntity {
 
-    @ManyToOne(optional = true, fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = true) //임시로 nullable 허용
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
     @Column(nullable = false, length = 255)
