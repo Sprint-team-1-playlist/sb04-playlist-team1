@@ -6,7 +6,7 @@ import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.exception.RequestInValidUuidFormat;
-import com.codeit.playlist.domain.user.service.AuthService;
+import com.codeit.playlist.domain.auth.service.AuthService;
 import com.codeit.playlist.domain.user.service.UserService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +34,7 @@ public class AdminInitializer implements ApplicationRunner {
 
   @Override
   public void run(ApplicationArguments args) throws Exception {
+    log.debug("[사용자 관리] 관리자 계정 생성 시작");
     UserCreateRequest request = new UserCreateRequest(name, email, password);
     try {
       UserDto admin = userService.registerUser(request);

@@ -34,7 +34,6 @@ public class BasicUserService implements UserService {
   @Override
   public UserDto registerUser (UserCreateRequest request){
     log.debug("[사용자 관리] 사용자 등록 시작 : email = {}", request.email());
-
     User newUser = userMapper.toEntity(request);
 
     if(userRepository.existsByEmail(newUser.getEmail())) {
@@ -51,13 +50,11 @@ public class BasicUserService implements UserService {
 
     String encodedPassword = passwordEncoder.encode(newUser.getPassword());
     newUser.updatePassword(encodedPassword);
+    userRepository.save(newUser);
 
     log.info("[사용자 관리] 사용자 등록 완료 : email = {}", request.email());
 
-    userRepository.save(newUser);
-
     UserDto userDto = userMapper.toDto(newUser);
-
     return userDto;
   }
 
