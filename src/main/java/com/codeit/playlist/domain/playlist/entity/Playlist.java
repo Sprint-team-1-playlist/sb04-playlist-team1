@@ -1,6 +1,6 @@
 package com.codeit.playlist.domain.playlist.entity;
 
-import com.codeit.playlist.domain.base.BaseEntity;
+import com.codeit.playlist.domain.base.BaseUpdatableEntity;
 import com.codeit.playlist.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,7 +12,7 @@ import java.beans.ConstructorProperties;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Playlist extends BaseEntity {
+public class Playlist extends BaseUpdatableEntity {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
@@ -33,9 +33,5 @@ public class Playlist extends BaseEntity {
         this.title = title;
         this.description = description;
         this.subscriberCount = 0L;
-    }
-
-    public Playlist(String title, String description) {
-        this(null, title, description);
     }
 }
