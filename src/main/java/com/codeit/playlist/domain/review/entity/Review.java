@@ -3,7 +3,13 @@ package com.codeit.playlist.domain.review.entity;
 import com.codeit.playlist.domain.base.BaseUpdatableEntity;
 import com.codeit.playlist.domain.content.entity.Contents;
 import com.codeit.playlist.domain.user.entity.User;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "reviews")
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class Review extends BaseUpdatableEntity {
 
