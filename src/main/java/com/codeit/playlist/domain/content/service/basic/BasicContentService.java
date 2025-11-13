@@ -6,7 +6,6 @@ import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.exception.ContentBadRequestException;
-import com.codeit.playlist.domain.content.exception.ContentException;
 import com.codeit.playlist.domain.content.mapper.ContentMapper;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.content.service.ContentService;
@@ -26,6 +25,7 @@ public class BasicContentService implements ContentService {
     @Override
     public ContentDto create(ContentCreateRequest request, String thumbnail) {
         log.debug("컨텐츠 생성 시작 : request = {}", request);
+        thumbnail = "testThumbnail.jpg";
 
         Tag tags = new Tag();
         log.debug("태그 생성 시작 : tags = {}", request.tags());
@@ -35,24 +35,27 @@ public class BasicContentService implements ContentService {
         log.info("태그 생성 완료 : tags = {}", tags);
 
         log.debug("타입 생성 시작 : type = {}", request.type());
-        Type type = Type.MOVIE;
-        try {
-            if (request.tags().equals(Type.SPORT)) {
-                type = Type.SPORT;
-            }
-            if (request.tags().equals(Type.TV_SERIES)) {
-                type = Type.TV_SERIES;
-            }
-        } catch(ContentException e) {
-            throw new ContentBadRequestException();
+        Type type = null;
+        if(request.type() == null) {
+            throw new ContentBadRequestException("타입을 입력해주세요.");
         }
+        if(request.type().equals(Type.MOVIE.toString())) {
+            type = Type.MOVIE;
+        }
+        if (request.type().equals(Type.SPORT.toString())) {
+            type = Type.SPORT;
+        }
+        if (request.type().equals(Type.TV_SERIES.toString())) {
+            type = Type.TV_SERIES;
+        }
+
         log.info("타입 생성 완료 : type = {}", type);
 
         Content contents = new Content(
                 type,
                 request.title(),
                 request.description(),
-                "썸네일",
+                thumbnail,
                 tags.toString(),
                 0,
                 0,
