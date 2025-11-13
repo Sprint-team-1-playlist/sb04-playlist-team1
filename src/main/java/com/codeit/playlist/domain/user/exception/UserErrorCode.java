@@ -14,7 +14,7 @@ public enum UserErrorCode implements ErrorCode {
   LOGIN_FAILED(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 올바르지 않습니다."),
   FORBIDDEN_USER_UPDATE(HttpStatus.FORBIDDEN.value(), "해당 사용자에 대한 수정 권한이 없습니다."),
   FORBIDDEN_USER_DELETE(HttpStatus.FORBIDDEN.value(), "해당 사용자에 대한 삭제 권한이 없습니다."),
-  REQUEST_INVALID_UUID_FORMAT(HttpStatus.BAD_REQUEST.value(), "유효하지 않은 UUID 형식입니다."),;
+  REQUEST_INVALID_UUID_FORMAT(HttpStatus.BAD_REQUEST.value(), "유효하지 않은 UUID 형식입니다.");
 
   private final int status;
   private final String message;
