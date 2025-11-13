@@ -4,14 +4,12 @@ import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "notifications")
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Notification extends BaseEntity {

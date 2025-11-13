@@ -5,14 +5,12 @@ import com.codeit.playlist.domain.content.entity.Contents;
 import com.codeit.playlist.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "reviews")
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Review extends BaseUpdatableEntity {
