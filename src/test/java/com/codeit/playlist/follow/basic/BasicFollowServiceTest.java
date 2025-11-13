@@ -1,7 +1,9 @@
 package com.codeit.playlist.follow.basic;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 import com.codeit.playlist.domain.follow.dto.data.FollowDto;
@@ -62,7 +64,7 @@ public class BasicFollowServiceTest {
 
   @Test
   @DisplayName("팔로우 생성 성공")
-  void createFollow_Success() {
+  void createFollowSuccess() {
     // given
     when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
     when(userRepository.findById(followerId)).thenReturn(Optional.of(follower));
@@ -80,7 +82,7 @@ public class BasicFollowServiceTest {
 
   @Test
   @DisplayName("팔로우 대상 유저가 존재하지 않을 때 400 예외 발생")
-  void createFollow_FolloweeNotFound() {
+  void createFollowFolloweeNotFound() {
     // given: userRepository에서 followee를 찾을 수 없도록 설정
     when(userRepository.findById(followeeId)).thenReturn(Optional.empty());
 
@@ -92,7 +94,7 @@ public class BasicFollowServiceTest {
 
   @Test
   @DisplayName("자기 자신을 팔로우할 경우 400 예외 발생")
-  void createFollow_SelfFollowNotAllowed() {
+  void createFollowSelfFollowNotAllowed() {
     FollowRequest selfRequest = new FollowRequest(followerId);
 
     assertThrows(FollowSelfNotAllowedException.class, () -> followService.create(selfRequest));
@@ -100,10 +102,49 @@ public class BasicFollowServiceTest {
 
   @Test
   @DisplayName("이미 팔로우 중일 경우 400 예외 발생")
-  void createFollow_AlreadyFollowing() {
+  void createFollowAlreadyFollowing() {
     when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
     when(followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)).thenReturn(true);
 
     assertThrows(FollowAlreadyExistsException.class, () -> followService.create(followRequest));
+  }
+
+  @Test
+  @DisplayName("내가 특정 유저를 팔로우 중이면 true 반환")
+  void followedByMeFollowing() {
+    // given
+    when(followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)).thenReturn(true);
+
+    // when
+    Boolean result = followService.followedByMe(followeeId);
+
+    // then
+    assertNotNull(result);
+    assertTrue(result);
+    verify(followRepository, times(1)).existsByFollowerIdAndFolloweeId(followerId, followeeId);
+  }
+
+  @Test
+  @DisplayName("내가 특정 유저를 팔로우 중이 아니면 false 반환")
+  void followedByMeNotFollowing() {
+    // given
+    when(followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)).thenReturn(false);
+
+    // when
+    Boolean result = followService.followedByMe(followeeId);
+
+    // then
+    assertNotNull(result);
+    assertFalse(result);
+    verify(followRepository, times(1)).existsByFollowerIdAndFolloweeId(followerId, followeeId);
+  }
+
+  @Test
+  @DisplayName("자기 자신을 조회하면 예외 발생")
+  void followedByMeSelfFollowNotAllowed() {
+    UUID selfId = followerId;
+
+    // then
+    assertThrows(FollowSelfNotAllowedException.class, () -> followService.followedByMe(selfId));
   }
 }
