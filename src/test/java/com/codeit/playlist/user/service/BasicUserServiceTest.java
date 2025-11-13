@@ -69,7 +69,7 @@ public class BasicUserServiceTest {
         savedUser.getEmail(),
         savedUser.getName(),
         savedUser.getProfileImageUrl(),
-        savedUser.getRole(),
+        savedUser.getRole().name(),
         savedUser.isLocked()
     );
 
