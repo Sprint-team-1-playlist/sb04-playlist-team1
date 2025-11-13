@@ -47,12 +47,6 @@ public class Content extends BaseUpdatableEntity {
     private String thumbnailUrl;
 
     /**
-     * 컨텐츠 태그 목록
-     */
-    @Column(nullable = false)
-    private String tags;
-
-    /**
      * 평균 평점
      */
     @Column(nullable = false)
