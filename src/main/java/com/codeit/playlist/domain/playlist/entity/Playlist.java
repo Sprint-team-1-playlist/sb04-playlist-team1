@@ -8,7 +8,7 @@ import lombok.*;
 import java.beans.ConstructorProperties;
 
 @Entity
-@Table(name = "play_lists")
+@Table(name = "playlists")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
