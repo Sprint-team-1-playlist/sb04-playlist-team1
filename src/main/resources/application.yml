@@ -24,9 +24,3 @@ management:
   observations:
     annotations:
       enabled: true
-
-playlist:
-  admin:
-    username: ${ADMIN_USER}
-    email: ${ADMIN_EMAIL}
-    password: ${ADMIN_PASSWORD}

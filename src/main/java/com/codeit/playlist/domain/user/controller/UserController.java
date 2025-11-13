@@ -34,9 +34,9 @@ public class UserController {
 
   @GetMapping("/{userId}")
   public ResponseEntity<UserDto> find(@PathVariable UUID userId) {
-    log.debug("[사용자 관리] 사용자 상제 조회 시작 : id = {} ", userId);
+    log.debug("[사용자 관리] 사용자 상세 조회 시작 : id = {} ", userId);
     UserDto user = userService.find(userId);
-    log.info("[사용자 관리] 사용자 상제 조회 완료 : id = {} ", userId);
+    log.info("[사용자 관리] 사용자 상세 조회 완료 : id = {} ", userId);
     return ResponseEntity.ok(user);
   }
 }

@@ -1,12 +1,12 @@
 package com.codeit.playlist.domain.security;
 
+import com.codeit.playlist.domain.auth.service.AuthService;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.exception.RequestInValidUuidFormat;
-import com.codeit.playlist.domain.auth.service.AuthService;
 import com.codeit.playlist.domain.user.service.UserService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -41,9 +41,9 @@ public class AdminInitializer implements ApplicationRunner {
       UUID adminId;
       try{
         adminId = UUID.fromString(admin.id());
-              } catch (RequestInValidUuidFormat e) {
+              } catch (IllegalArgumentException e) {
                 log.error("유효하지 않은 UUID 형식입니다: {}", admin.id());
-                throw e;
+                throw RequestInValidUuidFormat.withId(admin.id());
               }
       authService.updateRoleInternal(new UserRoleUpdateRequest(Role.ADMIN),
           adminId);
