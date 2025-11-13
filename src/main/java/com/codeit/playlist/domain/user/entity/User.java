@@ -33,7 +33,7 @@ public class User extends BaseUpdatableEntity {
   private Role role = Role.USER;
 
   @Column(name = "is_locked", nullable = false)
-  private boolean isLocked = false;
+  private boolean locked;
 
   @Column(name = "follow_count", nullable = false)
   private Long followCount;
@@ -44,7 +44,7 @@ public class User extends BaseUpdatableEntity {
     this.name = name;
     this.profileImageUrl = profileImageUrl;
     this.role = role;
-    this.isLocked = false;
+    this.locked = false;
     this.followCount = 0L;
   }
 
