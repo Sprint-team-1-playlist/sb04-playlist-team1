@@ -22,8 +22,9 @@ public class ContentController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<ContentDto> create(@RequestBody ContentCreateRequest request) {
-        ContentDto contents = contentService.create(request);
+    public ResponseEntity<ContentDto> create(@RequestBody ContentCreateRequest request,
+                                             @RequestBody String thumbnail) {
+        ContentDto contents = contentService.create(request, thumbnail);
         return ResponseEntity.status(HttpStatus.OK).body(contents);
     }
 }

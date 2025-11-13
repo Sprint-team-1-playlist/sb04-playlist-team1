@@ -1,7 +1,7 @@
 package com.codeit.playlist.domain.playlist.entity;
 
 import com.codeit.playlist.domain.base.BaseEntity;
-import com.codeit.playlist.domain.content.entity.Contents;
+import com.codeit.playlist.domain.content.entity.Content;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,5 +22,5 @@ public class PlaylistContent extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "content_id", nullable = false)
-    private Contents content;
+    private Content content;
 }

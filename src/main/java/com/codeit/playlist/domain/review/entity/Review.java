@@ -1,7 +1,7 @@
 package com.codeit.playlist.domain.review.entity;
 
 import com.codeit.playlist.domain.base.BaseUpdatableEntity;
-import com.codeit.playlist.domain.content.entity.Contents;
+import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -19,7 +19,7 @@ public class Review extends BaseUpdatableEntity {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "content_id", nullable = false)
-    private Contents content;
+    private Content content;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

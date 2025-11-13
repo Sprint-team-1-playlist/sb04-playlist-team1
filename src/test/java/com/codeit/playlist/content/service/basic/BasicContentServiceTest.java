@@ -1,17 +1,13 @@
 package com.codeit.playlist.content.service.basic;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.dto.request.ContentCreateRequest;
-import com.codeit.playlist.domain.content.entity.Contents;
+import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.mapper.ContentMapper;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
@@ -37,7 +33,7 @@ public class BasicContentServiceTest {
     @InjectMocks
     private BasicContentService contentService;
 
-    Contents contents = new Contents(
+    Content contents = new Content(
             Type.MOVIE,
             "미소된장국으로 건배",
             "재밌음",
@@ -67,13 +63,14 @@ public class BasicContentServiceTest {
                 "미소된장국으로 건배",
                 "재밌음",
                 List.of("러브코미디", "순정만화"));
-        given(contentMapper.toDto(any(Contents.class))).willReturn(contentDto);
+        String thumbnail = "thumbnail";
+        given(contentMapper.toDto(any(Content.class))).willReturn(contentDto);
 
         // when
-        ContentDto result = contentService.create(request);
+        ContentDto result = contentService.create(request, thumbnail);
 
         // then
         assertThat(result).isEqualTo(contentDto);
-        verify(contentRepository).save(any(Contents.class));
+        verify(contentRepository).save(any(Content.class));
     }
 }

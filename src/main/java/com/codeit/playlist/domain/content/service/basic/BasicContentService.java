@@ -2,8 +2,8 @@ package com.codeit.playlist.domain.content.service.basic;
 
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.dto.request.ContentCreateRequest;
-import com.codeit.playlist.domain.content.entity.Contents;
-import com.codeit.playlist.domain.content.entity.Tags;
+import com.codeit.playlist.domain.content.entity.Content;
+import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.exception.ContentBadRequestException;
 import com.codeit.playlist.domain.content.exception.ContentException;
@@ -24,9 +24,10 @@ public class BasicContentService implements ContentService {
 
     @Transactional
     @Override
-    public ContentDto create(ContentCreateRequest request) {
+    public ContentDto create(ContentCreateRequest request, String thumbnail) {
+        log.debug("컨텐츠 생성 시작 : request = {}", request);
 
-        Tags tags = new Tags();
+        Tag tags = new Tag();
         log.debug("태그 생성 시작 : tags = {}", request.tags());
         for(int i=0; i<request.tags().size(); i++) {
             tags.setItems(request.tags().get(i));
@@ -36,7 +37,6 @@ public class BasicContentService implements ContentService {
         log.debug("타입 생성 시작 : type = {}", request.type());
         Type type = Type.MOVIE;
         try {
-
             if (request.tags().equals(Type.SPORT)) {
                 type = Type.SPORT;
             }
@@ -48,8 +48,7 @@ public class BasicContentService implements ContentService {
         }
         log.info("타입 생성 완료 : type = {}", type);
 
-        log.debug("컨텐츠 생성 시작 : request = {}", request);
-        Contents contents = new Contents(
+        Content contents = new Content(
                 type,
                 request.title(),
                 request.description(),
@@ -60,7 +59,7 @@ public class BasicContentService implements ContentService {
                 0);
 
         contentRepository.save(contents);
-        log.info("영화 컨텐츠 생성 완료, id = {}", contents.getId());
+        log.info("컨텐츠 생성 완료, id = {}", contents.getId());
         return contentsMapper.toDto(contents);
     }
 }
