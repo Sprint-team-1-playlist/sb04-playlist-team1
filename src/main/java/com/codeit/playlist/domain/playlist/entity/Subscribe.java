@@ -3,15 +3,11 @@ package com.codeit.playlist.domain.playlist.entity;
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "subscribes")
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Subscribe extends BaseEntity {
