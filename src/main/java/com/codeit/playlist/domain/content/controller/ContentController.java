@@ -33,6 +33,7 @@ public class ContentController {
         return ResponseEntity.status(HttpStatus.OK).body(contents);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{contentId}")
     public ResponseEntity<ContentDto> update(@PathVariable UUID contentId,
                                              @RequestBody ContentUpdateRequest request,
