@@ -147,4 +147,35 @@ public class BasicFollowServiceTest {
     // then
     assertThrows(FollowSelfNotAllowedException.class, () -> followService.followedByMe(selfId));
   }
+
+  @Test
+  @DisplayName("특정 유저의 팔로워 수 조회 성공")
+  void countFollowersSuccess() {
+    // given
+    UUID followeeId = UUID.randomUUID();
+    User followee = new User("followee@test.com", "1234", "followee", null, Role.USER, false, 5L);
+
+    when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
+
+    // when
+    Long result = followService.countFollowers(followeeId);
+
+    // then
+    assertNotNull(result);
+    assertTrue(result >= 0);
+    assertTrue(result == 5L);
+    verify(userRepository, times(1)).findById(followeeId);
+  }
+
+  @Test
+  @DisplayName("팔로워 수 조회 시 유저가 존재하지 않으면 예외 발생")
+  void countFollowersUserNotFound() {
+    // given
+    UUID invalidId = UUID.randomUUID();
+    when(userRepository.findById(invalidId)).thenReturn(Optional.empty());
+
+    // when & then
+    assertThrows(UserNotFoundException.class, () -> followService.countFollowers(invalidId));
+    verify(userRepository, times(1)).findById(invalidId);
+  }
 }
