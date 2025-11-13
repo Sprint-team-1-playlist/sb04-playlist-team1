@@ -11,4 +11,6 @@ public interface FollowService {
   Boolean followedByMe(UUID followeeId);
 
   Long countFollowers(UUID followeeId);
+
+  void delete(UUID followId);
 }

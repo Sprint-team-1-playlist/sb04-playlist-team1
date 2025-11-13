@@ -50,9 +50,7 @@ public class BasicUserServiceTest {
         "123456789",
         "강은혁",
         null,  // profileImageUrl
-        Role.USER,
-        false, // isLocked
-        0L     // followCount
+        Role.USER
     );
 
     User savedUser = new User(
@@ -60,9 +58,7 @@ public class BasicUserServiceTest {
         "encodedPassword",
         "강은혁",
         null,
-        Role.USER,
-        false,
-        0L
+        Role.USER
     );
 
     UserDto userDto = new UserDto(
