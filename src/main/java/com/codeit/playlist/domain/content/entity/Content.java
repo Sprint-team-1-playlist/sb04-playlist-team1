@@ -1,8 +1,17 @@
 package com.codeit.playlist.domain.content.entity;
 
 import com.codeit.playlist.domain.base.BaseUpdatableEntity;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 
 @Entity
 @Table(name = "contents")
@@ -10,7 +19,7 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Contents extends BaseUpdatableEntity {
+public class Content extends BaseUpdatableEntity {
 
     /**
      * 컨텐츠 타입

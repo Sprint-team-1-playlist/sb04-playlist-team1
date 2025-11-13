@@ -1,7 +1,6 @@
 package com.codeit.playlist.domain.content.dto.request;
 
 import java.util.List;
-import java.util.UUID;
 
 public record ContentCreateRequest(
         String type, // 콘텐츠 타입

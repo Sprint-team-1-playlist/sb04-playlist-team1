@@ -1,7 +1,5 @@
 package com.codeit.playlist.domain.content.dto.request;
 
-import com.codeit.playlist.domain.content.entity.tags;
-
 import java.util.List;
 
 public record ContentUpdateRequest(
