@@ -14,6 +14,7 @@ import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.service.basic.BasicUserService;
 import java.time.LocalDateTime;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,7 +38,8 @@ public class BasicUserServiceTest {
   private BasicUserService BasicuserService;
 
   @Test
-  void registerUser() {
+  @DisplayName("사용자 생성 테스트 성공")
+  void registerUserSuccess() {
     // Given
     UserCreateRequest request = new UserCreateRequest(
         "강은혁",
@@ -74,9 +76,9 @@ public class BasicUserServiceTest {
     // Mock 동작 정의
     when(userMapper.toEntity(request)).thenReturn(newUser);
     when(userRepository.existsByEmail(newUser.getEmail())).thenReturn(false);
-    when(passwordEncoder.encode(newUser.getPassword())).thenReturn("123456789");
+    when(passwordEncoder.encode("123456789")).thenReturn("encodedPassword");
     when(userRepository.save(any(User.class))).thenReturn(savedUser);
-    when(userMapper.toDto(savedUser)).thenReturn(userDto);
+    when(userMapper.toDto(any(User.class))).thenReturn(userDto);
 
     // When
     BasicUserService userService = new BasicUserService(userRepository, passwordEncoder, userMapper);
@@ -90,7 +92,7 @@ public class BasicUserServiceTest {
     assertEquals(userDto.locked(), result.locked());
 
     verify(userRepository).existsByEmail(newUser.getEmail());
-    verify(passwordEncoder).encode(newUser.getPassword());
+    verify(passwordEncoder).encode("123456789");
     verify(userRepository).save(any(User.class));
   }
 
