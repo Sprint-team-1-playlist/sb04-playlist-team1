@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface ContentService {
     ContentDto create(ContentCreateRequest request, String thumbnail);
     ContentDto update(UUID contentId, ContentUpdateRequest request, String thumbnail);
+    void delete(UUID contentId);
 }

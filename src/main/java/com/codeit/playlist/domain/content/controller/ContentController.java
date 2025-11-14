@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,7 +31,7 @@ public class ContentController {
     public ResponseEntity<ContentDto> create(@RequestBody ContentCreateRequest request,
                                              @RequestBody String thumbnail) {
         ContentDto contents = contentService.create(request, thumbnail);
-        return ResponseEntity.status(HttpStatus.OK).body(contents);
+        return ResponseEntity.status(HttpStatus.CREATED).body(contents);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -40,5 +41,12 @@ public class ContentController {
                                              @RequestBody String thumbnail) {
         ContentDto updateContents = contentService.update(contentId, request, thumbnail);
         return ResponseEntity.ok(updateContents);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{contentId}")
+    public ResponseEntity<Void> delete(@PathVariable UUID contentId) {
+        contentService.delete(contentId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

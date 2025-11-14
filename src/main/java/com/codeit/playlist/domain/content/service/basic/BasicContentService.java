@@ -32,7 +32,7 @@ public class BasicContentService implements ContentService {
     @Override
     public ContentDto create(ContentCreateRequest request, String thumbnail) {
         log.debug("컨텐츠 생성 시작 : request = {}", request);
-        thumbnail = "testThumbnail.jpg";
+        thumbnail = "testThumbnail.jpg"; // 더미데이터
 
         log.debug("타입 생성 시작 : type = {}", request.type());
         Type type = null;
@@ -112,8 +112,24 @@ public class BasicContentService implements ContentService {
         tagRepository.saveAll(tagList);
         log.info("태그 수정 완료 : tag = {}", tagList);
 
-        log.info("컨텐츠 수정 완료, id = {}, tag = {}",
+        log.info("컨텐츠 수정 완료 : id = {}, tag = {}",
                 content.getId(), tagRepository.findByContentId(content.getId()));
         return contentMapper.toDto(content, tagList);
+    }
+
+    @Transactional
+    @Override
+    public void delete(UUID contentId) {
+        log.debug("컨텐츠 삭제 시작 : id = {}", contentId);
+        if(contentRepository.existsById(contentId)) {
+            log.debug("태그 삭제 시작 : tag = {}", tagRepository.findByContentId(contentId));
+            tagRepository.deleteAllByContentId(contentId); // contentId와 연결된 tags 리스트를 삭제함
+            log.info("태그 삭제 완료 : tag = {}", tagRepository.findByContentId(contentId));
+
+            contentRepository.deleteById(contentId);
+            log.info("컨텐츠 삭제 완료 : id = {}", contentId);
+        } else {
+            throw ContentNotFoundException.withId(contentId);
+        }
     }
 }
