@@ -4,6 +4,7 @@ import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.entity.Subscribe;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
+import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -104,11 +105,6 @@ public class PlaylistRepositoryTest {
     }
 
     public static User createTestUser(String email) {
-//        User user = new User();
-//        user.email = email;
-//        user.password = "password";
-//        user.name = "test-user";
-//        return user;
-        return null;//오류 방지를 위한 리턴문(빨간줄 제거를 위한 return문)
+        return new User(email, "password", "test-user", null, Role.USER);
     }
 }
