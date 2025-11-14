@@ -5,6 +5,7 @@ import com.codeit.playlist.domain.conversation.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.entity.Message;
+import com.codeit.playlist.domain.conversation.exception.conversation.ConversationAlreadyExistsException;
 import com.codeit.playlist.domain.conversation.exception.conversation.SelfChatNotAllowedException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
 import com.codeit.playlist.domain.conversation.mapper.MessageMapper;
@@ -16,6 +17,7 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +46,12 @@ public class BasicConversationService implements ConversationService {
     UUID testCurrentUserId = UUID.fromString("11111111-1111-1111-1111-111111111111");
     if (testCurrentUserId.equals(request.withUserId())){
       throw SelfChatNotAllowedException.withId(testCurrentUserId);
+    }
+
+    Optional<Conversation> existingConversation = conversationRepository
+        .findByUserIds(testCurrentUserId, request.withUserId());
+    if (existingConversation.isPresent()) {
+      throw ConversationAlreadyExistsException.withId(existingConversation.get().getId());
     }
 
     User currentUser = userRepository.findById(testCurrentUserId)

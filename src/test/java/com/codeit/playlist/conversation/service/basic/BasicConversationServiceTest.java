@@ -1,15 +1,18 @@
 package com.codeit.playlist.conversation.service.basic;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.util.AssertionErrors.assertTrue;
 
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
 import com.codeit.playlist.domain.conversation.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
+import com.codeit.playlist.domain.conversation.exception.conversation.ConversationAlreadyExistsException;
+import com.codeit.playlist.domain.conversation.exception.conversation.SelfChatNotAllowedException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
 import com.codeit.playlist.domain.conversation.mapper.MessageMapper;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
@@ -23,6 +26,7 @@ import com.codeit.playlist.domain.user.repository.UserRepository;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -68,7 +72,8 @@ public class BasicConversationServiceTest {
   }
 
   @Test
-  void createConversationSuccessWithoutMessage() {
+  @DisplayName("대화 생성 성공")
+  void createConversationSuccess() {
     // given
     // 사용자 Mock
     when(userRepository.findById(currentUserId))
@@ -115,6 +120,24 @@ public class BasicConversationServiceTest {
 
     // then
     assertNotNull(result);
-    assertTrue("lastest message is null as expected", result.lastestMessage() == null);
+    assertNull(result.lastestMessage(), "lastest message is null as expected");
+  }
+
+  @Test
+  @DisplayName("대화 생성 실패 - 자기 자신과 대화 시도")
+  void createConversationFailsWhenSelfChat() {
+    ConversationCreateRequest request = new ConversationCreateRequest(currentUserId);
+    assertThrows(SelfChatNotAllowedException.class, () -> conversationService.create(request));
+  }
+
+  @Test
+  @DisplayName("대화 생성 실패 - 이미 존재하는 대화")
+  void createConversationFailsWhenConversationAlreadyExists() {
+    Conversation existingConversation = new Conversation(currentUser, otherUser);
+    when(conversationRepository.findByUserIds(currentUserId, otherUserId))
+        .thenReturn(Optional.of(existingConversation));
+
+    ConversationCreateRequest request = new ConversationCreateRequest(otherUserId);
+    assertThrows(ConversationAlreadyExistsException.class, () -> conversationService.create(request));
   }
 }

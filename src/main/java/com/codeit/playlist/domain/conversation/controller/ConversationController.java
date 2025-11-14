@@ -24,7 +24,7 @@ public class ConversationController {
   public ResponseEntity<ConversationDto> create(@RequestBody ConversationCreateRequest request){
     log.debug("[Conversation] 대화 생성 요청: {}", request);
     ConversationDto conversationDto = conversationService.create(request);
-    log.info("[Conversation] 대화 생성 응답: {}", request);
+    log.info("[Conversation] 대화 생성 응답: {}", conversationDto);
     return ResponseEntity
         .status(HttpStatus.OK)
         .body(conversationDto);
