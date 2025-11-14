@@ -30,7 +30,7 @@ public class BasicFollowService implements FollowService {
 
   @Override
   public FollowDto create(FollowRequest followRequest) {
-    log.debug("팔로우 생성 시작: {}", followRequest);
+    log.debug("[Follow] 팔로우 생성 시작: {}", followRequest);
 
 //    UUID followerId = getCurrentUserId();
 
@@ -57,31 +57,31 @@ public class BasicFollowService implements FollowService {
 
     followee.increaseFollowCount();
 
-    log.info("팔로우 생성 완료: {} -> {}", follower.getId(), followee.getId());
+    log.info("[Follow] 팔로우 생성 완료: {} -> {}", follower.getId(), followee.getId());
     FollowDto followDto = followMapper.toDto(follow);
     return followDto;
   }
 
   @Override
   public Boolean followedByMe(UUID followeeId) {
-    log.debug("특정 유저를 내가 팔로우하는지 여부 조회 시작: {}", followeeId);
+    log.debug("[Follow] 특정 유저를 내가 팔로우하는지 여부 조회 시작: {}", followeeId);
     //    UUID followerId = getCurrentUserId();
     UUID testFollowerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
     if (testFollowerId.equals(followeeId)) {
       throw FollowSelfNotAllowedException.withId(followeeId);
     }
     boolean isFollowing = followRepository.existsByFollowerIdAndFolloweeId(testFollowerId, followeeId);
-    log.info("특정 유저를 내가 팔로우하는지 여부 조회 완료: {} -> {}", followeeId, isFollowing);
+    log.info("[Follow] 특정 유저를 내가 팔로우하는지 여부 조회 완료: {} -> {}", followeeId, isFollowing);
     return isFollowing;
   }
 
   @Override
   public Long countFollowers(UUID followeeId) {
-    log.debug("특정 유저의 팔로워 수 조회 시작: {}", followeeId);
+    log.debug("[Follow] 특정 유저의 팔로워 수 조회 시작: {}", followeeId);
     User followee = userRepository.findById(followeeId)
         .orElseThrow(() -> UserNotFoundException.withId(followeeId));
     long followersCount = followee.getFollowCount();
-    log.info("특정 유저의 팔로워 수 조회 완료: {}", followersCount);
+    log.info("[Follow] 특정 유저의 팔로워 수 조회 완료: {}", followersCount);
     return followersCount;
   }
 
