@@ -126,10 +126,10 @@ public class BasicContentService implements ContentService {
 
         List<Tag> tags = tagRepository.findByContentId(contentId);
         log.debug("태그 삭제 시작 : tag = {}", tags);
-        tagRepository.deleteAll(tags);
+        tagRepository.deleteAll(tags); // contentId와 연결된 tags 리스트를 삭제함
         log.info("태그 삭제 완료 : tag = {}", tagRepository.findByContentId(contentId));
 
-        contentRepository.deleteById(contentId);
-        log.info("컨텐츠 삭제 완료 : id = {}", contentId);
+        contentRepository.deleteById(content.getId());
+        log.info("컨텐츠 삭제 완료 : id = {}", content.getId());
     }
 }
