@@ -82,6 +82,10 @@ public class BasicConversationServiceTest {
     when(userRepository.findById(otherUserId))
         .thenReturn(Optional.of(otherUser));
 
+    // 기존 대화 없음
+    when(conversationRepository.findByUserIds(currentUserId, otherUserId))
+        .thenReturn(Optional.empty());
+
     // 저장될 Conversation
     Conversation savedConversation = new Conversation(currentUser, otherUser);
 
@@ -126,17 +130,29 @@ public class BasicConversationServiceTest {
   @Test
   @DisplayName("대화 생성 실패 - 자기 자신과 대화 시도")
   void createConversationFailsWhenSelfChat() {
-    ConversationCreateRequest request = new ConversationCreateRequest(currentUserId);
+    // given
+    when(userRepository.findById(currentUserId))
+        .thenReturn(Optional.of(currentUser));
+
+    // when & then
+        ConversationCreateRequest request = new ConversationCreateRequest(currentUserId);
     assertThrows(SelfChatNotAllowedException.class, () -> conversationService.create(request));
   }
 
   @Test
   @DisplayName("대화 생성 실패 - 이미 존재하는 대화")
   void createConversationFailsWhenConversationAlreadyExists() {
+    // given
+    when(userRepository.findById(currentUserId))
+        .thenReturn(Optional.of(currentUser));
+    when(userRepository.findById(otherUserId))
+        .thenReturn(Optional.of(otherUser));
+
     Conversation existingConversation = new Conversation(currentUser, otherUser);
     when(conversationRepository.findByUserIds(currentUserId, otherUserId))
         .thenReturn(Optional.of(existingConversation));
 
+    // when & then
     ConversationCreateRequest request = new ConversationCreateRequest(otherUserId);
     assertThrows(ConversationAlreadyExistsException.class, () -> conversationService.create(request));
   }
