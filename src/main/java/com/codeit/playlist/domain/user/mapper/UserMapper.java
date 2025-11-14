@@ -1,6 +1,7 @@
 package com.codeit.playlist.domain.user.mapper;
 
 import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.entity.User;
 import org.mapstruct.Mapper;
@@ -21,4 +22,6 @@ public interface UserMapper {
 
   UserDto toDto(User user);
 
+  @Mapping(target = "userId", source = "user.id")
+  UserSummary toSummary(User user);
 }
