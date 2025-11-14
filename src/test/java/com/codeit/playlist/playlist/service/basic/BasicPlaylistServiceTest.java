@@ -1,8 +1,10 @@
 package com.codeit.playlist.playlist.service.basic;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
+import com.codeit.playlist.domain.playlist.dto.response.CursorResponsePlaylistDto;
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.exception.PlaylistAccessDeniedException;
 import com.codeit.playlist.domain.playlist.mapper.PlaylistMapper;
@@ -19,6 +21,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Constructor;
@@ -31,6 +36,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -184,6 +193,136 @@ public class BasicPlaylistServiceTest {
 
         then(playlistRepository).should().findById(playlistId);
         then(playlistMapper).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("플레이리스트 목록 조회 성공 - 커서와 필터로 페이지 조회")
+    void findPlaylistsSuccess() {
+        //given
+        String keywordLike = "영화";
+        UUID ownerId = UUID.randomUUID();
+        UUID subscriberId = UUID.randomUUID();
+        String cursor = null;    // 첫 페이지
+        UUID idAfter = null;
+        int limit = 5;
+        String sortBy = "updatedAt";
+        SortDirection sortDirection = SortDirection.DESCENDING;
+
+        Playlist playlist1 = mock(Playlist.class);
+        Playlist playlist2 = mock(Playlist.class);
+
+        UUID lastId = UUID.randomUUID();
+        when(playlist2.getId()).thenReturn(lastId);
+
+        List<Playlist> content = List.of(playlist1, playlist2);
+        Slice<Playlist> slice = new SliceImpl<>(content, PageRequest.of(0, limit), true);
+
+        when(playlistRepository.searchPlaylists(
+                any(), any(), any(), anyBoolean(), any(), anyBoolean(), any())
+        ).thenReturn(slice);
+
+        PlaylistDto dto1 = new PlaylistDto(UUID.randomUUID(),
+                new UserSummary(UUID.randomUUID(), "owner1", null),
+                "플리1",
+                "설명1",
+                LocalDateTime.now(),
+                5L,
+                false,
+                List.of());
+        PlaylistDto dto2 = new PlaylistDto(
+                UUID.randomUUID(),
+                new UserSummary(UUID.randomUUID(), "owner2", null),
+                "플리2",
+                "설명2",
+                LocalDateTime.now(),
+                3L,
+                false,
+                List.of()
+        );
+
+        when(playlistMapper.toDto(playlist1)).thenReturn(dto1);
+        when(playlistMapper.toDto(playlist2)).thenReturn(dto2);
+
+        when(playlistRepository.countPlaylists(any(), any(), any()))
+                .thenReturn(10L);
+
+        // when
+        CursorResponsePlaylistDto result = basicPlaylistService.findPlaylists(
+                keywordLike,
+                ownerId,
+                subscriberId,
+                cursor,
+                idAfter,
+                limit,
+                sortBy,
+                sortDirection
+        );
+
+        // then
+        assertThat(result.data()).containsExactly(dto1, dto2);
+        assertThat(result.hasNext()).isTrue();
+        assertThat(result.nextCursor()).isEqualTo(lastId.toString());
+        assertThat(result.nextIdAfter()).isEqualTo(lastId);
+        assertThat(result.totalCount()).isEqualTo(10L);
+        assertThat(result.sortBy()).isEqualTo("updatedAt");
+        assertThat(result.sortDirection()).isEqualTo(SortDirection.DESCENDING);
+
+        verify(playlistRepository).searchPlaylists(
+                eq(keywordLike),
+                eq(ownerId),
+                eq(subscriberId),
+                eq(false),       // cursor/idAfter 없으므로 hasCursor=false
+                isNull(),        // cursorId=null
+                eq(false),       // DESCENDING → asc=false
+                any()
+        );
+        verify(playlistRepository).countPlaylists(keywordLike, ownerId, subscriberId);
+    }
+
+    @Test
+    @DisplayName("findPlaylists 실패 케이스 - 잘못된 cursor 문자열이 넘어와도 예외 없이 첫 페이지로 처리")
+    void findPlaylistsInvalidCursorDoesNotThrow() {
+        // given
+        String invalidCursor = "not-a-uuid";
+        int limit = 5;
+
+        // Slice empty
+        Slice<Playlist> slice = new SliceImpl<>(List.of(), PageRequest.of(0, limit), false);
+        when(playlistRepository.searchPlaylists(
+                any(), any(), any(), anyBoolean(), any(), anyBoolean(), any())
+        ).thenReturn(slice);
+        when(playlistRepository.countPlaylists(any(), any(), any()))
+                .thenReturn(0L);
+
+        // when
+        CursorResponsePlaylistDto result = basicPlaylistService.findPlaylists(
+                null,
+                null,
+                null,
+                invalidCursor,  // 잘못된 커서
+                null,
+                limit,
+                "updatedAt",
+                SortDirection.ASCENDING
+        );
+
+        // then
+        assertThat(result.data()).isEmpty();
+        assertThat(result.hasNext()).isFalse();
+        assertThat(result.nextCursor()).isNull();
+        assertThat(result.nextIdAfter()).isNull();
+        assertThat(result.totalCount()).isEqualTo(0L);
+
+        // 잘못된 커서라도 hasCursor=false, cursorId=null 로 호출되는지 확인
+        verify(playlistRepository).searchPlaylists(
+                isNull(), // keyword
+                isNull(), // owner
+                isNull(), // subscriber
+                eq(false),
+                isNull(),
+                eq(true),
+                any()
+        );
     }
 
     private User createUserWithId(UUID id) {
