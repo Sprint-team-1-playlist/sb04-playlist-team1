@@ -32,7 +32,7 @@ public class PlaylistRepositoryTest {
 
     @Test
     @DisplayName("searchPlaylists 성공 - 구독자 필터로 자신이 구독한 플레이리스트만 조회")
-    void searchPlaylists_success_withSubscriberFilter() {
+    void searchPlaylistsSuccessWithSubscriberFilter() {
         // given
         User user1 = createTestUser("user1@email.com");
         User user2 = createTestUser("user2@email.com");
@@ -69,7 +69,7 @@ public class PlaylistRepositoryTest {
 
     @Test
     @DisplayName("searchPlaylists 실패 케이스 - 구독자가 아무 것도 구독하지 않으면 빈 결과 반환")
-    void searchPlaylists_noSubscriptions_returnsEmpty() {
+    void searchPlaylistsNoSubscriptionsReturnsEmpty() {
         // given
         User user = createTestUser("no-sub@email.com");
         userRepository.save(user);
