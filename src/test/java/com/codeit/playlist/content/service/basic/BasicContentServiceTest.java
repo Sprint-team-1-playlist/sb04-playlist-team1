@@ -150,14 +150,14 @@ public class BasicContentServiceTest {
                 new Tag(content, "러브코미디")
         );
 
-        given(contentRepository.findById(contentId)).willReturn(Optional.of(content));
+        given(contentRepository.existsById(contentId)).willReturn(true);
         given(tagRepository.findByContentId(contentId)).willReturn(tags);
 
         // when
         contentService.delete(contentId);
 
         // then
-        verify(tagRepository).deleteAll(tags);
+        verify(tagRepository).deleteAllByContentId(contentId);
         verify(contentRepository).deleteById(contentId);
     }
 }
