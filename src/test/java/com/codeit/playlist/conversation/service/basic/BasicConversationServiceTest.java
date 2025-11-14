@@ -91,7 +91,7 @@ public class BasicConversationServiceTest {
         otherUser.getProfileImageUrl()
     );
 
-    when(userMapper.toSummary(otherUser))
+    when(userMapper.toUserSummary(otherUser))
         .thenReturn(withSummary);
 
     // mapper 결과 DTO

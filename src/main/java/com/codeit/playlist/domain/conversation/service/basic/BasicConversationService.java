@@ -54,7 +54,7 @@ public class BasicConversationService implements ConversationService {
     Conversation conversation = new Conversation(currentUser,user);
     conversationRepository.save(conversation);
 
-    UserSummary userSummary = userMapper.toSummary(user);
+    UserSummary userSummary = userMapper.toUserSummary(user);
 
     Message latestMessage = messageRepository
         .findFirstByConversationOrderByCreatedAtDesc(conversation)
