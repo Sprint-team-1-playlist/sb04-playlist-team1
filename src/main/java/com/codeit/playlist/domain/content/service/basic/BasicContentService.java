@@ -129,7 +129,7 @@ public class BasicContentService implements ContentService {
             contentRepository.deleteById(contentId);
             log.info("컨텐츠 삭제 완료 : id = {}", contentId);
         } else {
-            throw new ContentNotFoundException();
+            throw ContentNotFoundException.withId(contentId);
         }
     }
 }
