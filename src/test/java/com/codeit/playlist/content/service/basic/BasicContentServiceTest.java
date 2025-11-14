@@ -144,12 +144,20 @@ public class BasicContentServiceTest {
                 2,
                 3
         );
+
+        List<Tag> tags = List.of(
+                new Tag(content, "순정만화"),
+                new Tag(content, "러브코미디")
+        );
+
         given(contentRepository.findById(contentId)).willReturn(Optional.of(content));
+        given(tagRepository.findByContentId(contentId)).willReturn(tags);
 
         // when
         contentService.delete(contentId);
 
         // then
+        verify(tagRepository).deleteAll(tags);
         verify(contentRepository).deleteById(contentId);
     }
 }
