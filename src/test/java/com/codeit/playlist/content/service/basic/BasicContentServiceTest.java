@@ -3,11 +3,15 @@ package com.codeit.playlist.content.service.basic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.given;
 
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.dto.request.ContentCreateRequest;
+import com.codeit.playlist.domain.content.dto.request.ContentUpdateRequest;
 import com.codeit.playlist.domain.content.entity.Content;
+import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.mapper.ContentMapper;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
@@ -20,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,6 +78,87 @@ public class BasicContentServiceTest {
 
         // then
         assertThat(result).isEqualTo(content);
+    }
+
+    @Test
+    void updateContentsSuccess() {
+        // given
+        UUID contentId = UUID.randomUUID();
+
+        Content content = new Content(
+                Type.MOVIE,
+                "오가미 츠미키와 기일상",
+                "매우 재밌는 만화",
+                "exampleUrl",
+                3.0,
+                2,
+                3
+        );
+        List<Tag> oldTag = List.of(
+                new Tag(content,"러브코미디"),
+                new Tag(content,"BoyMeetGirl")
+        );
+
+        ContentDto contentDto = new ContentDto(
+                contentId,
+                content.getType().toString(),
+                content.getTitle(),
+                content.getDescription(),
+                content.getThumbnailUrl(),
+                List.of("러브코미디"),
+                content.getAverageRating(),
+                content.getReviewCount(),
+                content.getWatcherCount()
+        );
+
+        ContentUpdateRequest request = new ContentUpdateRequest(
+                "미소된장국으로 건배",
+                "재미있는 만화",
+                List.of("순정만화", "러브코미디")
+        );
+
+        String thumbnail = "testThumbnail.jpg";
+
+        when(contentRepository.findById(contentId)).thenReturn(Optional.of(content));
+        when(tagRepository.findByContentId(contentId)).thenReturn(oldTag);
+        when(contentMapper.toDto(any(Content.class), anyList())).thenReturn(contentDto);
+
+        // when
+        ContentDto result = contentService.update(contentId, request, thumbnail);
+
+        // then
+        assertThat(content.getTitle()).isEqualTo("미소된장국으로 건배");
+        assertThat(content.getDescription()).isEqualTo("재미있는 만화");
+        assertThat(content.getThumbnailUrl()).isEqualTo(thumbnail);
+    }
+
+    @Test void deleteContentSuccess() {
+        // given
+        UUID contentId = UUID.randomUUID();
+        Content content = new Content(
+                Type.MOVIE,
+                "오가미 츠미키와 기일상",
+                "매우 재밌는 만화",
+                "exampleUrl",
+                3.0,
+                2,
+                3
+        );
+
+        List<Tag> tags = List.of(
+                new Tag(content, "순정만화"),
+                new Tag(content, "러브코미디")
+        );
+
+        given(contentRepository.existsById(contentId)).willReturn(true);
+        given(tagRepository.findByContentId(contentId)).willReturn(tags);
+
+        // when
+        contentService.delete(contentId);
+
+        // then
+        verify(tagRepository).deleteAllByContentId(contentId);
+        verify(contentRepository).deleteById(contentId);
     }
 }
 

@@ -11,6 +11,8 @@ import org.mapstruct.Mapping;
 public interface PlaylistMapper {
 
     // Create 요청 -> 엔티티
+    @Mapping(target = "owner", source = "owner")
+    @Mapping(target = "subscriberCount", constant = "0L")
     Playlist toEntity(PlaylistCreateRequest request, User owner);
 
     // 엔티티 -> DTO
