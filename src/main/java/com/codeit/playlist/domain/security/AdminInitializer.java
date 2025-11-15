@@ -39,12 +39,12 @@ public class AdminInitializer implements ApplicationRunner {
     try {
       UserDto admin = userService.registerUser(request);
       UUID adminId;
-      try{
-        adminId = UUID.fromString(admin.id());
-              } catch (IllegalArgumentException e) {
-                log.error("유효하지 않은 UUID 형식입니다: {}", admin.id());
-                throw RequestInValidUuidFormat.withId(admin.id());
-              }
+      try {
+        adminId = admin.id();
+      } catch (IllegalArgumentException e) {
+        log.error("유효하지 않은 UUID 형식입니다: {}", admin.id());
+        throw RequestInValidUuidFormat.withId(admin.id().toString());
+      }
       authService.updateRoleInternal(new UserRoleUpdateRequest(Role.ADMIN),
           adminId);
       log.info("관리자 계정이 성공적으로 생성되었습니다.");

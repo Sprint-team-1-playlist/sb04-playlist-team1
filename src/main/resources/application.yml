@@ -24,3 +24,12 @@ management:
   observations:
     annotations:
       enabled: true
+
+playlist:
+  jwt:
+    access-token:
+      secret: mySuperSecureSecretKeyForJwtToken1234567890
+      expiration-ms: 3600000   # 1시간
+    refresh-token:
+      secret: mySuperSecureSecretKeyForJwtToken1234567899
+      expiration-ms: 604800000 # 7일

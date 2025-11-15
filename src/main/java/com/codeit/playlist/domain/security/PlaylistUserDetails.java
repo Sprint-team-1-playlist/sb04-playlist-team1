@@ -30,6 +30,6 @@ public class PlaylistUserDetails implements UserDetails {
 
   @Override
   public String getUsername() {
-    return userDto.name();
+    return userDto.email();
   }
 }
