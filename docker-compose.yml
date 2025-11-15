@@ -1,6 +1,12 @@
 version: "3.8"
 
 services:
+  redis:
+    image: redis:7.2
+    container_name: playlist-redis
+    ports:
+      - "6379:6379"
+
   db:
     image: postgres:16
     container_name: playlist-db
@@ -24,6 +30,11 @@ services:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PORT: ${REDIS_PORT}
     ports:
       - "8080:8080"
     restart: always
