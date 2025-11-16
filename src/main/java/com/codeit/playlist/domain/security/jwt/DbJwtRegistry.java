@@ -101,17 +101,12 @@ public class DbJwtRegistry implements JwtRegistry {
   @Transactional
   @Override
   public void clearExpiredJwtInformation() {
-    List<UserToken> tokens = userTokenRepository.findAll();
-
-    tokens.stream()
-        .filter(token -> token.isExpired())
-        .forEach(token -> {
-          token.setRevoked(true);
-          token.setRevokedAt(Instant.now());
-          userTokenRepository.save(token);
-        });
+    List<UserToken> expiredTokens = userTokenRepository.findExpiredTokens(Instant.now());
+      expiredTokens.forEach(UserToken::revoke);
+      userTokenRepository.saveAll(expiredTokens);
   }
 
+  @Transactional
   public void revokeRefreshToken(String refreshToken) {
     Optional<UserToken> token = userTokenRepository.findByTokenAndRevokedFalse(refreshToken);
     token.ifPresent(t -> {
@@ -120,6 +115,7 @@ public class DbJwtRegistry implements JwtRegistry {
     });
   }
 
+  @Transactional
   public void revokeByToken(String token) {
     userTokenRepository.findByTokenAndRevokedFalse(token)
         .ifPresent(t -> {
