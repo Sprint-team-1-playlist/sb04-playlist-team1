@@ -111,4 +111,17 @@ public class DbJwtRegistry implements JwtRegistry {
         });
   }
 
+  public void revokeRefreshToken(String refreshToken) {
+    Optional<UserToken> token = userTokenRepository.findByTokenAndRevokedFalse(refreshToken);
+    token.ifPresent(t -> {
+      t.revoke(); // revoked = true, revokedAt = now
+      userTokenRepository.save(t);
+    });
+  }
+
+  public void revokeByToken(String token) {
+    userTokenRepository.findByTokenAndRevokedFalse(token)
+        .ifPresent(UserToken::revoke);
+  }
+
 }

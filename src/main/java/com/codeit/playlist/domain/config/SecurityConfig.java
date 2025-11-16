@@ -1,6 +1,10 @@
 package com.codeit.playlist.domain.config;
 
+import com.codeit.playlist.domain.security.LoginFailureHandler;
 import com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter;
+import com.codeit.playlist.domain.security.jwt.JwtLoginSuccessHandler;
+import com.codeit.playlist.domain.security.jwt.JwtLogoutSuccessHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -10,6 +14,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -25,16 +30,38 @@ public class SecurityConfig {
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain filterChain(HttpSecurity http,
+      JwtLoginSuccessHandler jwtLoginSuccessHandler,
+      ObjectMapper objectMapper,
+      LoginFailureHandler loginFailureHandler,
+      JwtAuthenticationFilter jwtAuthenticationFilter,
+      JwtLogoutSuccessHandler jwtLogoutSuccessHandler) throws Exception {
     return http
         .csrf(
             csrf -> csrf.disable()) // 개발중이기 때문에 csrf를 disable 함. 운영환경에서는 무조!!!!!!!!!!!!!!!!!!!!!!!!!!!!건 켜야함
+
+        .formLogin(login -> login
+            .loginProcessingUrl("/api/auth/login")
+            .successHandler(jwtLoginSuccessHandler)
+            .failureHandler(loginFailureHandler)
+        )
+
+        .logout(logout -> logout
+            .logoutUrl("/api/auth/logout")
+            .logoutSuccessHandler(jwtLogoutSuccessHandler)
+        )
+
+        .sessionManagement(session ->
+            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+
+        )
         .authorizeHttpRequests((authorize) -> authorize
             //로그인 관련
             .requestMatchers("/api/auth/sign-in").permitAll()
             .requestMatchers("/api/auth/sign-up").permitAll()
             .requestMatchers("/api/auth/refresh").permitAll()
             .requestMatchers("/api/users", "/api/auth/**").permitAll()
+            .requestMatchers("/api/sse","/api/sse/**").permitAll()
 
             //정적 리소스
             .requestMatchers("/", "/index.html", "/vite.svg", "/assets/**")

@@ -23,4 +23,10 @@ public interface JwtRegistry {
 
   @Transactional
   void clearExpiredJwtInformation();
+
+  void revokeRefreshToken(String refreshToken);
+
+  void revokeByToken(String token);
+
 }
+

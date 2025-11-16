@@ -13,11 +13,12 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +26,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtTokenProvider {
 
-  private static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
+  public static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
 
   private final int accessTokenExpirationMs;
   private final int refreshTokenExpirationMs;
@@ -54,12 +55,30 @@ public class JwtTokenProvider {
     this.refreshTokenVerifier = new MACVerifier(refreshSecretBytes);
   }
 
-  public String generateAccessToken(PlaylistUserDetails userDetails) throws JOSEException {
-    return generateToken(userDetails, accessTokenExpirationMs, accessTokenSigner, "access");
+  public String generateAccessToken(PlaylistUserDetails user) throws JOSEException {
+    return generateToken(user, accessTokenExpirationMs, accessTokenSigner, "access");
   }
 
-  public String generateRefreshToken(PlaylistUserDetails userDetails) throws JOSEException {
-    return generateToken(userDetails, refreshTokenExpirationMs, refreshTokenSigner, "refresh");
+  public String generateRefreshToken(PlaylistUserDetails user) throws JOSEException {
+    return generateToken(user, refreshTokenExpirationMs, refreshTokenSigner, "refresh");
+  }
+
+  public Instant getExpiryFromToken(String token) {
+    try {
+      SignedJWT parsed = SignedJWT.parse(token);
+      Date exp = parsed.getJWTClaimsSet().getExpirationTime();
+      return exp.toInstant();
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Invalid token", e);
+    }
+  }
+
+  public Instant getAccessTokenExpiryInstant() {
+    return Instant.now().plusMillis(accessTokenExpirationMs);
+  }
+
+  public Instant getRefreshTokenExpiryInstant() {
+    return Instant.now().plusMillis(refreshTokenExpirationMs);
   }
 
   private String generateToken(PlaylistUserDetails userDetails, int expirationMs, JWSSigner signer,
@@ -71,7 +90,7 @@ public class JwtTokenProvider {
     Date expiryDate = new Date(now.getTime() + expirationMs);
 
     JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-        .subject(user.name())
+        .subject(user.email())
         .jwtID(tokenId)
         .claim("userId", user.id().toString())
         .claim("type", tokenType)
@@ -173,7 +192,7 @@ public class JwtTokenProvider {
   public Cookie genereateRefreshTokenCookie(String refreshToken) {
     Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
     refreshCookie.setHttpOnly(true);
-    refreshCookie.setSecure(true);
+    refreshCookie.setSecure(false); //Todo: 개발환경에서는 false
     refreshCookie.setPath("/");
     refreshCookie.setMaxAge(refreshTokenExpirationMs / 1000);
     return refreshCookie;
@@ -182,7 +201,7 @@ public class JwtTokenProvider {
   public Cookie genereateRefreshTokenExpirationCookie() {
     Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, "");
     refreshCookie.setHttpOnly(true);
-    refreshCookie.setSecure(true);
+    refreshCookie.setSecure(false); //Todo: 개발환경에서는 false
     refreshCookie.setPath("/");
     refreshCookie.setMaxAge(0);
     return refreshCookie;

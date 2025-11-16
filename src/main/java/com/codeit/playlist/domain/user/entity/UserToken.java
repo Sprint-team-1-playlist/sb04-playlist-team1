@@ -24,7 +24,7 @@ public class UserToken extends BaseUpdatableEntity {
   @Column(name = "user_id", nullable = false)
   private UUID userId;
 
-  @Column(name = "token", nullable = false, length = 255)
+  @Column(name = "token", nullable = false, length = 512)
   private String token;  // JWT 토큰 (Access 또는 Refresh 구분 없이 저장)
 
   @Column(name = "issued_at", nullable = false)
@@ -49,6 +49,11 @@ public class UserToken extends BaseUpdatableEntity {
 
   public boolean isActive() {
     return !revoked && !isExpired();
+  }
+
+  public void revoke() {
+    this.revoked = true;
+    this.revokedAt = Instant.now();
   }
 
 }
