@@ -17,7 +17,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,6 +77,45 @@ public class PlaylistRepositoryTest {
                 .containsExactlyInAnyOrder(p1.getId(), p3.getId());
         assertThat(slice.hasNext()).isFalse();
     }
+
+    @Test
+    @DisplayName("searchPlaylists 성공 - 수정 날짜 내림차순 정렬 확인")
+    void searchPlaylistsSortedByUpdatedAtDesc() {
+        // given
+        User owner = createTestUser("owner@email.com");
+        userRepository.save(owner);
+
+        Playlist p1 = createPlaylist(owner, "플리1");
+        Playlist p2 = createPlaylist(owner, "플리2");
+        Playlist p3 = createPlaylist(owner, "플리3");
+
+        // updatedAt 강제 조정
+        ReflectionTestUtils.setField(p1, "updatedAt", LocalDateTime.now().minusHours(3));
+        ReflectionTestUtils.setField(p2, "updatedAt", LocalDateTime.now().minusHours(2));
+        ReflectionTestUtils.setField(p3, "updatedAt", LocalDateTime.now().minusHours(1));
+
+        playlistRepository.saveAll(List.of(p1, p2, p3));
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // when - sortBy를 꼭 전달해야 함
+        Slice<Playlist> slice = playlistRepository.searchPlaylists(
+                null, null, null,
+                false, null,
+                false,                 // DESC
+                "updatedAt",           //정렬 기준
+                pageable
+        );
+
+        // then
+        List<Playlist> content = slice.getContent();
+
+        assertThat(content.get(0).getUpdatedAt())
+                .isAfter(content.get(1).getUpdatedAt());
+        assertThat(content.get(1).getUpdatedAt())
+                .isAfter(content.get(2).getUpdatedAt());
+    }
+
 
     @Test
     @DisplayName("searchPlaylists 실패 케이스 - 구독자가 아무 것도 구독하지 않으면 빈 결과 반환")
