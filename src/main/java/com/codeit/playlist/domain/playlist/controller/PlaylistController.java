@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -59,7 +60,7 @@ public class PlaylistController {
     }
 
     //플레이리스트 삭제(플레이리스트 목록조회 선 구현을 위한 임시 비활성화)
-/*    @DeleteMapping("/{playlistId}")
+    @DeleteMapping("/{playlistId}")
     public ResponseEntity<Void> delete(@PathVariable UUID playlistId) {
 
         log.debug("[플레이리스트] 삭제 요청: id={}", playlistId);
@@ -67,7 +68,7 @@ public class PlaylistController {
 
         log.info("플레이리스트 삭제 성공 - id={}", playlistId);
         return ResponseEntity.noContent().build();
-    }*/
+    }
 
     //플레이리스트 목록 조회
     @GetMapping

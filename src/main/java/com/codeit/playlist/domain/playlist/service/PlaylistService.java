@@ -13,7 +13,9 @@ public interface PlaylistService {
 
     PlaylistDto updatePlaylist(UUID playlistId, PlaylistUpdateRequest request);
 
-//    void deletePlaylist(UUID playlistId); //플레이리스트 삭제 서비스 코드 임시 비활성화
+    void softDeletePlaylist(UUID playlistId, UUID requesterUserId);
+
+    void deletePlaylist(UUID playlistId);
 
     CursorResponsePlaylistDto findPlaylists(String keywordLike, UUID ownerIdEqual,
                                             UUID subscriberIdEqual, String cursor,

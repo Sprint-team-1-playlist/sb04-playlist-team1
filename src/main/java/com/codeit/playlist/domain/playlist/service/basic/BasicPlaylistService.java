@@ -80,12 +80,40 @@ public class BasicPlaylistService implements PlaylistService {
         return playlistMapper.toDto(playlist);
     }
 
-    //삭제 서비스 코드 임시 비활성화
-/*    @Transactional
+    @Transactional
+    @Override
+    public void softDeletePlaylist(UUID playlistId, UUID requesterUserId) {
+        log.debug("[플레이리스트] 삭제 시작 : playlistId={}, requesterUserId={}", playlistId, requesterUserId);
+
+        //삭제되지 않은 플레이리스트 조회
+        Playlist playlist = playlistRepository.findByIdAndDeletedAtIsNull(playlistId)
+                .orElseThrow(() -> {
+                    log.error("[플레이리스트] 삭제 실패: 존재하지 않거나 이미 삭제됨 playlistId={}", playlistId);
+                    return PlaylistNotFoundException.withId(playlistId);
+                });
+
+        //소유자 검증
+        UUID ownerId = playlist.getOwner().getId();
+        if (!ownerId.equals(requesterUserId)) {
+            log.error("[플레이리스트] 논리 삭제 실패: 권한 없음 playlistId={}, ownerId={}, requester={}", playlistId, ownerId, requesterUserId);
+            throw PlaylistAccessDeniedException.withPlaylistId(playlistId);
+        }
+
+        int deleted = playlistRepository.softDeleteById(playlistId);
+        if (deleted == 0) {
+            throw PlaylistNotFoundException.withId(playlistId);
+        }
+
+        log.info("[플레이리스트] 논리 삭제 성공 playlistId={}, requesterUserId={}",
+                playlistId, requesterUserId);
+    }
+
+    @Transactional
     @Override
     public void deletePlaylist(UUID playlistId) {
-
-    }*/
+        UUID ownerId = getCurrentUserIdForTest(); // Security 도입 전 임시
+        softDeletePlaylist(playlistId, ownerId);
+    }
 
     @Transactional(readOnly = true)
     @Override
