@@ -61,10 +61,6 @@ public class BasicAuthService implements AuthService {
       log.debug("[사용자 관리] 사용자 권한 변경 : userId={}, {} -> {}", userId, oldRole, newRole);
     }
 
-    //JWT 토큰 확인하는 로직 필요
-    // TODO: JWT 토큰 무효화 로직 구현
-    // 역할이 변경되면 해당 사용자의 모든 JWT 토큰 무효화
-
     if (!oldRole.equals(newRole)) {
       user.updateRole(newRole);
       log.debug("[사용자 관리] 사용자 권한 변경 : userId={}, {} -> {}", userId, oldRole, newRole);
