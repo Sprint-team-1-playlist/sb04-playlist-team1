@@ -61,8 +61,8 @@ public class SecurityConfig {
             .requestMatchers("/api/auth/sign-in").permitAll()
             .requestMatchers("/api/auth/sign-up").permitAll()
             .requestMatchers("/api/auth/refresh").permitAll()
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(HttpMethod.POST,"/api/users").permitAll()
-            .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/api/sse","/api/sse/**").permitAll()
 
             //정적 리소스
@@ -73,7 +73,6 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         )
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-
 
         .build();
   }

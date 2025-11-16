@@ -14,8 +14,6 @@ public interface UserTokenRepository extends JpaRepository<UserToken, UUID> {
 
   Optional<UserToken> findByTokenAndRevokedFalse(String token);
 
-  void deleteByUserId(UUID userId);
-
   @Query("SELECT t FROM UserToken t WHERE t.revoked = false AND t.expiresAt < :now")
   List<UserToken> findExpiredTokens(Instant now);
 

@@ -45,7 +45,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       String token = resolveToken(request);
 
       if (StringUtils.hasText(token)) {
-        if (tokenProvider.validateAccessToken(token) && jwtRegistry.hasActiveJwtInformationByAccessToken(
+        if (tokenProvider.validateAccessToken(token)
+            && jwtRegistry.hasActiveJwtInformationByAccessToken(
             token)) {
           String username = tokenProvider.getUsernameFromToken(token);
 
@@ -110,8 +111,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         uri.startsWith("/api/auth/sign-up") ||
         uri.startsWith("/api/auth/refresh") ||
         uri.startsWith("/api/auth/sign-out") ||
-
-        uri.startsWith("/api/users") ||
+        uri.startsWith("/api/auth/csrf-token") ||
 
         uri.startsWith("/api/sse") ||
         uri.equals("/") ||

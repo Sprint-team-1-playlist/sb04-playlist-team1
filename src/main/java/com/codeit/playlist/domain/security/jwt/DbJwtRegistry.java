@@ -25,7 +25,7 @@ public class DbJwtRegistry implements JwtRegistry {
         .token(jwtInformation.accessToken())
         .tokenType("ACCESS")
         .issuedAt(Instant.now())
-        .expiresAt(jwtInformation.accessTokenExpiresAt()) // JwtInformation 에서 만료시간 받아야함
+        .expiresAt(jwtInformation.accessTokenExpiresAt())
         .revoked(false)
         .build();
 
@@ -37,7 +37,7 @@ public class DbJwtRegistry implements JwtRegistry {
         .token(jwtInformation.refreshToken())
         .tokenType("REFRESH")
         .issuedAt(Instant.now())
-        .expiresAt(jwtInformation.refreshTokenExpiresAt()) // JwtInformation 에서 만료시간 받아야함
+        .expiresAt(jwtInformation.refreshTokenExpiresAt())
         .revoked(false)
         .build();
 
