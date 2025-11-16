@@ -51,7 +51,7 @@ public class SecurityConfig {
         .formLogin(AbstractHttpConfigurer::disable)
 
         .logout(logout -> logout
-            .logoutUrl("/api/auth/logout")
+            .logoutUrl("/api/auth/sign-out")
             .logoutSuccessHandler(jwtLogoutSuccessHandler)
         )
 
