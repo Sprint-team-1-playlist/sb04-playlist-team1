@@ -27,8 +27,6 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http,
       JwtAuthenticationFilter jwtAuthenticationFilter,
@@ -40,11 +38,10 @@ public class SecurityConfig {
                     "/index.html",
                     "/vite.svg",
                     "/assets/**",
-                    "/api/auth/login",
                     "/api/auth/sign-in",
                     "/api/auth/sign-up",
                     "/api/auth/refresh",
-                    "/api/auth/logout",
+                    "/api/auth/sign-out",
                     "/api/users")
         )
 

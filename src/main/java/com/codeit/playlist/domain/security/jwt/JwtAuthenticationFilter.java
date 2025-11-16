@@ -109,7 +109,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     return uri.startsWith("/api/auth/sign-in") ||
         uri.startsWith("/api/auth/sign-up") ||
         uri.startsWith("/api/auth/refresh") ||
-        uri.startsWith("/api/auth/logout") ||
+        uri.startsWith("/api/auth/sign-out") ||
 
         uri.startsWith("/api/users") ||
 
