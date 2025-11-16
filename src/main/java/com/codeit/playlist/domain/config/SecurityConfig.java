@@ -47,7 +47,6 @@ public class SecurityConfig {
                     "/api/auth/logout",
                     "/api/users")
         )
-         // 개발중이기 때문에 csrf를 disable 함. 운영환경에서는 무조!!!!!!!!!!!!!!!!!!!!!!!!!!!!건 켜야함
 
         .formLogin(AbstractHttpConfigurer::disable)
 
