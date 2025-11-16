@@ -218,7 +218,7 @@ public class BasicPlaylistServiceTest {
         Slice<Playlist> slice = new SliceImpl<>(content, PageRequest.of(0, limit), true);
 
         when(playlistRepository.searchPlaylists(
-                any(), any(), any(), anyBoolean(), any(), anyBoolean(), any())
+                any(), any(), any(), anyBoolean(), any(), anyBoolean(), any(), any())
         ).thenReturn(slice);
 
         PlaylistDto dto1 = new PlaylistDto(UUID.randomUUID(),
@@ -274,6 +274,7 @@ public class BasicPlaylistServiceTest {
                 eq(false),       // cursor/idAfter 없으므로 hasCursor=false
                 isNull(),        // cursorId=null
                 eq(false),       // DESCENDING → asc=false
+                eq("updatedAt"),
                 any()
         );
         verify(playlistRepository).countPlaylists(keywordLike, ownerId, subscriberId);
@@ -289,7 +290,7 @@ public class BasicPlaylistServiceTest {
         // Slice empty
         Slice<Playlist> slice = new SliceImpl<>(List.of(), PageRequest.of(0, limit), false);
         when(playlistRepository.searchPlaylists(
-                any(), any(), any(), anyBoolean(), any(), anyBoolean(), any())
+                any(), any(), any(), anyBoolean(), any(), anyBoolean(), any(), any())
         ).thenReturn(slice);
         when(playlistRepository.countPlaylists(any(), any(), any()))
                 .thenReturn(0L);
@@ -321,6 +322,7 @@ public class BasicPlaylistServiceTest {
                 eq(false),
                 isNull(),
                 eq(true),
+                eq("updatedAt"),
                 any()
         );
     }

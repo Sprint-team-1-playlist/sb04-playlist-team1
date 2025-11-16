@@ -65,6 +65,7 @@ public class PlaylistRepositoryTest {
                 false,               // hasCursor
                 null,                // cursorId
                 true,                // asc
+                "updatedAt",
                 pageable
         );
 
@@ -96,6 +97,7 @@ public class PlaylistRepositoryTest {
                 false,
                 null,
                 true,
+                "updatedAt",
                 pageable
         );
 

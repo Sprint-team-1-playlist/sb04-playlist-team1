@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -108,13 +107,7 @@ public class BasicPlaylistService implements PlaylistService {
             sortBy = "updatedAt";
         }
 
-        //2. 정렬 정보
-        Sort.Direction direction = (sortDirection == SortDirection.ASCENDING)
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
-
-        //id도 함께 정렬(sortBy값이 같을 경우)
-        Sort sort = Sort.by(direction, sortBy)
-                .and(Sort.by(direction, "id"));
+        boolean asc = (sortDirection == SortDirection.ASCENDING);
 
         // 3. 커서 해석 (cursor가 메인)
         UUID effectiveIdAfter = null;
@@ -134,8 +127,8 @@ public class BasicPlaylistService implements PlaylistService {
 
         boolean hasCursor = (effectiveIdAfter != null);
 
-        // 4. limit + 1 개 조회해서 hasNext 판단하기
-        Pageable pageable = PageRequest.of(0, limit, sort);
+
+        Pageable pageable = PageRequest.of(0, limit);
 
         Slice<Playlist> playlists = playlistRepository.searchPlaylists(
                 keywordLike,
@@ -143,7 +136,8 @@ public class BasicPlaylistService implements PlaylistService {
                 subscriberIdEqual,
                 hasCursor,
                 effectiveIdAfter,
-                sortDirection == SortDirection.ASCENDING,
+                asc,
+                sortBy,
                 pageable
         );
 
