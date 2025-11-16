@@ -28,7 +28,7 @@ class RedisWatchingSessionRepositoryTest {
 
     private final UUID contentId = WatchingSessionFixtures.FIXED_ID;
     private final UUID userId = WatchingSessionFixtures.FIXED_ID;
-    private final String key = "content:%s:user".formatted(contentId);
+    private final String key = "content:%s:users".formatted(contentId);
 
     @Test
     @DisplayName("addWatcher 호출 시 Redis set add 성공하면 true 반환")

@@ -10,7 +10,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RedisWatchingSessionRepository {
     private final StringRedisTemplate redisTemplate;
-    private static final String KEY_PREFIX = "content:%s:user";
+    private static final String KEY_PREFIX = "content:%s:users";
 
     private String key(UUID contentId) {
         return KEY_PREFIX.formatted(contentId);
