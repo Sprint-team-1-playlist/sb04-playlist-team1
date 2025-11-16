@@ -36,11 +36,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     String uri = request.getRequestURI();
 
-// 인증이 필요 없는 URL은 전부 여기서 통과시킴
-    if (uri.startsWith("/api/auth/") || uri.startsWith("/api/sse")) {
+    if (isExcludedPath(uri)) {
       filterChain.doFilter(request, response);
       return;
     }
+
     try {
       String token = resolveToken(request);
 
@@ -101,5 +101,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     String jsonResponse = objectMapper.writeValueAsString(body);
 
     response.getWriter().write(jsonResponse);
+  }
+
+  // JWT 인증을 제외할 URL 정의
+  private boolean isExcludedPath(String uri) {
+
+    return uri.startsWith("/api/auth/sign-in") ||
+        uri.startsWith("/api/auth/sign-up") ||
+        uri.startsWith("/api/auth/refresh") ||
+        uri.startsWith("/api/auth/logout") ||
+
+        uri.startsWith("/api/users") ||
+
+        uri.startsWith("/api/sse") ||
+        uri.equals("/") ||
+        uri.equals("/index.html") ||
+        uri.equals("/vite.svg") ||
+        uri.startsWith("/assets/");
   }
 }

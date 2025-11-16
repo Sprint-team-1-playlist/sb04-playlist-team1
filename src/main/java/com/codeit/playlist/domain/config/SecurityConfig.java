@@ -1,19 +1,18 @@
 package com.codeit.playlist.domain.config;
 
-import com.codeit.playlist.domain.security.LoginFailureHandler;
 import com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter;
-import com.codeit.playlist.domain.security.jwt.JwtLoginSuccessHandler;
 import com.codeit.playlist.domain.security.jwt.JwtLogoutSuccessHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,9 +31,6 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http,
-      JwtLoginSuccessHandler jwtLoginSuccessHandler,
-      ObjectMapper objectMapper,
-      LoginFailureHandler loginFailureHandler,
       JwtAuthenticationFilter jwtAuthenticationFilter,
       JwtLogoutSuccessHandler jwtLogoutSuccessHandler) throws Exception {
     return http
@@ -48,15 +44,12 @@ public class SecurityConfig {
                     "/api/auth/sign-in",
                     "/api/auth/sign-up",
                     "/api/auth/refresh",
-                    "/api/auth/logout")
+                    "/api/auth/logout",
+                    "/api/users")
         )
          // 개발중이기 때문에 csrf를 disable 함. 운영환경에서는 무조!!!!!!!!!!!!!!!!!!!!!!!!!!!!건 켜야함
 
-        .formLogin(login -> login
-            .loginProcessingUrl("/api/auth/login")
-            .successHandler(jwtLoginSuccessHandler)
-            .failureHandler(loginFailureHandler)
-        )
+        .formLogin(AbstractHttpConfigurer::disable)
 
         .logout(logout -> logout
             .logoutUrl("/api/auth/logout")
@@ -72,12 +65,15 @@ public class SecurityConfig {
             .requestMatchers("/api/auth/sign-in").permitAll()
             .requestMatchers("/api/auth/sign-up").permitAll()
             .requestMatchers("/api/auth/refresh").permitAll()
-            .requestMatchers("/api/users", "/api/auth/**").permitAll()
+            .requestMatchers(HttpMethod.POST,"/api/users").permitAll()
+            .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/api/sse","/api/sse/**").permitAll()
 
             //정적 리소스
-            .requestMatchers("/", "/index.html", "/vite.svg", "/assets/**")
-            .permitAll()
+            .requestMatchers("/").permitAll()
+            .requestMatchers("/index.html").permitAll()
+            .requestMatchers("/vite.svg").permitAll()
+            .requestMatchers("/assets/**").permitAll()
             .anyRequest().authenticated()
         )
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
