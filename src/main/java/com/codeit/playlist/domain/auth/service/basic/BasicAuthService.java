@@ -59,11 +59,6 @@ public class BasicAuthService implements AuthService {
     if (!oldRole.equals(newRole)) {
       user.updateRole(newRole);
       log.debug("[사용자 관리] 사용자 권한 변경 : userId={}, {} -> {}", userId, oldRole, newRole);
-    }
-
-    if (!oldRole.equals(newRole)) {
-      user.updateRole(newRole);
-      log.debug("[사용자 관리] 사용자 권한 변경 : userId={}, {} -> {}", userId, oldRole, newRole);
 
         // 역할 변경 시 해당 사용자의 모든 JWT 토큰 무효화
         jwtRegistry.invalidateJwtInformationByUserId(userId);
@@ -101,7 +96,6 @@ public class BasicAuthService implements AuthService {
         refresh, refreshExp
     );
 
-    jwtRegistry.invalidateJwtInformationByUserId(userDto.id());
     // DB 저장
     jwtRegistry.registerJwtInformation(info);
 
