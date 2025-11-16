@@ -6,7 +6,9 @@ import java.time.Instant;
 public record JwtInformation(UserDto userDto,
                              String accessToken,
                              Instant accessTokenExpiresAt,
+                             Instant accessTokenIssuedAt,
                              String refreshToken,
-                             Instant refreshTokenExpiresAt) {
+                             Instant refreshTokenExpiresAt,
+                             Instant refreshTokenIssuedAt){
 
 }

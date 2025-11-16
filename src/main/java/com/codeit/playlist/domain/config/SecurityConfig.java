@@ -40,7 +40,6 @@ public class SecurityConfig {
                     "/assets/**",
                     "/api/auth/sign-in",
                     "/api/auth/sign-up",
-                    "/api/auth/refresh",
                     "/api/auth/sign-out",
                     "/api/users")
         )
@@ -64,6 +63,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(HttpMethod.POST,"/api/users").permitAll()
             .requestMatchers("/api/sse","/api/sse/**").permitAll()
+            .requestMatchers("/api/auth/csrf-token").permitAll()
 
             //정적 리소스
             .requestMatchers("/").permitAll()

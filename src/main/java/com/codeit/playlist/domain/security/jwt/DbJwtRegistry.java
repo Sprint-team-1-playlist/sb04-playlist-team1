@@ -24,7 +24,7 @@ public class DbJwtRegistry implements JwtRegistry {
         .userId(jwtInformation.userDto().id())
         .token(jwtInformation.accessToken())
         .tokenType("ACCESS")
-        .issuedAt(Instant.now())
+        .issuedAt(jwtInformation.accessTokenIssuedAt())
         .expiresAt(jwtInformation.accessTokenExpiresAt())
         .revoked(false)
         .build();
@@ -36,7 +36,7 @@ public class DbJwtRegistry implements JwtRegistry {
         .userId(jwtInformation.userDto().id())
         .token(jwtInformation.refreshToken())
         .tokenType("REFRESH")
-        .issuedAt(Instant.now())
+        .issuedAt(jwtInformation.refreshTokenIssuedAt())
         .expiresAt(jwtInformation.refreshTokenExpiresAt())
         .revoked(false)
         .build();

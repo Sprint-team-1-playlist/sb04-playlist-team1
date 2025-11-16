@@ -83,17 +83,24 @@ public class BasicAuthService implements AuthService {
 
     jwtRegistry.invalidateJwtInformationByUserId(userDto.id());
 
-    // Access / Refresh 생성
-    String access = jwtTokenProvider.generateAccessToken(userDetails);
-    String refresh = jwtTokenProvider.generateRefreshToken(userDetails);
+    // Access 발급 시간
+    Instant accessIssuedAt = Instant.now();
+    String access = jwtTokenProvider.generateAccessToken(userDetails, accessIssuedAt);
 
+    // Refresh 발급 시간
+    Instant refreshIssuedAt = Instant.now();
+    String refresh = jwtTokenProvider.generateRefreshToken(userDetails, refreshIssuedAt);
+
+    // 만료 시간 추출
     Instant accessExp = jwtTokenProvider.getExpiryFromToken(access);
     Instant refreshExp = jwtTokenProvider.getExpiryFromToken(refresh);
 
     JwtInformation info = new JwtInformation(
         userDto,
         access, accessExp,
-        refresh, refreshExp
+        accessIssuedAt,
+        refresh, refreshExp,
+        refreshIssuedAt
     );
 
     // DB 저장
@@ -121,16 +128,20 @@ public class BasicAuthService implements AuthService {
     PlaylistUserDetails playlistUser = (PlaylistUserDetails) userDetails;
 
     try {
-      String newAccess = jwtTokenProvider.generateAccessToken(playlistUser);
-      String newRefresh = jwtTokenProvider.generateRefreshToken(playlistUser);
+
+      Instant accessIssuedAt = Instant.now();
+      Instant refreshIssuedAt = Instant.now();
+
+      String newAccess = jwtTokenProvider.generateAccessToken(playlistUser, accessIssuedAt);
+      String newRefresh = jwtTokenProvider.generateRefreshToken(playlistUser, refreshIssuedAt);
 
       Instant accessExp = jwtTokenProvider.getExpiryFromToken(newAccess);
       Instant refreshExp = jwtTokenProvider.getExpiryFromToken(newRefresh);
 
       JwtInformation info = new JwtInformation(
           playlistUser.getUserDto(),
-          newAccess, accessExp,
-          newRefresh, refreshExp
+          newAccess, accessExp, accessIssuedAt,
+          newRefresh, refreshExp, refreshIssuedAt
       );
 
       jwtRegistry.rotateJwtInformation(refreshToken, info);

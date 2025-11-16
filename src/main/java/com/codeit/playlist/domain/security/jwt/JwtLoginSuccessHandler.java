@@ -47,13 +47,16 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
     String refreshToken;
     Instant refreshTokenExpiresAt;
 
+    Instant accessIssuedAt = Instant.now();
+    Instant refreshIssuedAt = Instant.now();
+
     try {
       // Access Token
-      accessToken = tokenProvider.generateAccessToken(userDetails);
+      accessToken = tokenProvider.generateAccessToken(userDetails, accessIssuedAt);
       accessTokenExpiresAt = tokenProvider.getAccessTokenExpiryInstant();
 
       // Refresh Token
-      refreshToken = tokenProvider.generateRefreshToken(userDetails);
+      refreshToken = tokenProvider.generateRefreshToken(userDetails, refreshIssuedAt);
       refreshTokenExpiresAt = tokenProvider.getRefreshTokenExpiryInstant();
 
     } catch (JOSEException e) {
@@ -65,7 +68,7 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
 
     jwtRegistry.invalidateJwtInformationByUserId(userDetails.getUserDto().id());
 
-    Cookie refreshCookie = tokenProvider.generateRefreshTokenCookie(refreshToken);
+    Cookie refreshCookie = tokenProvider.genereateRefreshTokenCookie(refreshToken);
     refreshCookie.setSecure(true);
     response.addCookie(refreshCookie);
 
@@ -82,8 +85,10 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
             userDetails.getUserDto(),
             accessToken,
             accessTokenExpiresAt,
+            accessIssuedAt,
             refreshToken,
-            refreshTokenExpiresAt
+            refreshTokenExpiresAt,
+            refreshIssuedAt
         )
     );
 

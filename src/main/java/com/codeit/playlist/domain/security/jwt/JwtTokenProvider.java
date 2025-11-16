@@ -69,11 +69,11 @@ public class JwtTokenProvider {
     this.refreshTokenVerifier = new MACVerifier(refreshSecretBytes);
   }
 
-  public String generateAccessToken(PlaylistUserDetails user) throws JOSEException {
+  public String generateAccessToken(PlaylistUserDetails user, Instant issuedAt) throws JOSEException {
     return generateToken(user, accessTokenExpirationMs, accessTokenSigner, "access");
   }
 
-  public String generateRefreshToken(PlaylistUserDetails user) throws JOSEException {
+  public String generateRefreshToken(PlaylistUserDetails user, Instant issuedAt) throws JOSEException {
     return generateToken(user, refreshTokenExpirationMs, refreshTokenSigner, "refresh");
   }
 
@@ -215,7 +215,7 @@ public class JwtTokenProvider {
     }
   }
 
-  public Cookie generateRefreshTokenCookie(String refreshToken) {
+  public Cookie genereateRefreshTokenCookie(String refreshToken) {
     Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
     refreshCookie.setHttpOnly(true);
     refreshCookie.setSecure(cookieSecure); //Todo: 개발환경에서는 false 나중에 cookieSecure 로 변경
