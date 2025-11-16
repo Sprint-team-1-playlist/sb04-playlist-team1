@@ -10,7 +10,7 @@ public interface JwtRegistry {
   void registerJwtInformation(JwtInformation jwtInformation);
 
   @Transactional
-  void invalidateJwtInformationByUserId(String userId);
+  void invalidateJwtInformationByUserId(UUID userId);
 
   boolean hasActiveJwtInformationByUserId(UUID userId);
 

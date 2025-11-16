@@ -46,11 +46,10 @@ public class DbJwtRegistry implements JwtRegistry {
 
   @Transactional
   @Override
-  public void invalidateJwtInformationByUserId(String userId) {
+  public void invalidateJwtInformationByUserId(UUID userId) {
 
-    UUID uuid = UUID.fromString(userId);
 
-    List<UserToken> tokens = userTokenRepository.findByUserIdAndRevokedFalse(uuid);
+    List<UserToken> tokens = userTokenRepository.findByUserIdAndRevokedFalse(userId);
     tokens.forEach(token -> {
       token.setRevoked(true);
       token.setRevokedAt(Instant.now());
@@ -67,36 +66,36 @@ public class DbJwtRegistry implements JwtRegistry {
   @Override
   public boolean hasActiveJwtInformationByAccessToken(String accessToken) {
     Optional<UserToken> token = userTokenRepository.findByTokenAndRevokedFalse(accessToken);
-    return token.isPresent() && token.get().isActive() && "ACCESS".equals(token.get().getTokenType());
+    return token.isPresent() && token.get().isActive() && "ACCESS".equals(
+        token.get().getTokenType());
   }
 
   @Override
   public boolean hasActiveJwtInformationByRefreshToken(String refreshToken) {
     Optional<UserToken> token = userTokenRepository.findByTokenAndRevokedFalse(refreshToken);
-    return token.isPresent() && token.get().isActive() && "REFRESH".equals(token.get().getTokenType());
+    return token.isPresent() && token.get().isActive() && "REFRESH".equals(
+        token.get().getTokenType());
   }
 
   @Transactional
   @Override
   public void rotateJwtInformation(String refreshToken, JwtInformation newJwtInformation) {
-    Optional<UserToken> refreshTokenEntityOpt = userTokenRepository.findByTokenAndRevokedFalse(refreshToken);
+    Optional<UserToken> refreshTokenEntityOpt = userTokenRepository.findByTokenAndRevokedFalse(
+        refreshToken);
 
     refreshTokenEntityOpt.ifPresent(refreshTokenEntity -> {
-      // Refresh 토큰 업데이트
-      refreshTokenEntity.setToken(newJwtInformation.refreshToken());
-      refreshTokenEntity.setExpiresAt(newJwtInformation.refreshTokenExpiresAt());
 
-      userTokenRepository.save(refreshTokenEntity);
+      // 기존 토큰 쌍 무효화
+      refreshTokenEntity.revoke();
 
-      // 대응하는 Access 토큰도 업데이트
-      List<UserToken> accessTokens = userTokenRepository.findByUserIdAndRevokedFalse(newJwtInformation.userDto().id());
-      accessTokens.stream()
+      // 같은 userId의 기존 ACCESS 토큰 찾아서 무효화
+      userTokenRepository.findByUserIdAndRevokedFalse(newJwtInformation.userDto().id())
+          .stream()
           .filter(token -> "ACCESS".equals(token.getTokenType()))
-          .forEach(accessTokenEntity -> {
-            accessTokenEntity.setToken(newJwtInformation.accessToken());
-            accessTokenEntity.setExpiresAt(newJwtInformation.accessTokenExpiresAt());
-          });
-      userTokenRepository.saveAll(accessTokens);
+          .forEach(UserToken::revoke);
+
+      // 새로운 토큰 쌍 등록
+      registerJwtInformation(newJwtInformation);
     });
   }
 
@@ -124,7 +123,10 @@ public class DbJwtRegistry implements JwtRegistry {
 
   public void revokeByToken(String token) {
     userTokenRepository.findByTokenAndRevokedFalse(token)
-        .ifPresent(UserToken::revoke);
+        .ifPresent(t -> {
+          t.revoke();
+          userTokenRepository.save(t);
+        });
   }
 
 }

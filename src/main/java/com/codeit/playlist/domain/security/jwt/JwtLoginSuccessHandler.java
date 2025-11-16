@@ -63,7 +63,7 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
       return;
     }
 
-    jwtRegistry.invalidateJwtInformationByUserId(userDetails.getUserDto().id().toString());
+    jwtRegistry.invalidateJwtInformationByUserId(userDetails.getUserDto().id());
 
     Cookie refreshCookie = tokenProvider.generateRefreshTokenCookie(refreshToken);
     refreshCookie.setSecure(true);

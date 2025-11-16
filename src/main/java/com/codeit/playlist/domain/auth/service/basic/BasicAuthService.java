@@ -65,6 +65,14 @@ public class BasicAuthService implements AuthService {
     // TODO: JWT 토큰 무효화 로직 구현
     // 역할이 변경되면 해당 사용자의 모든 JWT 토큰 무효화
 
+    if (!oldRole.equals(newRole)) {
+      user.updateRole(newRole);
+      log.debug("[사용자 관리] 사용자 권한 변경 : userId={}, {} -> {}", userId, oldRole, newRole);
+
+        // 역할 변경 시 해당 사용자의 모든 JWT 토큰 무효화
+        jwtRegistry.invalidateJwtInformationByUserId(userId);
+    }
+
     log.info("[사용자 관리] 사용자 권한 변경 완료 : userId={} , {} -> {}", userId, oldRole, newRole);
 
     return userMapper.toDto(user);
@@ -82,7 +90,7 @@ public class BasicAuthService implements AuthService {
     PlaylistUserDetails userDetails = (PlaylistUserDetails) auth.getPrincipal();
     UserDto userDto = userDetails.getUserDto();
 
-    jwtRegistry.invalidateJwtInformationByUserId(userDto.id().toString());
+    jwtRegistry.invalidateJwtInformationByUserId(userDto.id());
 
     // Access / Refresh 생성
     String access = jwtTokenProvider.generateAccessToken(userDetails);
@@ -97,7 +105,7 @@ public class BasicAuthService implements AuthService {
         refresh, refreshExp
     );
 
-    jwtRegistry.invalidateJwtInformationByUserId(userDto.id().toString());
+    jwtRegistry.invalidateJwtInformationByUserId(userDto.id());
     // DB 저장
     jwtRegistry.registerJwtInformation(info);
 
@@ -107,6 +115,10 @@ public class BasicAuthService implements AuthService {
 
   @Override
   public JwtInformation refreshToken(String refreshToken) {
+
+    if (refreshToken == null || refreshToken.isBlank()) {
+      throw new IllegalArgumentException("Refresh token is required");
+    }
 
     if (!jwtTokenProvider.validateRefreshToken(refreshToken)
         || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {

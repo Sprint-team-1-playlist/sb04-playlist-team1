@@ -40,7 +40,7 @@ public class JwtLogoutHandler implements LogoutHandler {
           String refreshToken = cookie.getValue();
           if(tokenProvider.validateRefreshToken(refreshToken)) {
           UUID userId = tokenProvider.getUserId(refreshToken);
-          jwtRegistry.invalidateJwtInformationByUserId(userId.toString());
+          jwtRegistry.invalidateJwtInformationByUserId(userId);
           }
         });
 

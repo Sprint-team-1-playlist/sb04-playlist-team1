@@ -80,13 +80,12 @@ public class AuthController {
   @PostMapping("/sign-out")
   public ResponseEntity<Void> logout(
       @CookieValue(value = "REFRESH_TOKEN", required = false) String refreshToken,
-      HttpServletResponse response
-  ) {
+      HttpServletResponse response) {
     log.info("로그아웃 요청");
 
     // 쿠키가 없으면 그냥 성공 처리 (클라이언트에서 이미 삭제된 경우)
-    if (refreshToken != null) {
-      jwtRegistry.invalidateJwtInformationByUserId(refreshToken);
+    if (refreshToken != null && !refreshToken.isBlank()) {
+      authService.logout(refreshToken);
     }
 
     // 쿠키 즉시 제거
