@@ -87,12 +87,15 @@ public class DbJwtRegistry implements JwtRegistry {
 
       // 기존 토큰 쌍 무효화
       refreshTokenEntity.revoke();
+      userTokenRepository.save(refreshTokenEntity);
 
       // 같은 userId의 기존 ACCESS 토큰 찾아서 무효화
-      userTokenRepository.findByUserIdAndRevokedFalse(newJwtInformation.userDto().id())
+      List<UserToken> accessTokens = userTokenRepository.findByUserIdAndRevokedFalse(newJwtInformation.userDto().id())
           .stream()
           .filter(token -> "ACCESS".equals(token.getTokenType()))
-          .forEach(UserToken::revoke);
+          .toList();
+      accessTokens.forEach(UserToken::revoke);
+      userTokenRepository.saveAll(accessTokens);
 
       // 새로운 토큰 쌍 등록
       registerJwtInformation(newJwtInformation);
