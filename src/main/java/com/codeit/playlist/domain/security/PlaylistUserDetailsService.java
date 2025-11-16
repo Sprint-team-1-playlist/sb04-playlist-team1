@@ -2,7 +2,6 @@ package com.codeit.playlist.domain.security;
 
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.entity.User;
-import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ public class PlaylistUserDetailsService implements UserDetailsService {
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     User user = userRepository.findByEmail(username)
-        .orElseThrow(() -> UserNotFoundException.withUsername(username));
+        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     UserDto userDto = userMapper.toDto(user);
 
     return new PlaylistUserDetails(

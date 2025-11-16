@@ -30,7 +30,7 @@ public class LoginFailureHandler implements AuthenticationFailureHandler {
     response.setCharacterEncoding("UTF-8");
 
     Map<String, Object> body = new HashMap<>();
-    body.put("error", exception);  // 메시지 넣기
+    body.put("error", "Authentication failed");  // 메시지 넣기
 
     String jsonResponse = objectMapper.writeValueAsString(body);
 

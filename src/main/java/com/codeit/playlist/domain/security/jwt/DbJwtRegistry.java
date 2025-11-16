@@ -46,8 +46,11 @@ public class DbJwtRegistry implements JwtRegistry {
 
   @Transactional
   @Override
-  public void invalidateJwtInformationByUserId(UUID userId) {
-    List<UserToken> tokens = userTokenRepository.findByUserIdAndRevokedFalse(userId);
+  public void invalidateJwtInformationByUserId(String userId) {
+
+    UUID uuid = UUID.fromString(userId);
+
+    List<UserToken> tokens = userTokenRepository.findByUserIdAndRevokedFalse(uuid);
     tokens.forEach(token -> {
       token.setRevoked(true);
       token.setRevokedAt(Instant.now());

@@ -37,7 +37,7 @@ public class BasicAuthService implements AuthService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
   private final JwtTokenProvider jwtTokenProvider;
-  private final JwtRegistry dbJwtRegistry;
+  private final JwtRegistry jwtRegistry;
   private final UserDetailsService userDetailsService;
 
   @Override
@@ -82,6 +82,8 @@ public class BasicAuthService implements AuthService {
     PlaylistUserDetails userDetails = (PlaylistUserDetails) auth.getPrincipal();
     UserDto userDto = userDetails.getUserDto();
 
+    jwtRegistry.invalidateJwtInformationByUserId(userDto.id().toString());
+
     // Access / Refresh 생성
     String access = jwtTokenProvider.generateAccessToken(userDetails);
     String refresh = jwtTokenProvider.generateRefreshToken(userDetails);
@@ -95,8 +97,9 @@ public class BasicAuthService implements AuthService {
         refresh, refreshExp
     );
 
+    jwtRegistry.invalidateJwtInformationByUserId(userDto.id().toString());
     // DB 저장
-    dbJwtRegistry.registerJwtInformation(info);
+    jwtRegistry.registerJwtInformation(info);
 
     return info;
   }
@@ -106,7 +109,7 @@ public class BasicAuthService implements AuthService {
   public JwtInformation refreshToken(String refreshToken) {
 
     if (!jwtTokenProvider.validateRefreshToken(refreshToken)
-        || !dbJwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
+        || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
       throw new IllegalArgumentException("Invalid or expired refresh token");
     }
 
@@ -128,7 +131,7 @@ public class BasicAuthService implements AuthService {
           newRefresh, refreshExp
       );
 
-      dbJwtRegistry.rotateJwtInformation(refreshToken, info);
+      jwtRegistry.rotateJwtInformation(refreshToken, info);
 
       return info;
 
@@ -139,6 +142,6 @@ public class BasicAuthService implements AuthService {
 
   @Override
   public void logout(String refreshToken) {
-    dbJwtRegistry.revokeByToken(refreshToken);
+    jwtRegistry.revokeByToken(refreshToken);
   }
 }

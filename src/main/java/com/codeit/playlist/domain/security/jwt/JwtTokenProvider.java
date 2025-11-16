@@ -26,6 +26,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtTokenProvider {
 
+  private final boolean cookieSecure;
+
   public static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
 
   private final int accessTokenExpirationMs;
@@ -40,8 +42,20 @@ public class JwtTokenProvider {
       @Value("${playlist.jwt.access-token.secret}") String accessTokenSecret,
       @Value("${playlist.jwt.access-token.expiration-ms}") int accessTokenExpirationMs,
       @Value("${playlist.jwt.refresh-token.secret}") String refreshTokenSecret,
-      @Value("${playlist.jwt.refresh-token.expiration-ms}") int refreshTokenExpirationMs)
+      @Value("${playlist.jwt.refresh-token.expiration-ms}") int refreshTokenExpirationMs,
+      @Value("${playlist.jwt.cookie.secure:true}") boolean cookieSecure)
       throws JOSEException {
+
+      this.cookieSecure = cookieSecure;
+
+    // HS256 requires at least 256 bits (32 bytes)
+    if (accessTokenSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
+      throw new IllegalArgumentException("Access token secret must be at least 32 bytes for HS256");
+    }
+    if (refreshTokenSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
+      throw new IllegalArgumentException(
+          "Refresh token secret must be at least 32 bytes for HS256");
+    }
 
     this.accessTokenExpirationMs = accessTokenExpirationMs;
     this.refreshTokenExpirationMs = refreshTokenExpirationMs;
@@ -152,6 +166,9 @@ public class JwtTokenProvider {
   public JWTClaimsSet getClaims(String token) {
     try {
       SignedJWT signedJWT = SignedJWT.parse(token);
+      if (!signedJWT.verify(accessTokenVerifier) && !signedJWT.verify(refreshTokenVerifier)) {
+        throw new IllegalArgumentException("Invalid token signature");
+      }
       return signedJWT.getJWTClaimsSet();
     } catch (Exception e) {
       throw new IllegalArgumentException("Invalid JWT token", e);
@@ -161,6 +178,9 @@ public class JwtTokenProvider {
   public String getUsernameFromToken(String token) {
     try {
       SignedJWT signedJWT = SignedJWT.parse(token);
+      if (!signedJWT.verify(accessTokenVerifier) && !signedJWT.verify(refreshTokenVerifier)) {
+          throw new IllegalArgumentException("Invalid token signature");
+      }
       return signedJWT.getJWTClaimsSet().getSubject();
     } catch (Exception e) {
       throw new IllegalArgumentException("Invalid JWT token", e);
@@ -170,6 +190,9 @@ public class JwtTokenProvider {
   public String getTokenId(String token) {
     try {
       SignedJWT signedJWT = SignedJWT.parse(token);
+      if (!signedJWT.verify(accessTokenVerifier) && !signedJWT.verify(refreshTokenVerifier)) {
+             throw new IllegalArgumentException("Invalid token signature");
+             }
       return signedJWT.getJWTClaimsSet().getJWTID();
     } catch (Exception e) {
       throw new IllegalArgumentException("Invalid JWT token", e);
@@ -179,6 +202,9 @@ public class JwtTokenProvider {
   public UUID getUserId(String token) {
     try {
       SignedJWT signedJWT = SignedJWT.parse(token);
+      if (!signedJWT.verify(accessTokenVerifier) && !signedJWT.verify(refreshTokenVerifier)) {
+        throw new IllegalArgumentException("Invalid token signature");
+      }
       String userIdStr = (String) signedJWT.getJWTClaimsSet().getClaim("userId");
       if (userIdStr == null) {
         throw new IllegalArgumentException("User ID claim not found in JWT token");
@@ -189,10 +215,10 @@ public class JwtTokenProvider {
     }
   }
 
-  public Cookie genereateRefreshTokenCookie(String refreshToken) {
+  public Cookie generateRefreshTokenCookie(String refreshToken) {
     Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
     refreshCookie.setHttpOnly(true);
-    refreshCookie.setSecure(false); //Todo: 개발환경에서는 false
+    refreshCookie.setSecure(cookieSecure); //Todo: 개발환경에서는 false 나중에 cookieSecure 로 변경
     refreshCookie.setPath("/");
     refreshCookie.setMaxAge(refreshTokenExpirationMs / 1000);
     return refreshCookie;
@@ -201,7 +227,7 @@ public class JwtTokenProvider {
   public Cookie genereateRefreshTokenExpirationCookie() {
     Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, "");
     refreshCookie.setHttpOnly(true);
-    refreshCookie.setSecure(false); //Todo: 개발환경에서는 false
+    refreshCookie.setSecure(cookieSecure); //Todo: 개발환경에서는 false
     refreshCookie.setPath("/");
     refreshCookie.setMaxAge(0);
     return refreshCookie;

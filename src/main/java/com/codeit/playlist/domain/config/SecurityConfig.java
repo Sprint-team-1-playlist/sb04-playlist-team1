@@ -19,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -37,8 +38,19 @@ public class SecurityConfig {
       JwtAuthenticationFilter jwtAuthenticationFilter,
       JwtLogoutSuccessHandler jwtLogoutSuccessHandler) throws Exception {
     return http
-        .csrf(
-            csrf -> csrf.disable()) // 개발중이기 때문에 csrf를 disable 함. 운영환경에서는 무조!!!!!!!!!!!!!!!!!!!!!!!!!!!!건 켜야함
+        .csrf(csrf -> csrf
+        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .ignoringRequestMatchers("/",
+                    "/index.html",
+                    "/vite.svg",
+                    "/assets/**",
+                    "/api/auth/login",
+                    "/api/auth/sign-in",
+                    "/api/auth/sign-up",
+                    "/api/auth/refresh",
+                    "/api/auth/logout")
+        )
+         // 개발중이기 때문에 csrf를 disable 함. 운영환경에서는 무조!!!!!!!!!!!!!!!!!!!!!!!!!!!!건 켜야함
 
         .formLogin(login -> login
             .loginProcessingUrl("/api/auth/login")

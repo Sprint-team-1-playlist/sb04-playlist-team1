@@ -35,15 +35,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       FilterChain filterChain) throws ServletException, IOException {
 
     String uri = request.getRequestURI();
-    System.out.println("### REQUEST URI = " + uri);
 
 // 인증이 필요 없는 URL은 전부 여기서 통과시킴
     if (uri.startsWith("/api/auth/") || uri.startsWith("/api/sse")) {
       filterChain.doFilter(request, response);
       return;
     }
-
-
     try {
       String token = resolveToken(request);
 

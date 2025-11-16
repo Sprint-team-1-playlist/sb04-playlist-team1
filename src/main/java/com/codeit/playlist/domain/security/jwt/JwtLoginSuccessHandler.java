@@ -41,9 +41,6 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
       return;
     }
 
-    // -----------------------------------------
-    // 🔥 AccessToken / RefreshToken 생성
-    // -----------------------------------------
     String accessToken;
     Instant accessTokenExpiresAt;
 
@@ -66,7 +63,10 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
       return;
     }
 
-    Cookie refreshCookie = tokenProvider.genereateRefreshTokenCookie(refreshToken);
+    jwtRegistry.invalidateJwtInformationByUserId(userDetails.getUserDto().id().toString());
+
+    Cookie refreshCookie = tokenProvider.generateRefreshTokenCookie(refreshToken);
+    refreshCookie.setSecure(true);
     response.addCookie(refreshCookie);
 
     JwtDto jwtDto = new JwtDto(

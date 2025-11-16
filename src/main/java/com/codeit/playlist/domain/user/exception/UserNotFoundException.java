@@ -16,7 +16,7 @@ public class UserNotFoundException extends UserException {
 
   public static UserNotFoundException withUsername(String username) {
     UserNotFoundException exception = new UserNotFoundException();
-    exception.addDetail("userId", username);
+    exception.addDetail("username", username);
     return exception;
   }
 }
