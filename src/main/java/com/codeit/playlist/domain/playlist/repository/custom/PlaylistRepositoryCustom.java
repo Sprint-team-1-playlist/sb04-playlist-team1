@@ -16,6 +16,7 @@ public interface PlaylistRepositoryCustom {
             @Param("hasCursor") boolean hasCursor,
             @Param("cursorId") UUID cursorId,
             @Param("asc") boolean asc,
+            String sortBy,
             Pageable pageable
     );
 
