@@ -1,5 +1,6 @@
 package com.codeit.playlist.playlist.repository;
 
+import com.codeit.playlist.domain.config.QuerydslConfig;
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.entity.Subscribe;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
@@ -7,10 +8,12 @@ import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -20,6 +23,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
+@Import(QuerydslConfig.class)
 public class PlaylistRepositoryTest {
 
     @Autowired
@@ -30,6 +34,9 @@ public class PlaylistRepositoryTest {
 
     @Autowired
     SubscribeRepository subscribeRepository;
+
+    @Autowired
+    private JPAQueryFactory queryFactory;
 
     @Test
     @DisplayName("searchPlaylists 성공 - 구독자 필터로 자신이 구독한 플레이리스트만 조회")
@@ -63,7 +70,7 @@ public class PlaylistRepositoryTest {
 
         // then
         List<Playlist> content = slice.getContent();
-        assertThat(content).extracting("id")
+        assertThat(content).extracting(Playlist::getId)
                 .containsExactlyInAnyOrder(p1.getId(), p3.getId());
         assertThat(slice.hasNext()).isFalse();
     }
