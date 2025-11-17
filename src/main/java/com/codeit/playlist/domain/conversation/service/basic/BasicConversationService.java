@@ -20,8 +20,10 @@ import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -106,6 +108,12 @@ public class BasicConversationService implements ConversationService {
 
     long total = conversationRepository.countAll(currentUserId, keywordLike);
 
+    List<Message> lastestMessages = messageRepository.findLatestMessagesByConversations(conversations);
+
+    Map<UUID, Message> latestMessageMap = lastestMessages.stream()
+        .collect(Collectors.toMap(
+            message -> message.getConversation().getId(), message -> message));
+
     List<ConversationDto> dtos = conversations.stream()
         .map(conversation -> {
           User otherUser = conversation.getUser1().getId().equals(currentUserId)
@@ -113,10 +121,7 @@ public class BasicConversationService implements ConversationService {
               : conversation.getUser1();
           UserSummary userSummary = userMapper.toUserSummary(otherUser);
 
-          Message latestMessage = messageRepository
-              .findFirstByConversationOrderByCreatedAtDesc(conversation)
-              .orElse(null);
-
+          Message latestMessage = latestMessageMap.get(conversation.getId());
           DirectMessageDto msgDto = messageMapper.toDto(latestMessage);
 
           return conversationMapper.toDto(conversation, userSummary, msgDto);
