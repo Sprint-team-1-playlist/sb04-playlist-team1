@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.config;
+package com.codeit.playlist.global.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;

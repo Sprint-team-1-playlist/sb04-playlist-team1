@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.config;
+package com.codeit.playlist.global.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
