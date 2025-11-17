@@ -1,0 +1,53 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  batch:
+    jdbc:
+      initialize-schema: never
+    job:
+      enabled: false
+playlist:
+  jwt:
+    access-token:
+      secret: ${JWT_ACCESS_TOKEN_SECRET}
+      expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000} # 1시간
+    refresh-token:
+      secret: ${JWT_REFRESH_TOKEN_SECRET}
+      expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7일
+    cookie:
+      secure: false
+
+logging:
+  level:
+    com.codeit.playlist: debug
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.springframework.security: trace
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
