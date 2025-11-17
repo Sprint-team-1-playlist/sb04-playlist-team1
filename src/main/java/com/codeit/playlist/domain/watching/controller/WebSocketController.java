@@ -1,6 +1,6 @@
 package com.codeit.playlist.domain.watching.controller;
 
-import com.codeit.playlist.domain.watching.service.basic.BasicWatchingSessionService;
+import com.codeit.playlist.domain.watching.service.WatchingSessionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -14,7 +14,7 @@ import java.util.UUID;
 @Slf4j
 @MessageMapping("/pub/contents/{contentId}/watch")
 public class WebSocketController {
-    private final BasicWatchingSessionService watchingSessionService;
+    private final WatchingSessionService watchingSessionService;
 
     @MessageMapping("/join")
     public void joinWatching(@DestinationVariable UUID contentId) {

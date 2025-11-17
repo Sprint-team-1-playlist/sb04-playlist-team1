@@ -1,7 +1,7 @@
 package com.codeit.playlist.watching.controller;
 
 import com.codeit.playlist.domain.watching.controller.WebSocketController;
-import com.codeit.playlist.domain.watching.service.basic.BasicWatchingSessionService;
+import com.codeit.playlist.domain.watching.service.WatchingSessionService;
 import com.codeit.playlist.watching.fixture.WatchingSessionFixtures;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ class WebSocketControllerTest {
     private WebSocketController webSocketController;
 
     @Mock
-    private BasicWatchingSessionService watchingSessionService;
+    private WatchingSessionService watchingSessionService;
 
     private final UUID contentId = WatchingSessionFixtures.FIXED_ID;
 
