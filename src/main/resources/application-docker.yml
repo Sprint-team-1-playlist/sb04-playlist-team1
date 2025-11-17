@@ -11,9 +11,20 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update # dev용
-    show-sql: true # dev용
+    show-sql: true # dev용:qw
 #      ddl-auto: validate # 운영용
 #    show-sql: false # 운영용
+playlist:
+  jwt:
+    access-token:
+      # :값 부분은 디폴트라 환경변수 안주면 저 값 사용, 환경변수 주면 환경변수 값 사용함
+      secret: ${JWT_ACCESS_TOKEN_SECRET:mySuperSecureAccessKeyForDocker123}
+      expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000} # 1시간
+    refresh-token:
+      secret: ${JWT_REFRESH_TOKEN_SECRET:mySuperSecureRefreshKeyForDocker123}
+      expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7일
+    cookie:
+      secure: true
 
 server:
   port: 8080
