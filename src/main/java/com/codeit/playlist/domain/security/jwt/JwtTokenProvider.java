@@ -219,19 +219,19 @@ public class JwtTokenProvider {
     }
   }
 
-  public Cookie genereateRefreshTokenCookie(String refreshToken) {
+  public Cookie generateRefreshTokenCookie(String refreshToken) {
     Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
     refreshCookie.setHttpOnly(true);
-    refreshCookie.setSecure(cookieSecure); //Todo: 개발환경에서는 false 나중에 cookieSecure 로 변경
+    refreshCookie.setSecure(cookieSecure); //Todo: 개발환경에서는 false 추후에 yml 에서 true 로 바꿀것
     refreshCookie.setPath("/");
     refreshCookie.setMaxAge(refreshTokenExpirationMs / 1000);
     return refreshCookie;
   }
 
-  public Cookie genereateRefreshTokenExpirationCookie() {
+  public Cookie generateRefreshTokenExpirationCookie() {
     Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, "");
     refreshCookie.setHttpOnly(true);
-    refreshCookie.setSecure(cookieSecure); //Todo: 개발환경에서는 false
+    refreshCookie.setSecure(cookieSecure); //Todo: 개발환경에서는 false 추후에 yml 에서 true 로 바꿀것
     refreshCookie.setPath("/");
     refreshCookie.setMaxAge(0);
     return refreshCookie;

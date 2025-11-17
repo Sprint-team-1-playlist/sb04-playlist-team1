@@ -80,7 +80,7 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
 
     jwtRegistry.registerJwtInformation(jwtInformation);
 
-    Cookie refreshCookie = tokenProvider.genereateRefreshTokenCookie(refreshToken);
+    Cookie refreshCookie = tokenProvider.generateRefreshTokenCookie(refreshToken);
     refreshCookie.setSecure(true);
     response.addCookie(refreshCookie);
 

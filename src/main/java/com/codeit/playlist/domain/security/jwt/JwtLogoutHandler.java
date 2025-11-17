@@ -24,7 +24,7 @@ public class JwtLogoutHandler implements LogoutHandler {
       Authentication authentication) {
 
     // Clear refresh token cookie
-    Cookie refreshTokenExpirationCookie = tokenProvider.genereateRefreshTokenExpirationCookie();
+    Cookie refreshTokenExpirationCookie = tokenProvider.generateRefreshTokenExpirationCookie();
     response.addCookie(refreshTokenExpirationCookie);
 
         Cookie[] cookies = request.getCookies();

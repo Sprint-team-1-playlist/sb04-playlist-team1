@@ -47,7 +47,7 @@ public class AuthController {
       HttpServletResponse response) {
     log.info("토큰 리프레시 요청");
     JwtInformation jwtInformation = authService.refreshToken(refreshToken);
-    Cookie refreshCookie = jwtTokenProvider.genereateRefreshTokenCookie(
+    Cookie refreshCookie = jwtTokenProvider.generateRefreshTokenCookie(
         jwtInformation.refreshToken());
     response.addCookie(refreshCookie);
 
@@ -68,7 +68,7 @@ public class AuthController {
     JwtInformation info = authService.signIn(username, password);
 
     // refresh 쿠키 설정
-    Cookie cookie = jwtTokenProvider.genereateRefreshTokenCookie(info.refreshToken());
+    Cookie cookie = jwtTokenProvider.generateRefreshTokenCookie(info.refreshToken());
     response.addCookie(cookie);
 
     // FE 로는 access token + user 정보만 보냄
