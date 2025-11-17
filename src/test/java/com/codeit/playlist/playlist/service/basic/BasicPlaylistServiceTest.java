@@ -1,6 +1,7 @@
 package com.codeit.playlist.playlist.service.basic;
 
 import com.codeit.playlist.domain.base.SortDirection;
+import com.codeit.playlist.domain.content.dto.data.ContentSummary;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
@@ -34,6 +35,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -134,7 +136,7 @@ public class BasicPlaylistServiceTest {
         UUID playlistId = UUID.randomUUID();
         User owner = createUserWithId(CURRENT_USER_ID);  // owner == currentUser
 
-        Playlist playlist = new Playlist(owner, "old title", "old description", 0L);
+        Playlist playlist = new Playlist(owner, "old title", "old description", 0L, null);
 
         PlaylistUpdateRequest request = new PlaylistUpdateRequest("new title", "new description");
 
@@ -181,7 +183,7 @@ public class BasicPlaylistServiceTest {
         UUID ownerId = UUID.fromString("22222222-2222-2222-2222-222222222222");
         User owner = createUserWithId(ownerId);
 
-        Playlist playlist = new Playlist(owner, "old title", "old description", 0L);
+        Playlist playlist = new Playlist(owner, "old title", "old description", 0L, null);
 
         PlaylistUpdateRequest request =
                 new PlaylistUpdateRequest("new title", "new description");
@@ -406,6 +408,68 @@ public class BasicPlaylistServiceTest {
         verify(playlistRepository, never()).softDeleteById(any());
     }
 
+    @Test
+    @DisplayName("getPlaylist 성공 - 플레이리스트 단건 조회 성공 후 DTO로 변환")
+    void getPlaylistSuccess() {
+        //given
+        UUID playlistId = UUID.randomUUID();
+
+        Playlist playlist = mock(Playlist.class);
+
+        given(playlistRepository.findWithDetailsById(playlistId))
+                .willReturn(Optional.of(playlist));
+
+        UserSummary ownerSummary = new UserSummary(UUID.randomUUID(), "이름", "profile.png");
+
+        ContentSummary content1 = new ContentSummary(UUID.randomUUID(), "MOVIE", "영화1", "테스트용 영화",
+                "썸네일.png", List.of("태그1"), 4.5, 10);
+
+        ContentSummary content2 = new ContentSummary(UUID.randomUUID(), "Soccer", "축구", "테스트용 경기",
+                "썸네일2.png", List.of("태그2"), 4.0, 8);
+
+        PlaylistDto mappedDto = new PlaylistDto(playlistId, ownerSummary, "테스트 플리", "테스트용",
+                LocalDateTime.now(), 2L, false, List.of(content1, content2));
+
+        given(playlistMapper.toDto(playlist)).willReturn(mappedDto);
+
+        //when
+        PlaylistDto result = basicPlaylistService.getPlaylist(playlistId);
+
+        //then
+        assertThat(result.id()).isEqualTo(mappedDto.id());
+        assertThat(result.title()).isEqualTo("테스트 플리");
+        assertThat(result.description()).isEqualTo("테스트용");
+        assertThat(result.owner()).isEqualTo(ownerSummary);
+        assertThat(result.subscriberCount()).isEqualTo(2L);
+        assertThat(result.contents())
+                .hasSize(2)
+                .extracting(ContentSummary::title)
+                .containsExactlyInAnyOrder("영화1", "축구");
+
+        assertThat(result.subscribedByMe()).isFalse();
+
+        then(playlistRepository).should().findWithDetailsById(playlistId);
+        then(playlistMapper).should().toDto(playlist);
+    }
+
+    @Test
+    @DisplayName("getPlaylist 실패 - 존재하지 않는 ID면 PlaylistNotFoundException이 발생한다")
+    void getPlaylistFailWhenNotFound() {
+        // given
+        UUID playlistId = UUID.randomUUID();
+
+        given(playlistRepository.findWithDetailsById(playlistId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> basicPlaylistService.getPlaylist(playlistId))
+                .isInstanceOf(PlaylistNotFoundException.class);
+
+        then(playlistRepository).should().findWithDetailsById(playlistId);
+        // 매퍼는 호출되면 안 됨
+        then(playlistMapper).shouldHaveNoInteractions();
+    }
+
     private User createUserWithId(UUID id) {
         try {
             Constructor<User> constructor = User.class.getDeclaredConstructor();
@@ -419,4 +483,5 @@ public class BasicPlaylistServiceTest {
             throw new RuntimeException(e);
         }
     }
+
 }
