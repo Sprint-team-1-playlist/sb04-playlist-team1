@@ -39,9 +39,15 @@ public class JwtLogoutHandler implements LogoutHandler {
         .findFirst()
         .ifPresent(cookie -> {
           String refreshToken = cookie.getValue();
-          if (tokenProvider.validateRefreshToken(refreshToken)) {
-            UUID userId = tokenProvider.getUserId(refreshToken);
-            jwtRegistry.invalidateJwtInformationByUserId(userId);
+          try {
+            if (tokenProvider.validateRefreshToken(refreshToken)) {
+              UUID userId = tokenProvider.getUserId(refreshToken);
+              jwtRegistry.invalidateJwtInformationByUserId(userId);
+            }
+          } catch (Exception e) {
+            log.warn("Failed to invalidate JWT information during logout", e);
+          } finally {
+            jwtRegistry.revokeByToken(refreshToken);
           }
         });
 
