@@ -1,6 +1,6 @@
 package com.codeit.playlist.watching.controller;
 
-import com.codeit.playlist.domain.watching.controller.WebSocketController;
+import com.codeit.playlist.domain.watching.controller.WatchingSessionController;
 import com.codeit.playlist.domain.watching.service.WatchingSessionService;
 import com.codeit.playlist.watching.fixture.WatchingSessionFixtures;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class WebSocketControllerTest {
     @InjectMocks
-    private WebSocketController webSocketController;
+    private WatchingSessionController webSocketController;
 
     @Mock
     private WatchingSessionService watchingSessionService;
