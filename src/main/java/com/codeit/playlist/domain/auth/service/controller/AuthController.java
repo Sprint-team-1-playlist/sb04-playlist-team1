@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -52,9 +53,9 @@ public class AuthController {
       HttpServletResponse response) {
     log.info("토큰 리프레시 요청");
     JwtInformation jwtInformation = authService.refreshToken(refreshToken);
-    Cookie refreshCookie = jwtTokenProvider.generateRefreshTokenCookie(
+    ResponseCookie refreshCookie = jwtTokenProvider.generateRefreshTokenCookie(
         jwtInformation.refreshToken());
-    response.addCookie(refreshCookie);
+    response.addHeader("Set-Cookie", refreshCookie.toString());
 
     JwtDto body = new JwtDto(
         jwtInformation.userDto(),
@@ -73,8 +74,8 @@ public class AuthController {
     JwtInformation info = authService.signIn(username, password);
 
     // refresh 쿠키 설정
-    Cookie cookie = jwtTokenProvider.generateRefreshTokenCookie(info.refreshToken());
-    response.addCookie(cookie);
+    ResponseCookie cookie = jwtTokenProvider.generateRefreshTokenCookie(info.refreshToken());
+    response.addHeader("set-cookie", cookie.toString());
 
     // FE 로는 access token + user 정보만 보냄
     JwtDto body = new JwtDto(info.userDto(), info.accessToken());

@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
@@ -219,13 +220,14 @@ public class JwtTokenProvider {
     }
   }
 
-  public Cookie generateRefreshTokenCookie(String refreshToken) {
-    Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
-    refreshCookie.setHttpOnly(true);
-    refreshCookie.setSecure(cookieSecure);
-    refreshCookie.setPath("/");
-    refreshCookie.setMaxAge(refreshTokenExpirationMs / 1000);
-    return refreshCookie;
+  public ResponseCookie generateRefreshTokenCookie(String refreshToken) {
+    return ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, refreshToken)
+        .httpOnly(true)
+        .secure(cookieSecure)
+        .path("/")
+        .maxAge(refreshTokenExpirationMs / 1000)
+        .sameSite("Lax")
+        .build();
   }
 
   public Cookie generateRefreshTokenExpirationCookie() {

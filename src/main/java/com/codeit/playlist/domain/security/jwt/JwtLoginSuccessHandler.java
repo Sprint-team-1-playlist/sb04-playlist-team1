@@ -4,7 +4,6 @@ import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.dto.data.JwtDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -14,6 +13,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -80,8 +80,8 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
 
     jwtRegistry.registerJwtInformation(jwtInformation);
 
-    Cookie refreshCookie = tokenProvider.generateRefreshTokenCookie(refreshToken);
-    response.addCookie(refreshCookie);
+    ResponseCookie refreshCookie = tokenProvider.generateRefreshTokenCookie(refreshToken);
+    response.addHeader("Set-Cookie", refreshCookie.toString());
 
     JwtDto jwtDto = new JwtDto(
         userDetails.getUserDto(),
