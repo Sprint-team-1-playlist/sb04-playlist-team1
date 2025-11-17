@@ -170,3 +170,4 @@ public class BasicAuthService implements AuthService {
     jwtRegistry.revokeByToken(refreshToken);
   }
 }
+
