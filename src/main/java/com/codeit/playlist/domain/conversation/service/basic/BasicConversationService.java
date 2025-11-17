@@ -98,7 +98,7 @@ public class BasicConversationService implements ConversationService {
 
     boolean isAsc = sortDirection.equalsIgnoreCase("ASCENDING");
 
-    Pageable pageable = PageRequest.of(0, limit);
+    Pageable pageable = PageRequest.of(0, limit + 1);
 
     UUID currentUserId = getCurrentUserId();
 
@@ -123,6 +123,11 @@ public class BasicConversationService implements ConversationService {
         .collect(Collectors.toMap(
             message -> message.getConversation().getId(), message -> message));
 
+    boolean hasNext = conversations.size() > limit;
+    List<Conversation> pageConversations = hasNext
+        ? conversations.subList(0, limit)
+        : conversations;
+
     List<ConversationDto> dtos = conversations.stream()
         .map(conversation -> {
           User otherUser = conversation.getUser1().getId().equals(currentUserId)
@@ -139,10 +144,9 @@ public class BasicConversationService implements ConversationService {
 
     String nextCursor = null;
     UUID nextIdAfter = null;
-    boolean hasNext = false;
 
-    if (!conversations.isEmpty()) {
-      Conversation last = conversations.get(conversations.size() - 1);
+    if (!pageConversations.isEmpty()) {
+      Conversation last = pageConversations.get(pageConversations.size() - 1);
 
       nextCursor = last.getCreatedAt().toString();
       nextIdAfter = last.getId();

@@ -3,7 +3,7 @@ package com.codeit.playlist.domain.conversation.exception.conversation;
 public class InvalidCursorException extends ConversationException{
 
   public InvalidCursorException() {
-    super(ConversationErrorCode.INVALID_CURSOR_FORMAT);
+    super(ConversationErrorCode.INVALID_CURSOR);
   }
 
   public static InvalidCursorException withCursor(String cursor) {
