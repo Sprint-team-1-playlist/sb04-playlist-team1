@@ -78,7 +78,7 @@ public class BasicConversationServiceTest {
     currentUser = new User("current@test.com", "pw", "current", null, Role.USER);
     otherUser = new User("other@test.com", "pw", "other", null, Role.USER);
 
-    // ✨ User 엔티티의 id 필드 강제 주입
+    // User 엔티티의 id 필드 강제 주입
     setId(currentUser, currentUserId);
     setId(otherUser, otherUserId);
   }
@@ -190,14 +190,17 @@ public class BasicConversationServiceTest {
 
     List<Conversation> sorted = List.of(oldConv, midConv, newConv);
 
+    LocalDateTime cursorTime = cursor != null ? LocalDateTime.parse(cursor) : null;
+
     when(conversationRepository.findPageAsc(
+        currentUserId,
         keyword,
-        cursor,
+        cursorTime,
         idAfter,
         PageRequest.of(0, limit)
     )).thenReturn(sorted);
 
-    when(conversationRepository.countAll(keyword))
+    when(conversationRepository.countAll(currentUserId, keyword))
         .thenReturn(3L);
 
     UserSummary summary = new UserSummary(otherUserId, otherUser.getName(), otherUser.getProfileImageUrl());
@@ -241,15 +244,18 @@ public class BasicConversationServiceTest {
 
     List<Conversation> sorted = List.of(newConv, midConv, oldConv);
 
+    LocalDateTime cursorTime = cursor != null ? LocalDateTime.parse(cursor) : null;
+
     when(conversationRepository.findPageDesc(
+        currentUserId,
         keyword,
-        cursor,
+        cursorTime,
         idAfter,
         PageRequest.of(0, limit)
     ))
         .thenReturn(sorted);
 
-    when(conversationRepository.countAll(keyword)).thenReturn(3L);
+    when(conversationRepository.countAll(currentUserId, keyword)).thenReturn(3L);
 
     UserSummary summary = new UserSummary(otherUserId, otherUser.getName(), otherUser.getProfileImageUrl());
     when(userMapper.toUserSummary(otherUser))
@@ -260,7 +266,7 @@ public class BasicConversationServiceTest {
         .thenReturn(new ConversationDto(UUID.randomUUID(), summary, null, false));
 
     // when
-    var response = conversationService.findAll(keyword, cursor, idAfter, limit, sortDirection, "createdAt");
+    CursorResponseConversationDto response = conversationService.findAll(keyword, cursor, idAfter, limit, sortDirection, "createdAt");
 
     // then
     assertNotNull(response);

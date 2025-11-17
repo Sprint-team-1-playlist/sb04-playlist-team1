@@ -18,6 +18,7 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -95,19 +96,21 @@ public class BasicConversationService implements ConversationService {
 
     Pageable pageable = PageRequest.of(0, limit);
 
-    List<Conversation> conversations = isAsc
-        ? conversationRepository.findPageAsc(keywordLike, cursor, idAfter, pageable)
-        : conversationRepository.findPageDesc(keywordLike, cursor, idAfter, pageable);
+    UUID currentUserId = getCurrentUserId();
 
-    long total = conversationRepository.countAll(keywordLike);
+    LocalDateTime cursorTime = cursor != null ? LocalDateTime.parse(cursor) : null;
+
+    List<Conversation> conversations = isAsc
+        ? conversationRepository.findPageAsc(currentUserId, keywordLike, cursorTime, idAfter, pageable)
+        : conversationRepository.findPageDesc(currentUserId, keywordLike, cursorTime, idAfter, pageable);
+
+    long total = conversationRepository.countAll(currentUserId, keywordLike);
 
     List<ConversationDto> dtos = conversations.stream()
         .map(conversation -> {
-          UUID currentId = getCurrentUserId();
-          User otherUser = (conversation.getUser1().getId().equals(currentId))
+          User otherUser = conversation.getUser1().getId().equals(currentUserId)
               ? conversation.getUser2()
               : conversation.getUser1();
-
           UserSummary userSummary = userMapper.toUserSummary(otherUser);
 
           Message latestMessage = messageRepository

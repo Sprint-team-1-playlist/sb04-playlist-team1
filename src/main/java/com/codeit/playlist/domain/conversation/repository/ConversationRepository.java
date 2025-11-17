@@ -1,6 +1,7 @@
 package com.codeit.playlist.domain.conversation.repository;
 
 import com.codeit.playlist.domain.conversation.entity.Conversation;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,8 +21,10 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
   @Query("""
     SELECT c
     FROM Conversation c
-    JOIN c.user2 u
-    WHERE (:keyword IS NULL OR u.name LIKE %:keyword%)
+    LEFT JOIN FETCH c.user1 u1
+    LEFT JOIN FETCH c.user2 u2
+    WHERE (c.user1.id = :currentUserId OR c.user2.id = :currentUserId)
+      AND (:keyword IS NULL OR u1.name LIKE %:keyword% OR u2.name LIKE %:keyword%)
       AND (
             :cursor IS NULL
             OR (c.createdAt < :cursor)
@@ -30,8 +33,9 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
     ORDER BY c.createdAt DESC, c.id DESC
     """)
   List<Conversation> findPageDesc(
+      @Param("currentUserId") UUID currentUserId,
       @Param("keyword") String keyword,
-      @Param("cursor") String cursor,
+      @Param("cursor") LocalDateTime cursor,
       @Param("idAfter") UUID idAfter,
       Pageable pageable
   );
@@ -39,8 +43,10 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
   @Query("""
     SELECT c
     FROM Conversation c
-    JOIN c.user2 u
-    WHERE (:keyword IS NULL OR u.name LIKE %:keyword%)
+    LEFT JOIN FETCH c.user1 u1
+    LEFT JOIN FETCH c.user2 u2
+    WHERE (c.user1.id = :currentUserId OR c.user2.id = :currentUserId)
+      AND (:keyword IS NULL OR u1.name LIKE %:keyword% OR u2.name LIKE %:keyword%)
       AND (
             :cursor IS NULL
             OR (c.createdAt > :cursor)
@@ -49,8 +55,9 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
     ORDER BY c.createdAt ASC, c.id ASC
     """)
   List<Conversation> findPageAsc(
+      @Param("currentUserId") UUID currentUserId,
       @Param("keyword") String keyword,
-      @Param("cursor") String cursor,
+      @Param("cursor") LocalDateTime cursor,
       @Param("idAfter") UUID idAfter,
       Pageable pageable
   );
@@ -58,8 +65,8 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
   @Query("""
         SELECT COUNT(c)
         FROM Conversation c
-        JOIN c.user2 u
-        WHERE (:keyword IS NULL OR u.name LIKE %:keyword%)
+        WHERE (c.user1.id = :currentUserId OR c.user2.id = :currentUserId)
+          AND (:keyword IS NULL OR c.user1.name LIKE %:keyword% OR c.user2.name LIKE %:keyword%)
         """)
-  long countAll(@Param("keyword") String keyword);
+  long countAll(@Param("currentUserId") UUID currentUserId, @Param("keyword") String keyword);
 }
