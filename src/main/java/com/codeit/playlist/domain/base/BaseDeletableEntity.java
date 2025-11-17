@@ -12,4 +12,8 @@ public class BaseDeletableEntity extends BaseUpdatableEntity {
 
     @Column(name = "deletedAt")
     private LocalDateTime deletedAt;
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
 }
