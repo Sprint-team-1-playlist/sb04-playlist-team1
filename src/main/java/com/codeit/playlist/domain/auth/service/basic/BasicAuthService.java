@@ -1,5 +1,10 @@
 package com.codeit.playlist.domain.auth.service.basic;
 
+import com.codeit.playlist.domain.auth.service.AuthService;
+import com.codeit.playlist.domain.security.PlaylistUserDetails;
+import com.codeit.playlist.domain.security.jwt.JwtInformation;
+import com.codeit.playlist.domain.security.jwt.JwtRegistry;
+import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
@@ -7,11 +12,18 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
-import com.codeit.playlist.domain.auth.service.AuthService;
+import com.nimbusds.jose.JOSEException;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,8 +33,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class BasicAuthService implements AuthService {
 
+  private final AuthenticationManager authenticationManager;
   private final UserRepository userRepository;
   private final UserMapper userMapper;
+  private final JwtTokenProvider jwtTokenProvider;
+  private final JwtRegistry jwtRegistry;
+  private final UserDetailsService userDetailsService;
 
   @Override
   @PreAuthorize("hasRole('ADMIN')")
@@ -40,17 +56,117 @@ public class BasicAuthService implements AuthService {
     Role oldRole = user.getRole();
     Role newRole = request.newRole();
 
-    if(!oldRole.equals(newRole)) {
+    if (!oldRole.equals(newRole)) {
       user.updateRole(newRole);
       log.debug("[사용자 관리] 사용자 권한 변경 : userId={}, {} -> {}", userId, oldRole, newRole);
-    }
 
-        //JWT 토큰 확인하는 로직 필요
-        // TODO: JWT 토큰 무효화 로직 구현
-        // 역할이 변경되면 해당 사용자의 모든 JWT 토큰을 무효화해야 합니다.
+      // 역할 변경 시 해당 사용자의 모든 JWT 토큰 무효화
+      jwtRegistry.invalidateJwtInformationByUserId(userId);
+    }
 
     log.info("[사용자 관리] 사용자 권한 변경 완료 : userId={} , {} -> {}", userId, oldRole, newRole);
 
     return userMapper.toDto(user);
   }
+
+  @Override
+  public JwtInformation signIn(String username, String password) throws JOSEException {
+
+    Authentication auth = authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(username, password)
+    );
+
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    PlaylistUserDetails userDetails = (PlaylistUserDetails) auth.getPrincipal();
+    UserDto userDto = userDetails.getUserDto();
+
+    jwtRegistry.invalidateJwtInformationByUserId(userDto.id());
+
+    // Access 발급 시간
+    Instant accessIssuedAt = Instant.now();
+    String access = jwtTokenProvider.generateAccessToken(userDetails, accessIssuedAt);
+
+    // Refresh 발급 시간
+    Instant refreshIssuedAt = Instant.now();
+    String refresh = jwtTokenProvider.generateRefreshToken(userDetails, refreshIssuedAt);
+
+    // 만료 시간 추출
+    Instant accessExp = jwtTokenProvider.getExpiryFromToken(access);
+    Instant refreshExp = jwtTokenProvider.getExpiryFromToken(refresh);
+
+    JwtInformation info = new JwtInformation(
+        userDto,
+        access, accessExp,
+        accessIssuedAt,
+        refresh, refreshExp,
+        refreshIssuedAt
+    );
+
+    // DB 저장
+    jwtRegistry.registerJwtInformation(info);
+
+    return info;
+  }
+
+
+  @Override
+  public JwtInformation refreshToken(String refreshToken) {
+
+    if (refreshToken == null || refreshToken.isBlank()) {
+      throw new IllegalArgumentException("Refresh token is required");
+    }
+
+    if (!jwtTokenProvider.validateRefreshToken(refreshToken)
+        || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
+      throw new IllegalArgumentException("Invalid or expired refresh token");
+    }
+
+    String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
+    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+    PlaylistUserDetails playlistUser = (PlaylistUserDetails) userDetails;
+
+    try {
+
+      Instant accessIssuedAt = Instant.now();
+      Instant refreshIssuedAt = Instant.now();
+
+      String newAccess = jwtTokenProvider.generateAccessToken(playlistUser, accessIssuedAt);
+      String newRefresh = jwtTokenProvider.generateRefreshToken(playlistUser, refreshIssuedAt);
+
+      Instant accessExp = jwtTokenProvider.getExpiryFromToken(newAccess);
+      Instant refreshExp = jwtTokenProvider.getExpiryFromToken(newRefresh);
+
+      JwtInformation info = new JwtInformation(
+          playlistUser.getUserDto(),
+          newAccess, accessExp, accessIssuedAt,
+          newRefresh, refreshExp, refreshIssuedAt
+      );
+
+      boolean rotated = jwtRegistry.rotateJwtInformation(refreshToken, info);
+      if(!rotated) {
+        throw new IllegalStateException("Invalid or expired refresh token");
+      }
+
+      return info;
+
+    } catch (JOSEException e) {
+      throw new IllegalArgumentException("INTERNAL_SERVER_ERROR", e);
+    }
+  }
+
+  @Override
+  public void logout(String refreshToken) {
+    if (refreshToken == null || refreshToken.isBlank()) {
+      return;
+    }
+
+    if (jwtTokenProvider.validateRefreshToken(refreshToken)) {
+      UUID userId = jwtTokenProvider.getUserId(refreshToken);
+      jwtRegistry.invalidateJwtInformationByUserId(userId);
+    }
+    jwtRegistry.revokeByToken(refreshToken);
+  }
 }
+

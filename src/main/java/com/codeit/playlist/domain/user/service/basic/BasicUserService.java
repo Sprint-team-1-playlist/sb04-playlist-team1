@@ -32,15 +32,15 @@ public class BasicUserService implements UserService {
 
 
   @Override
-  public UserDto registerUser (UserCreateRequest request){
+  public UserDto registerUser(UserCreateRequest request) {
     log.debug("[사용자 관리] 사용자 등록 시작 : email = {}", request.email());
     User newUser = userMapper.toEntity(request);
 
-    if(userRepository.existsByEmail(newUser.getEmail())) {
+    if (userRepository.existsByEmail(newUser.getEmail())) {
       throw EmailAlreadyExistsException.withEmail(newUser.getEmail());
     }
 
-    if(newUser.getEmail().equals(adminEmail)){
+    if (newUser.getEmail().equals(adminEmail)) {
       newUser.updateRole(Role.ADMIN);
     }
     //auth 구현하면서 USER 와 ADMIN 관련 역할 부여할때 수정 예정
@@ -60,7 +60,7 @@ public class BasicUserService implements UserService {
 
   @Transactional(readOnly = true)
   @Override
-  public UserDto find(UUID userId){
+  public UserDto find(UUID userId) {
     log.debug("[사용자 관리] 사용자 조회 시작 : userId = {}", userId);
     UserDto userDto = userRepository.findById(userId)
         .map(userMapper::toDto)
