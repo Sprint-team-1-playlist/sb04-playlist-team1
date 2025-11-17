@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public class WatchingNotFoundException extends WatchingException {
     public WatchingNotFoundException() {
-        super(WatchingErrorCode.Watching_NOT_FOUND);
+        super(WatchingErrorCode.WATCHING_NOT_FOUND);
     }
 
     public static WatchingNotFoundException withId(UUID id) {
