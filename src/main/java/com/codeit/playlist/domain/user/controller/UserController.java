@@ -51,5 +51,4 @@ public class UserController {
     log.info("[사용자 관리] 사용자 패스워드 변경 완료 : id = {} ", userId);
     return ResponseEntity.ok().build();
   }
-
 }

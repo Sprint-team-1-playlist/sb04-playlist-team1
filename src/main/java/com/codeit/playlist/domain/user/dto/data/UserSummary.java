@@ -7,5 +7,4 @@ public record UserSummary(
     String name,
     String profileImageUrl
 ) {
-
 }
