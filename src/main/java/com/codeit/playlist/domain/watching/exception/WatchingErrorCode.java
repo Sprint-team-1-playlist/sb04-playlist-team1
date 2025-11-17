@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum WatchingErrorCode implements ErrorCode {
-    Watching_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "시청 세션 정보가 없습니다.");
+    WATCHING_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "시청 세션 정보가 없습니다.");
 
     private final int status;
     private final String message;
