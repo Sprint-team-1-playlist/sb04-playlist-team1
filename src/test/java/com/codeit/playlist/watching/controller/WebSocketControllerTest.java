@@ -36,7 +36,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    @DisplayName("joinWatching 호출 시 watchingSessionService.leave()이 호출됨")
+    @DisplayName("leaveWatching 호출 시 watchingSessionService.leave()이 호출됨")
     void leaveWatchingShouldCallService() {
         // when
         webSocketController.leaveWatching(contentId);
