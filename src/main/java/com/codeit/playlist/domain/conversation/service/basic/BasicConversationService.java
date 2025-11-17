@@ -128,7 +128,7 @@ public class BasicConversationService implements ConversationService {
         ? conversations.subList(0, limit)
         : conversations;
 
-    List<ConversationDto> dtos = conversations.stream()
+    List<ConversationDto> dtos = pageConversations.stream()
         .map(conversation -> {
           User otherUser = conversation.getUser1().getId().equals(currentUserId)
               ? conversation.getUser2()
@@ -150,7 +150,6 @@ public class BasicConversationService implements ConversationService {
 
       nextCursor = last.getCreatedAt().toString();
       nextIdAfter = last.getId();
-      hasNext = (conversations.size() == limit);
     }
 
     CursorResponseConversationDto response = new CursorResponseConversationDto(
