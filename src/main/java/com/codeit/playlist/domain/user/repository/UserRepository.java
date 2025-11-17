@@ -1,10 +1,13 @@
 package com.codeit.playlist.domain.user.repository;
 
-import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.entity.User;
+import io.lettuce.core.dynamic.annotation.Param;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
@@ -14,5 +17,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   Optional<User> findByEmail(String email);
 
-  void updatedPassword(UUID userId, ChangePasswordRequest request);
+  @Modifying
+  @Transactional
+  @Query("UPDATE User u SET u.password = :newPassword WHERE u.id = :userId")
+  void updatedPassword(@Param("userId") UUID userId, @Param("newPassword") String newPassword);
 }
