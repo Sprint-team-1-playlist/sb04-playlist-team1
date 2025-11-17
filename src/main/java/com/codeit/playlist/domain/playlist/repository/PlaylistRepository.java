@@ -19,7 +19,7 @@ public interface PlaylistRepository extends JpaRepository<Playlist, UUID>, Playl
     Optional<Playlist> findByIdAndDeletedAtIsNull(UUID id);
 
     // Soft delete
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
         update Playlist p 
            set p.deletedAt = CURRENT_TIMESTAMP 
