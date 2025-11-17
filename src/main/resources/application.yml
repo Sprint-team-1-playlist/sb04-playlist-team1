@@ -24,3 +24,6 @@ management:
   observations:
     annotations:
       enabled: true
+
+  cookie:
+    secrue: ${COOKIE_SECURE:false} # 로컬 개발시에만 false

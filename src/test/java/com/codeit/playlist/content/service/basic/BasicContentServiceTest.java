@@ -3,7 +3,9 @@ package com.codeit.playlist.content.service.basic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.given;
 
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.dto.request.ContentCreateRequest;
@@ -128,6 +130,35 @@ public class BasicContentServiceTest {
         assertThat(content.getTitle()).isEqualTo("미소된장국으로 건배");
         assertThat(content.getDescription()).isEqualTo("재미있는 만화");
         assertThat(content.getThumbnailUrl()).isEqualTo(thumbnail);
+    }
+
+    @Test void deleteContentSuccess() {
+        // given
+        UUID contentId = UUID.randomUUID();
+        Content content = new Content(
+                Type.MOVIE,
+                "오가미 츠미키와 기일상",
+                "매우 재밌는 만화",
+                "exampleUrl",
+                3.0,
+                2,
+                3
+        );
+
+        List<Tag> tags = List.of(
+                new Tag(content, "순정만화"),
+                new Tag(content, "러브코미디")
+        );
+
+        given(contentRepository.existsById(contentId)).willReturn(true);
+        given(tagRepository.findByContentId(contentId)).willReturn(tags);
+
+        // when
+        contentService.delete(contentId);
+
+        // then
+        verify(tagRepository).deleteAllByContentId(contentId);
+        verify(contentRepository).deleteById(contentId);
     }
 }
 
