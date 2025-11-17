@@ -60,11 +60,11 @@ public class WatchingSessionFixtures {
     }
 
     public static WatchingSessionDto watchingSessionDto() {
-        return WatchingSessionDto.builder()
-                .watchingId(FIXED_ID)
-                .createdAt(FIXED_TIME)
-                .watcher(userDto())
-                .content(contentDto())
-                .build();
+        return new WatchingSessionDto(
+                UUID.randomUUID(),
+                LocalDateTime.now(),
+                userDto(),
+                contentDto()
+        );
     }
 }

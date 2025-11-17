@@ -43,7 +43,7 @@ public class BasicWatchingSessionService implements WatchingSessionService {
         log.debug("[실시간 같이 보기] join 시작: contentId={}, userId={}", contentId, userId);
 
         boolean isAdded = redisWatchingSessionRepository.addWatcher(contentId, userId);
-        if(!isAdded) {
+        if (!isAdded) {
             log.error("[실시간 같이 보기] Redis 저장 실패: contentId={}, userId={}", contentId, userId);
             throw new WatchingSessionUpdateException();
         }
@@ -62,7 +62,7 @@ public class BasicWatchingSessionService implements WatchingSessionService {
         log.debug("[실시간 같이 보기] leave 시작: contentId={}, userId={}", contentId, userId);
 
         boolean isAdded = redisWatchingSessionRepository.removeWatcher(contentId, userId);
-        if(!isAdded) {
+        if (!isAdded) {
             log.error("[실시간 같이 보기] Redis 삭제 실패: contentId={}, userId={}", contentId, userId);
             throw new WatchingSessionUpdateException();
         }
@@ -83,11 +83,11 @@ public class BasicWatchingSessionService implements WatchingSessionService {
     }
 
     private WatchingSessionChange createEvent(ChangeType type, WatchingSessionDto watchingSessionDto, long watcherCount) {
-        return WatchingSessionChange.builder()
-                .type(type)
-                .watchingSession(watchingSessionDto)
-                .watcherCount(watcherCount)
-                .build();
+        return new WatchingSessionChange(
+                type,
+                watchingSessionDto,
+                watcherCount
+        );
     }
 
     private WatchingSessionDto createWatchingSessionDto(UUID contentId) {
@@ -97,12 +97,12 @@ public class BasicWatchingSessionService implements WatchingSessionService {
                 .orElseThrow(() -> ContentNotFoundException.withId(contentId));
         List<Tag> tags = tagRepository.findByContentId(contentId);
 
-        return WatchingSessionDto.builder()
-                .watchingId(UUID.randomUUID())
-                .createdAt(LocalDateTime.now())
-                .watcher(userMapper.toDto(user))
-                .content(contentMapper.toDto(content, tags))
-                .build();
+        return new WatchingSessionDto(
+                UUID.randomUUID(),
+                LocalDateTime.now(),
+                userMapper.toDto(user),
+                contentMapper.toDto(content, tags)
+        );
     }
 
     private UUID getCurrentUserId() {
