@@ -17,12 +17,12 @@ public class TheMovieApiController {
     private final TheMovieApiService theMovieApiService;
 
     @GetMapping("/movie")
-    public Mono<String> searchMovie(@RequestParam String query) {
+    public String searchMovie(@RequestParam String query) {
         return theMovieApiService.searchMovie(query);
     }
 
     @GetMapping("/tv")
-    public Mono<String> searchTv(@RequestParam String query) {
+    public String searchTv(@RequestParam String query) {
         return theMovieApiService.searchTv(query);
     }
 }
