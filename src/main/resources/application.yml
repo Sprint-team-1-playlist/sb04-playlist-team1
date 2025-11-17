@@ -27,3 +27,6 @@ management:
 
   cookie:
     secrue: ${COOKIE_SECURE:false} # 로컬 개발시에만 false
+
+websocket:
+  allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS}
