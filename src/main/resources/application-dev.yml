@@ -35,7 +35,7 @@ playlist:
       secret: ${JWT_REFRESH_TOKEN_SECRET}
       expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7일
     cookie:
-      secure: true
+      secure: false
 
 logging:
   level:
