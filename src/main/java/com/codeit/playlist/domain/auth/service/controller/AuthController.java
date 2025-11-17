@@ -7,7 +7,6 @@ import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
 import com.codeit.playlist.domain.user.dto.data.JwtDto;
 import com.codeit.playlist.domain.user.service.UserService;
 import com.nimbusds.jose.JOSEException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +37,7 @@ public class AuthController {
     log.debug("CSRF 토큰 요청");
 
         if (csrfToken != null) {
-            log.info("CSRF 토큰: {}", csrfToken.getToken());
+            log.debug("CSRF 토큰: {}", csrfToken.getToken());
           } else {
             log.trace("CSRF 토큰이 존재하지 않습니다.");
           }
@@ -75,7 +74,7 @@ public class AuthController {
 
     // refresh 쿠키 설정
     ResponseCookie cookie = jwtTokenProvider.generateRefreshTokenCookie(info.refreshToken());
-    response.addHeader("set-cookie", cookie.toString());
+    response.addHeader("Set-cookie", cookie.toString());
 
     // FE 로는 access token + user 정보만 보냄
     JwtDto body = new JwtDto(info.userDto(), info.accessToken());
@@ -94,9 +93,8 @@ public class AuthController {
       authService.logout(refreshToken);
     }
 
-
-    Cookie deleteCookie = jwtTokenProvider.generateRefreshTokenExpirationCookie();
-    response.addCookie(deleteCookie);
+    ResponseCookie deleteCookie = jwtTokenProvider.generateRefreshTokenExpirationCookie();
+    response.addHeader("Set-Cookie", deleteCookie.toString());
 
     return ResponseEntity.noContent().build();
   }

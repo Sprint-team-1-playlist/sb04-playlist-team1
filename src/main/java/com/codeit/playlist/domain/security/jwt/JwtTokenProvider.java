@@ -11,7 +11,6 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
@@ -230,13 +229,14 @@ public class JwtTokenProvider {
         .build();
   }
 
-  public Cookie generateRefreshTokenExpirationCookie() {
-    Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, "");
-    refreshCookie.setHttpOnly(true);
-    refreshCookie.setSecure(cookieSecure);
-    refreshCookie.setPath("/");
-    refreshCookie.setMaxAge(0);
-    return refreshCookie;
+      public ResponseCookie generateRefreshTokenExpirationCookie() {
+          return ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, "")
+                  .httpOnly(true)
+                  .secure(cookieSecure)
+                  .path("/")
+                  .maxAge(0)
+                  .sameSite("Lax")
+                  .build();
   }
 
 }

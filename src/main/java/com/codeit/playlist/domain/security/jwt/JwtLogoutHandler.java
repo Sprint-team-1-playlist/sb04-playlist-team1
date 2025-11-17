@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Component;
@@ -24,8 +25,8 @@ public class JwtLogoutHandler implements LogoutHandler {
       Authentication authentication) {
 
     // Clear refresh token cookie
-    Cookie refreshTokenExpirationCookie = tokenProvider.generateRefreshTokenExpirationCookie();
-    response.addCookie(refreshTokenExpirationCookie);
+    ResponseCookie refreshTokenExpirationCookie = tokenProvider.generateRefreshTokenExpirationCookie();
+    response.addHeader("Set-Cookie", refreshTokenExpirationCookie.toString());
 
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
