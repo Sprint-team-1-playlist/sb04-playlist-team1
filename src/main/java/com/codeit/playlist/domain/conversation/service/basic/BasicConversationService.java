@@ -7,6 +7,7 @@ import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConver
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.entity.Message;
 import com.codeit.playlist.domain.conversation.exception.conversation.ConversationAlreadyExistsException;
+import com.codeit.playlist.domain.conversation.exception.conversation.InvalidCursorException;
 import com.codeit.playlist.domain.conversation.exception.conversation.SelfChatNotAllowedException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
 import com.codeit.playlist.domain.conversation.mapper.MessageMapper;
@@ -19,6 +20,7 @@ import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,10 +74,10 @@ public class BasicConversationService implements ConversationService {
 
     UserSummary userSummary = userMapper.toUserSummary(user);
 
-    Message latestMessage = messageRepository
+    Message lastestMessage = messageRepository
         .findFirstByConversationOrderByCreatedAtDesc(conversation)
         .orElse(null);
-    DirectMessageDto messageDto = messageMapper.toDto(latestMessage);
+    DirectMessageDto messageDto = messageMapper.toDto(lastestMessage);
 
     ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto);
 
@@ -100,7 +102,14 @@ public class BasicConversationService implements ConversationService {
 
     UUID currentUserId = getCurrentUserId();
 
-    LocalDateTime cursorTime = cursor != null ? LocalDateTime.parse(cursor) : null;
+    LocalDateTime cursorTime = null;
+    if (cursor != null) {
+      try {
+        cursorTime = LocalDateTime.parse(cursor);
+      } catch (DateTimeParseException e) {
+        throw InvalidCursorException.withCursor(cursor);
+      }
+    }
 
     List<Conversation> conversations = isAsc
         ? conversationRepository.findPageAsc(currentUserId, keywordLike, cursorTime, idAfter, pageable)
@@ -110,7 +119,7 @@ public class BasicConversationService implements ConversationService {
 
     List<Message> lastestMessages = messageRepository.findLatestMessagesByConversations(conversations);
 
-    Map<UUID, Message> latestMessageMap = lastestMessages.stream()
+    Map<UUID, Message> lastestMessageMap = lastestMessages.stream()
         .collect(Collectors.toMap(
             message -> message.getConversation().getId(), message -> message));
 
@@ -121,8 +130,8 @@ public class BasicConversationService implements ConversationService {
               : conversation.getUser1();
           UserSummary userSummary = userMapper.toUserSummary(otherUser);
 
-          Message latestMessage = latestMessageMap.get(conversation.getId());
-          DirectMessageDto msgDto = messageMapper.toDto(latestMessage);
+          Message lastestMessage = lastestMessageMap.get(conversation.getId());
+          DirectMessageDto msgDto = messageMapper.toDto(lastestMessage);
 
           return conversationMapper.toDto(conversation, userSummary, msgDto);
         })
