@@ -13,6 +13,7 @@ import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.watching.dto.data.ChangeType;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
+import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.domain.watching.service.basic.BasicWatchingSessionService;
 import com.codeit.playlist.watching.fixture.WatchingSessionFixtures;
@@ -25,7 +26,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,7 +43,7 @@ class BasicWatchingSessionServiceTest {
     @Mock
     private RedisWatchingSessionRepository redisWatchingSessionRepository;
     @Mock
-    private SimpMessagingTemplate messagingTemplate;
+    private WatchingSessionPublisher publisher;
     @Mock
     private UserMapper userMapper;
     @Mock
@@ -97,8 +97,8 @@ class BasicWatchingSessionServiceTest {
                 .findById(any());
         verify(tagRepository, times(1))
                 .findByContentId(any());
-        verify(messagingTemplate, times(1))
-                .convertAndSend(eq("/sub/contents/" + contentId + "/watch"), eventCaptor.capture());
+        verify(publisher, times(1))
+                .publish(eq(contentId), eventCaptor.capture());
 
         WatchingSessionChange capturedEvent = eventCaptor.getValue();
         assertThat(capturedEvent.type()).isEqualTo(ChangeType.JOIN);
@@ -130,8 +130,9 @@ class BasicWatchingSessionServiceTest {
                 .findById(any());
         verify(tagRepository, times(1))
                 .findByContentId(any());
-        verify(messagingTemplate, times(1))
-                .convertAndSend(eq("/sub/contents/" + contentId + "/watch"), eventCaptor.capture());
+        verify(publisher, times(1))
+                .publish(eq(contentId), eventCaptor.capture());
+
 
         WatchingSessionChange capturedEvent = eventCaptor.getValue();
         assertThat(capturedEvent.type()).isEqualTo(ChangeType.LEAVE);

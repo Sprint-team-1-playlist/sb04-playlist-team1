@@ -5,7 +5,9 @@ import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.entity.User;
+import com.codeit.playlist.domain.watching.dto.data.ChangeType;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
+import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -61,10 +63,18 @@ public class WatchingSessionFixtures {
 
     public static WatchingSessionDto watchingSessionDto() {
         return new WatchingSessionDto(
-                UUID.randomUUID(),
-                LocalDateTime.now(),
+                FIXED_ID,
+                FIXED_TIME,
                 userDto(),
                 contentDto()
+        );
+    }
+
+    public static WatchingSessionChange watchingSessionChange() {
+        return new WatchingSessionChange(
+                ChangeType.JOIN,
+                watchingSessionDto(),
+                3
         );
     }
 }
