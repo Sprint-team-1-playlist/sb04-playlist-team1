@@ -35,7 +35,12 @@ public class AuthController {
   @GetMapping("/csrf-token")
   public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
     log.debug("CSRF 토큰 요청");
-    log.trace("CSRF 토큰: {}", csrfToken.getToken());
+
+        if (csrfToken != null) {
+            log.info("CSRF 토큰: {}", csrfToken.getToken());
+          } else {
+            log.trace("CSRF 토큰이 존재하지 않습니다.");
+          }
 
     return ResponseEntity
         .status(HttpStatus.NO_CONTENT)
@@ -88,12 +93,8 @@ public class AuthController {
       authService.logout(refreshToken);
     }
 
-    // 쿠키 즉시 제거
-    Cookie deleteCookie = new Cookie("REFRESH_TOKEN", null);
-    deleteCookie.setHttpOnly(true);
-    deleteCookie.setSecure(false);  // HTTPS 환경이면 true
-    deleteCookie.setPath("/");
-    deleteCookie.setMaxAge(0);     // 즉시 삭제
+
+    Cookie deleteCookie = jwtTokenProvider.generateRefreshTokenExpirationCookie();
     response.addCookie(deleteCookie);
 
     return ResponseEntity.noContent().build();

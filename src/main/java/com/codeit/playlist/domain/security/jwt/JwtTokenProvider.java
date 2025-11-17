@@ -222,17 +222,16 @@ public class JwtTokenProvider {
   public Cookie generateRefreshTokenCookie(String refreshToken) {
     Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
     refreshCookie.setHttpOnly(true);
-    refreshCookie.setSecure(cookieSecure); //Todo: 개발환경에서는 false 추후에 yml 에서 true 로 바꿀것
+    refreshCookie.setSecure(cookieSecure);
     refreshCookie.setPath("/");
     refreshCookie.setMaxAge(refreshTokenExpirationMs / 1000);
-    refreshCookie.setHttpOnly(true);
     return refreshCookie;
   }
 
   public Cookie generateRefreshTokenExpirationCookie() {
     Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, "");
     refreshCookie.setHttpOnly(true);
-    refreshCookie.setSecure(cookieSecure); //Todo: 개발환경에서는 false 추후에 yml 에서 true 로 바꿀것
+    refreshCookie.setSecure(cookieSecure);
     refreshCookie.setPath("/");
     refreshCookie.setMaxAge(0);
     return refreshCookie;
