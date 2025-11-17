@@ -18,7 +18,6 @@ public interface PlaylistRepository extends JpaRepository<Playlist, UUID>, Playl
 
     Optional<Playlist> findByIdAndDeletedAtIsNull(UUID id);
 
-
     // Soft delete
     @Modifying
     @Query("""
@@ -33,7 +32,8 @@ public interface PlaylistRepository extends JpaRepository<Playlist, UUID>, Playl
     @Query("""
         select p 
           from Playlist p 
-         where p.deletedAt <= :threshold
+         where p.deletedAt is not null
+                and p.deletedAt <= :threshold
     """)
     List<Playlist> findAllDeletedBefore(@Param("threshold") LocalDateTime threshold);
 }

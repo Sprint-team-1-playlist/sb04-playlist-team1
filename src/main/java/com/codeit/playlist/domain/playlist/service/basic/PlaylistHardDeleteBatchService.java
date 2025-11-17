@@ -18,7 +18,7 @@ public class PlaylistHardDeleteBatchService {
     private final PlaylistRepository playlistRepository;
 
     @Transactional
-    public void hardDeleteExpiredPlaylists() {
+    public void hardDeletedPlaylists() {
         LocalDateTime threshold = LocalDateTime.now().minusDays(7);
 
         List<Playlist> playlists = playlistRepository.findAllDeletedBefore(threshold);

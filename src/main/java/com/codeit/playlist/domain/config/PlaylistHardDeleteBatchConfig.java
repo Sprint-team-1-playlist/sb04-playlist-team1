@@ -19,7 +19,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class PlaylistHardDeleteBatchConfig {
 
     private final JobRepository jobRepository;
-    private final PlatformTransactionManager txManager;
+    private final PlatformTransactionManager txManager; //트랜잭션 관리자
     private final PlaylistHardDeleteBatchService hardDeleteService;
 
     @Bean
@@ -33,7 +33,7 @@ public class PlaylistHardDeleteBatchConfig {
     public Step playlistHardDeleteStep() {
         return new StepBuilder("playlistHardDeleteStep", jobRepository)
                 .tasklet((contribution, chunkContext) -> {
-                    hardDeleteService.hardDeleteExpiredPlaylists();
+                    hardDeleteService.hardDeletedPlaylists();
                     return RepeatStatus.FINISHED;
                 }, txManager)
                 .build();
