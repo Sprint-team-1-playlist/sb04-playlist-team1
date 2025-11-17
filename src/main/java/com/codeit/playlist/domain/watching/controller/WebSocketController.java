@@ -12,7 +12,7 @@ import java.util.UUID;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@MessageMapping("/pub/contents/{contentId}/watch")
+@MessageMapping("/contents/{contentId}/watch")
 public class WebSocketController {
     private final WatchingSessionService watchingSessionService;
 
