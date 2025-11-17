@@ -1,6 +1,6 @@
 package com.codeit.playlist.domain.playlist.entity;
 
-import com.codeit.playlist.domain.base.BaseUpdatableEntity;
+import com.codeit.playlist.domain.base.BaseDeletableEntity;
 import com.codeit.playlist.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class Playlist extends BaseUpdatableEntity {
+public class Playlist extends BaseDeletableEntity {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
