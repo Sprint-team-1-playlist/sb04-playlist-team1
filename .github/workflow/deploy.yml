@@ -21,30 +21,33 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsECSRole
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ env.ECR_REPO }}:latest .
+          docker build -t ${{ secrets.ECR_REPO }}:latest .
 
       - name: Tag Docker image
         run: |
-          docker tag playlist-backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
+          docker tag ${{ secrets.ECR_REPO }}:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest
 
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest
 
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          cluster: ${{ env.CLUSTER_NAME }}
-          service: ${{ env.SERVICE_NAME }}
-          task-definition: ${{ env.TASK_DEFINITION }}
+          cluster: ${{ secrets.CLUSTER_NAME }}
+          service: ${{ secrets.SERVICE_NAME }}
+          task-definition: ${{ secrets.TASK_DEFINITION }}
           wait-for-service-stability: true
           container-name: ${{ secrets.CONTAINER_NAME }}
           environment-variables: |
             SPRING_PROFILES_ACTIVE=prod
+            SPRING_DATASOURCE_URL=${{ secrets.RDS_URL }}
+            SPRING_DATASOURCE_USERNAME=${{ secrets.RDS_USERNAME }}
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.RDS_PASSWORD }}
