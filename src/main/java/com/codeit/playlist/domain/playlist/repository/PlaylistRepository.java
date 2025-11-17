@@ -2,6 +2,7 @@ package com.codeit.playlist.domain.playlist.repository;
 
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.repository.custom.PlaylistRepositoryCustom;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -36,4 +37,13 @@ public interface PlaylistRepository extends JpaRepository<Playlist, UUID>, Playl
                 and p.deletedAt <= :threshold
     """)
     List<Playlist> findAllDeletedBefore(@Param("threshold") LocalDateTime threshold);
+
+    //플레이리스트 단건 조회
+    @EntityGraph(attributePaths = {
+            "owner",
+            "playlistContents",                    // 플레이리스트-콘텐츠 연결 엔티티
+            "playlistContents.content",            // 실제 콘텐츠
+            "playlistContents.content.tags"        // 태그
+    })
+    Optional<Playlist> findWithDetailsById(UUID id);
 }

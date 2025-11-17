@@ -102,4 +102,14 @@ public class PlaylistController {
 
         return ResponseEntity.ok(playlists);
     }
+
+    @GetMapping("/{playlistId}")
+    public ResponseEntity<PlaylistDto> getPlaylist(@PathVariable UUID playlistId) {
+        log.debug("[플레이리스트] 플레이리스트 단건 조회 시작: id={}", playlistId);
+
+        PlaylistDto response = playlistService.getPlaylist(playlistId);
+
+        log.info("[플레이리스트] 플레이리스트 단건 조회 성공: id={}", playlistId);
+        return ResponseEntity.ok(response);
+    }
 }

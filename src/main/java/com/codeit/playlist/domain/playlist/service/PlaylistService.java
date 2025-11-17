@@ -21,4 +21,6 @@ public interface PlaylistService {
                                             UUID subscriberIdEqual, String cursor,
                                             UUID idAfter, int limit, String sortBy,
                                             SortDirection sortDirection);
+
+    PlaylistDto getPlaylist(UUID playlistId);
 }
