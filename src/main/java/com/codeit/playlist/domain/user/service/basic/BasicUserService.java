@@ -1,6 +1,9 @@
 package com.codeit.playlist.domain.user.service.basic;
 
+import com.codeit.playlist.domain.security.PlaylistUserDetails;
+import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
@@ -9,10 +12,12 @@ import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.service.UserService;
+import java.nio.file.AccessDeniedException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +31,7 @@ public class BasicUserService implements UserService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
+  private final JwtRegistry jwtRegistry;
 
   @Value("${ADMIN_EMAIL}")
   private String adminEmail;
@@ -70,4 +76,28 @@ public class BasicUserService implements UserService {
     return userDto;
   }
 
-}
+  @Override
+  public void changePassword(UUID userId, ChangePasswordRequest request)
+      throws AccessDeniedException {
+    log.debug("[사용자 관리] 패스워드 변경 시작 : userId = {}", userId);
+
+    PlaylistUserDetails principal = (PlaylistUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+    UUID loginUserId = principal.getUserDto().id();
+
+    if(!loginUserId.equals(userId)){
+      throw new AccessDeniedException("본인의 비밀번호만 변경할 수 있습니다.");
+    }
+
+    User user = userRepository.findById(userId).orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    String encodedPassword = passwordEncoder.encode(request.password());
+    user.updatePassword(encodedPassword);
+    userRepository.save(user);
+
+    jwtRegistry.invalidateJwtInformationByUserId(userId);
+
+    log.info("[사용자 관리] 패스워드 변경 완료 : userId = {}", userId);
+    }
+  }
+
