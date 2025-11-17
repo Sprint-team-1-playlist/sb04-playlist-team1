@@ -70,16 +70,20 @@ public class JwtTokenProvider {
   }
 
   public String generateAccessToken(PlaylistUserDetails user, Instant issuedAt) throws JOSEException {
-    return generateToken(user, accessTokenExpirationMs, accessTokenSigner, "access");
+    return generateToken(user, accessTokenExpirationMs, accessTokenSigner, "access", issuedAt);
   }
 
   public String generateRefreshToken(PlaylistUserDetails user, Instant issuedAt) throws JOSEException {
-    return generateToken(user, refreshTokenExpirationMs, refreshTokenSigner, "refresh");
+    return generateToken(user, refreshTokenExpirationMs, refreshTokenSigner, "refresh", issuedAt);
   }
 
   public Instant getExpiryFromToken(String token) {
     try {
       SignedJWT parsed = SignedJWT.parse(token);
+      if(!parsed.verify(accessTokenVerifier) && !parsed.verify(refreshTokenVerifier)) {
+        throw new IllegalArgumentException("Invalid token signature");
+      }
+
       Date exp = parsed.getJWTClaimsSet().getExpirationTime();
       return exp.toInstant();
     } catch (Exception e) {
@@ -96,11 +100,11 @@ public class JwtTokenProvider {
   }
 
   private String generateToken(PlaylistUserDetails userDetails, int expirationMs, JWSSigner signer,
-      String tokenType) throws JOSEException {
+      String tokenType, Instant issuedAt) throws JOSEException {
     String tokenId = UUID.randomUUID().toString();
     UserDto user = userDetails.getUserDto();
 
-    Date now = new Date();
+    Date now = Date.from(issuedAt);
     Date expiryDate = new Date(now.getTime() + expirationMs);
 
     JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()

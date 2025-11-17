@@ -68,6 +68,18 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
 
     jwtRegistry.invalidateJwtInformationByUserId(userDetails.getUserDto().id());
 
+    JwtInformation jwtInformation = new JwtInformation(
+        userDetails.getUserDto(),
+        accessToken,
+        accessTokenExpiresAt,
+        accessIssuedAt,
+        refreshToken,
+        refreshTokenExpiresAt,
+        refreshIssuedAt
+    );
+
+    jwtRegistry.registerJwtInformation(jwtInformation);
+
     Cookie refreshCookie = tokenProvider.genereateRefreshTokenCookie(refreshToken);
     refreshCookie.setSecure(true);
     response.addCookie(refreshCookie);
@@ -80,17 +92,6 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
     response.setStatus(HttpServletResponse.SC_OK);
     response.getWriter().write(objectMapper.writeValueAsString(jwtDto));
 
-    jwtRegistry.registerJwtInformation(
-        new JwtInformation(
-            userDetails.getUserDto(),
-            accessToken,
-            accessTokenExpiresAt,
-            accessIssuedAt,
-            refreshToken,
-            refreshTokenExpiresAt,
-            refreshIssuedAt
-        )
-    );
 
     log.info("Tokens issued for user: {}", userDetails.getUsername());
   }

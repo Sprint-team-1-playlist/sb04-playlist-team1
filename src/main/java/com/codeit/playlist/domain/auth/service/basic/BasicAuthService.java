@@ -60,8 +60,8 @@ public class BasicAuthService implements AuthService {
       user.updateRole(newRole);
       log.debug("[사용자 관리] 사용자 권한 변경 : userId={}, {} -> {}", userId, oldRole, newRole);
 
-        // 역할 변경 시 해당 사용자의 모든 JWT 토큰 무효화
-        jwtRegistry.invalidateJwtInformationByUserId(userId);
+      // 역할 변경 시 해당 사용자의 모든 JWT 토큰 무효화
+      jwtRegistry.invalidateJwtInformationByUserId(userId);
     }
 
     log.info("[사용자 관리] 사용자 권한 변경 완료 : userId={} , {} -> {}", userId, oldRole, newRole);
@@ -155,6 +155,14 @@ public class BasicAuthService implements AuthService {
 
   @Override
   public void logout(String refreshToken) {
+    if (refreshToken == null || refreshToken.isBlank()) {
+      return;
+    }
+
+    if (jwtTokenProvider.validateRefreshToken(refreshToken)) {
+      UUID userId = jwtTokenProvider.getUserId(refreshToken);
+      jwtRegistry.invalidateJwtInformationByUserId(userId);
+    }
     jwtRegistry.revokeByToken(refreshToken);
   }
 }
