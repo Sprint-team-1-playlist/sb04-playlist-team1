@@ -19,7 +19,7 @@ public interface JwtRegistry {
   boolean hasActiveJwtInformationByRefreshToken(String refreshToken);
 
   @Transactional
-  void rotateJwtInformation(String refreshToken, JwtInformation newJwtInformation);
+  boolean rotateJwtInformation(String oldRefreshToken, JwtInformation newInfo);
 
   @Transactional
   void clearExpiredJwtInformation();

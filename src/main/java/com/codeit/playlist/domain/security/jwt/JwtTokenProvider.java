@@ -225,6 +225,7 @@ public class JwtTokenProvider {
     refreshCookie.setSecure(cookieSecure); //Todo: 개발환경에서는 false 추후에 yml 에서 true 로 바꿀것
     refreshCookie.setPath("/");
     refreshCookie.setMaxAge(refreshTokenExpirationMs / 1000);
+    refreshCookie.setHttpOnly(true);
     return refreshCookie;
   }
 

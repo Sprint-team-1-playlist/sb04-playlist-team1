@@ -53,11 +53,11 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
     try {
       // Access Token
       accessToken = tokenProvider.generateAccessToken(userDetails, accessIssuedAt);
-      accessTokenExpiresAt = tokenProvider.getAccessTokenExpiryInstant();
+      accessTokenExpiresAt = tokenProvider.getExpiryFromToken(accessToken);
 
       // Refresh Token
       refreshToken = tokenProvider.generateRefreshToken(userDetails, refreshIssuedAt);
-      refreshTokenExpiresAt = tokenProvider.getRefreshTokenExpiryInstant();
+      refreshTokenExpiresAt = tokenProvider.getExpiryFromToken(refreshToken);
 
     } catch (JOSEException e) {
       log.error("JWT generation failed for {}", userDetails.getUsername(), e);
@@ -81,7 +81,6 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
     jwtRegistry.registerJwtInformation(jwtInformation);
 
     Cookie refreshCookie = tokenProvider.generateRefreshTokenCookie(refreshToken);
-    refreshCookie.setSecure(true);
     response.addCookie(refreshCookie);
 
     JwtDto jwtDto = new JwtDto(

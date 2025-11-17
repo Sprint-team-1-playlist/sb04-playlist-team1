@@ -75,35 +75,43 @@ public class DbJwtRegistry implements JwtRegistry {
 
   @Transactional
   @Override
-  public void rotateJwtInformation(String refreshToken, JwtInformation newJwtInformation) {
+  public boolean rotateJwtInformation(String oldRefreshToken, JwtInformation newInfo) {
     Optional<UserToken> refreshTokenEntityOpt = userTokenRepository.findByTokenAndRevokedFalse(
-        refreshToken);
+        oldRefreshToken);
 
-    refreshTokenEntityOpt.ifPresent(refreshTokenEntity -> {
+    // 토큰이 없거나 이미 revoke 되었으면 false 반환
+    if (refreshTokenEntityOpt.isEmpty()) {
+      return false;
+    }
 
-      // 기존 토큰 쌍 무효화
-      refreshTokenEntity.revoke();
-      userTokenRepository.save(refreshTokenEntity);
+    UserToken refreshTokenEntity = refreshTokenEntityOpt.get();
 
-      // 같은 userId의 기존 ACCESS 토큰 찾아서 무효화
-      List<UserToken> accessTokens = userTokenRepository.findByUserIdAndRevokedFalse(newJwtInformation.userDto().id())
-          .stream()
-          .filter(token -> "ACCESS".equals(token.getTokenType()))
-          .toList();
-      accessTokens.forEach(UserToken::revoke);
-      userTokenRepository.saveAll(accessTokens);
+    // 1. 기존 REFRESH 토큰 무효화
+    refreshTokenEntity.revoke();
+    userTokenRepository.save(refreshTokenEntity);
 
-      // 새로운 토큰 쌍 등록
-      registerJwtInformation(newJwtInformation);
-    });
+    // 2. 기존 ACCESS 토큰 전체 무효화
+    List<UserToken> accessTokens = userTokenRepository
+        .findByUserIdAndRevokedFalse(newInfo.userDto().id())
+        .stream()
+        .filter(token -> "ACCESS".equals(token.getTokenType()))
+        .toList();
+
+    accessTokens.forEach(UserToken::revoke);
+    userTokenRepository.saveAll(accessTokens);
+
+    // 3. 새 토큰 등록
+    registerJwtInformation(newInfo);
+
+    return true;
   }
 
   @Transactional
   @Override
   public void clearExpiredJwtInformation() {
     List<UserToken> expiredTokens = userTokenRepository.findExpiredTokens(Instant.now());
-      expiredTokens.forEach(UserToken::revoke);
-      userTokenRepository.saveAll(expiredTokens);
+    expiredTokens.forEach(UserToken::revoke);
+    userTokenRepository.saveAll(expiredTokens);
   }
 
   @Transactional

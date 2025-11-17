@@ -144,6 +144,10 @@ public class BasicAuthService implements AuthService {
           newRefresh, refreshExp, refreshIssuedAt
       );
 
+      boolean rotated = jwtRegistry.rotateJwtInformation(refreshToken, info);
+      if(!rotated) {
+        throw new IllegalStateException("Invalid or expired refresh token");
+      }
       jwtRegistry.rotateJwtInformation(refreshToken, info);
 
       return info;
