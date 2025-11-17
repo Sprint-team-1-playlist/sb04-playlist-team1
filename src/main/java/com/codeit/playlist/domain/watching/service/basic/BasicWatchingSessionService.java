@@ -13,6 +13,7 @@ import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.watching.dto.data.ChangeType;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
+import com.codeit.playlist.domain.watching.exception.WatchingSessionUpdateException;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.domain.watching.service.WatchingSessionService;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +42,11 @@ public class BasicWatchingSessionService implements WatchingSessionService {
         UUID userId = getCurrentUserId();
         log.debug("[실시간 같이 보기] join 시작: contentId={}, userId={}", contentId, userId);
 
-        redisWatchingSessionRepository.addWatcher(contentId, userId);
+        boolean isAdded = redisWatchingSessionRepository.addWatcher(contentId, userId);
+        if(!isAdded) {
+            log.error("[실시간 같이 보기] Redis 저장 실패: contentId={}, userId={}", contentId, userId);
+            throw new WatchingSessionUpdateException();
+        }
         long watcherCount = redisWatchingSessionRepository.countWatcher(contentId);
 
         WatchingSessionDto watchingSessionDto = createWatchingSessionDto(contentId);
@@ -56,7 +61,11 @@ public class BasicWatchingSessionService implements WatchingSessionService {
         UUID userId = getCurrentUserId();
         log.debug("[실시간 같이 보기] leave 시작: contentId={}, userId={}", contentId, userId);
 
-        redisWatchingSessionRepository.removeWatcher(contentId, userId);
+        boolean isAdded = redisWatchingSessionRepository.removeWatcher(contentId, userId);
+        if(!isAdded) {
+            log.error("[실시간 같이 보기] Redis 삭제 실패: contentId={}, userId={}", contentId, userId);
+            throw new WatchingSessionUpdateException();
+        }
         long watcherCount = redisWatchingSessionRepository.countWatcher(contentId);
 
         WatchingSessionDto watchingSessionDto = createWatchingSessionDto(contentId);
