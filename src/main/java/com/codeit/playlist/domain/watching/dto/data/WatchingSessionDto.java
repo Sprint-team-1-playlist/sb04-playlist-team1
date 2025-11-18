@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.watching.dto.response;
+package com.codeit.playlist.domain.watching.dto.data;
 
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
