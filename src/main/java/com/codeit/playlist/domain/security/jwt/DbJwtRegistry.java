@@ -131,5 +131,4 @@ public class DbJwtRegistry implements JwtRegistry {
           userTokenRepository.save(t);
         });
   }
-
 }

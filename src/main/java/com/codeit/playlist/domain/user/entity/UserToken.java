@@ -55,5 +55,4 @@ public class UserToken extends BaseUpdatableEntity {
     this.revoked = true;
     this.revokedAt = Instant.now();
   }
-
 }
