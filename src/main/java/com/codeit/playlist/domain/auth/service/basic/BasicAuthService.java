@@ -109,18 +109,17 @@ public class BasicAuthService implements AuthService {
 
     // DB 저장
     jwtRegistry.registerJwtInformation(info);
-    log.info("[인증 관리] : 로그인  완료");
+    log.info("[인증 관리] : 로그인 완료");
 
     return info;
   }
 
-
   @Override
   public JwtInformation refreshToken(String refreshToken) {
-    log.debug("[인증 관리] : Token 발급 시작 ");
+    log.debug("[인증 관리] : Token 발급 시작");
 
     if (refreshToken == null || refreshToken.isBlank()) {
-      throw RefreshTokenException.withToken(refreshToken);
+      throw RefreshTokenException.withToken("Refresh token is required");
     }
 
     if (!jwtTokenProvider.validateRefreshToken(refreshToken)
@@ -164,7 +163,7 @@ public class BasicAuthService implements AuthService {
 
   @Override
   public void logout(String refreshToken) {
-    log.debug("[인증 관리] : 로그아웃 시작 ");
+    log.debug("[인증 관리] : 로그아웃 시작");
     if (refreshToken == null || refreshToken.isBlank()) {
       return;
     }
@@ -174,6 +173,6 @@ public class BasicAuthService implements AuthService {
       jwtRegistry.invalidateJwtInformationByUserId(userId);
     }
     jwtRegistry.revokeByToken(refreshToken);
-    log.info("[인증 관리] : 로그아웃 완료 ");
+    log.info("[인증 관리] : 로그아웃 완료");
   }
 }
