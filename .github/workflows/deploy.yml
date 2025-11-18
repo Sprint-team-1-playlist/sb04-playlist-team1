@@ -38,17 +38,14 @@ jobs:
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
 
+      - name: Update task definition with new image
+        run: |
+          sed -i "s|dummy|${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}|g" task-definition.json
+
       - name: Deploy to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          cluster: ${{ secrets.CLUSTER_NAME }}
+          task-definition: task-definition.json
           service: ${{ secrets.SERVICE_NAME }}
-          task-definition: ${{ secrets.TASK_DEFINITION }}
+          cluster: ${{ secrets.CLUSTER_NAME }}
           wait-for-service-stability: true
-          container-name: ${{ secrets.CONTAINER_NAME }}
-          environment-variables: |
-            SPRING_PROFILES_ACTIVE=prod
-            SPRING_DATASOURCE_URL=${{ secrets.RDS_URL }}
-            SPRING_DATASOURCE_USERNAME=${{ secrets.RDS_USERNAME }}
-            SPRING_DATASOURCE_PASSWORD=${{ secrets.RDS_PASSWORD }}
-            IMAGE_TAG=${{ github.sha }}
