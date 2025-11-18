@@ -1,7 +1,7 @@
-package com.codeit.playlist.domain.conversation.repository;
+package com.codeit.playlist.domain.message.repository;
 
 import com.codeit.playlist.domain.conversation.entity.Conversation;
-import com.codeit.playlist.domain.conversation.entity.Message;
+import com.codeit.playlist.domain.message.entity.Message;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

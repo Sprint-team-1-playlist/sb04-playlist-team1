@@ -1,6 +1,6 @@
-package com.codeit.playlist.domain.conversation.dto.response;
+package com.codeit.playlist.domain.message.dto.response;
 
-import com.codeit.playlist.domain.conversation.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import java.util.List;
 import java.util.UUID;
 

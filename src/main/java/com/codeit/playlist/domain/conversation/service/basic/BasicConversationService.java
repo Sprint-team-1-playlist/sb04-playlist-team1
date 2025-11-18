@@ -1,19 +1,20 @@
 package com.codeit.playlist.domain.conversation.service.basic;
 
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
-import com.codeit.playlist.domain.conversation.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
-import com.codeit.playlist.domain.conversation.entity.Message;
-import com.codeit.playlist.domain.conversation.exception.conversation.ConversationAlreadyExistsException;
-import com.codeit.playlist.domain.conversation.exception.conversation.InvalidCursorException;
-import com.codeit.playlist.domain.conversation.exception.conversation.SelfChatNotAllowedException;
+import com.codeit.playlist.domain.message.entity.Message;
+import com.codeit.playlist.domain.conversation.exception.ConversationAlreadyExistsException;
+import com.codeit.playlist.domain.conversation.exception.InvalidCursorException;
+import com.codeit.playlist.domain.conversation.exception.SelfChatNotAllowedException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
-import com.codeit.playlist.domain.conversation.mapper.MessageMapper;
+import com.codeit.playlist.domain.message.mapper.MessageMapper;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
-import com.codeit.playlist.domain.conversation.repository.MessageRepository;
+import com.codeit.playlist.domain.message.repository.MessageRepository;
 import com.codeit.playlist.domain.conversation.service.ConversationService;
+import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
@@ -30,6 +31,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,22 +53,19 @@ public class BasicConversationService implements ConversationService {
   public ConversationDto create(ConversationCreateRequest request) {
     log.debug("[Conversation] 대화 생성 시작 {}", request);
 
-//    UUID currentUserId = getCurrentUserId();
-//    User currentUser = userRepository.findById(currentUserId)
-//        .orElseThrow(() -> UserNotFoundException.withId(currentUserId));
-    UUID testCurrentUserId = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    if (testCurrentUserId.equals(request.withUserId())){
-      throw SelfChatNotAllowedException.withId(testCurrentUserId);
+    UUID currentUserId = getCurrentUserId();
+    if (currentUserId.equals(request.withUserId())){
+      throw SelfChatNotAllowedException.withId(currentUserId);
     }
 
     Optional<Conversation> existingConversation = conversationRepository
-        .findByUserIds(testCurrentUserId, request.withUserId());
+        .findByUserIds(currentUserId, request.withUserId());
     if (existingConversation.isPresent()) {
       throw ConversationAlreadyExistsException.withId(existingConversation.get().getId());
     }
 
-    User currentUser = userRepository.findById(testCurrentUserId)
-        .orElseThrow(() -> UserNotFoundException.withId(testCurrentUserId));
+    User currentUser = userRepository.findById(currentUserId)
+        .orElseThrow(() -> UserNotFoundException.withId(currentUserId));
     User user = userRepository.findById(request.withUserId())
         .orElseThrow(() -> UserNotFoundException.withId(request.withUserId()));
 
@@ -77,7 +77,7 @@ public class BasicConversationService implements ConversationService {
     Message lastestMessage = messageRepository
         .findFirstByConversationOrderByCreatedAtDesc(conversation)
         .orElse(null);
-    DirectMessageDto messageDto = messageMapper.toDto(lastestMessage);
+    DirectMessageDto messageDto = lastestMessage != null ? messageMapper.toDto(lastestMessage) : null;
 
     ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto);
 
@@ -168,9 +168,8 @@ public class BasicConversationService implements ConversationService {
   }
 
   private UUID getCurrentUserId() {
-    //    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    //    PlaylistUserDetails userDetails = (PlaylistUserDetails) authentication.getPrincipal();
-    //    return userDetails.getId();
-    return UUID.fromString("11111111-1111-1111-1111-111111111111");
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    PlaylistUserDetails userDetails = (PlaylistUserDetails) authentication.getPrincipal();
+    return userDetails.getUserDto().id();
   }
 }
