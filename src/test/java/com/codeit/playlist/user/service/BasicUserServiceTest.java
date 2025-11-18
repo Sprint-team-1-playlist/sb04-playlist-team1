@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
@@ -14,6 +15,7 @@ import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.service.basic.BasicUserService;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +38,9 @@ public class BasicUserServiceTest {
 
   @InjectMocks
   private BasicUserService BasicuserService;
+
+  @Mock
+  private JwtRegistry  jwtRegistry;
 
   @Test
   @DisplayName("사용자 생성 테스트 성공")
@@ -64,12 +69,12 @@ public class BasicUserServiceTest {
     );
 
     UserDto userDto = new UserDto(
-        "uuid-string",
+        UUID.randomUUID(),
         LocalDateTime.now(),
         savedUser.getEmail(),
         savedUser.getName(),
         savedUser.getProfileImageUrl(),
-        savedUser.getRole().name(),
+        savedUser.getRole(),
         savedUser.isLocked()
     );
 
@@ -81,7 +86,7 @@ public class BasicUserServiceTest {
     when(userMapper.toDto(any(User.class))).thenReturn(userDto);
 
     // When
-    BasicUserService userService = new BasicUserService(userRepository, passwordEncoder, userMapper);
+    BasicUserService userService = new BasicUserService(userRepository, passwordEncoder, userMapper, jwtRegistry);
     UserDto result = userService.registerUser(request);
 
     // Then
