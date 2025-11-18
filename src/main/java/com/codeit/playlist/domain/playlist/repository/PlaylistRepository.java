@@ -49,4 +49,22 @@ public interface PlaylistRepository extends JpaRepository<Playlist, UUID>, Playl
             "where p.id = :id " +
             "and p.deletedAt is null")
     Optional<Playlist> findWithDetailsById(@Param("id") UUID id);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+    update Playlist p 
+       set p.subscriberCount = p.subscriberCount + 1 
+     where p.id = :playlistId
+""")
+    int increaseSubscriberCount(@Param("playlistId") UUID playlistId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+    update Playlist p 
+       set p.subscriberCount = p.subscriberCount - 1 
+     where p.id = :playlistId
+       and p.subscriberCount > 0
+""")
+    int decreaseSubscriberCount(@Param("playlistId") UUID playlistId);
+
 }

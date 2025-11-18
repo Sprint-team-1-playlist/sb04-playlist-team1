@@ -5,6 +5,7 @@ import com.codeit.playlist.domain.playlist.entity.Subscribe;
 import com.codeit.playlist.domain.playlist.exception.AlreadySubscribedException;
 import com.codeit.playlist.domain.playlist.exception.NotSubscribedException;
 import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
+import com.codeit.playlist.domain.playlist.exception.SelfSubscriptionNotAllowedException;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.playlist.service.basic.BasicPlaylistSubscriptionService;
@@ -51,6 +52,10 @@ public class BasicPlaylistSubscriptionServiceTest {
         // given
         Playlist playlist = mock(Playlist.class);
         User subscriber = mock(User.class);
+        User owner = mock(User.class);
+
+        given(playlist.getOwner()).willReturn(owner);
+        given(owner.getId()).willReturn(UUID.randomUUID());
 
         given(playlistRepository.findById(PLAYLIST_ID))
                 .willReturn(Optional.of(playlist));
@@ -65,8 +70,8 @@ public class BasicPlaylistSubscriptionServiceTest {
         // then
         then(subscribeRepository).should()
                 .save(any(Subscribe.class));
-        then(playlist).should()
-                .increaseSubscriberCount();
+        then(playlistRepository).should()
+                .increaseSubscriberCount(PLAYLIST_ID);
     }
 
     @Test
@@ -82,6 +87,7 @@ public class BasicPlaylistSubscriptionServiceTest {
 
         then(userRepository).shouldHaveNoInteractions();
         then(subscribeRepository).shouldHaveNoInteractions();
+        then(playlistRepository).should(never()).increaseSubscriberCount(any());
     }
 
     @Test
@@ -99,6 +105,31 @@ public class BasicPlaylistSubscriptionServiceTest {
                 .isInstanceOf(UserNotFoundException.class);
 
         then(subscribeRepository).shouldHaveNoInteractions();
+        then(playlistRepository).should(never()).increaseSubscriberCount(any());
+    }
+
+    @Test
+    @DisplayName("구독 실패 - 자기 자신의 플레이리스트는 구독할 수 없다")
+    void subscribeFailWhenSelfSubscription() {
+        // given
+        Playlist playlist = mock(Playlist.class);
+        User owner = mock(User.class);
+
+        given(playlistRepository.findById(PLAYLIST_ID))
+                .willReturn(Optional.of(playlist));
+        given(userRepository.findById(SUBSCRIBER_ID))
+                .willReturn(Optional.of(owner));
+
+        // playlist.owner.id == subscriberId 인 상황
+        given(playlist.getOwner()).willReturn(owner);
+        given(owner.getId()).willReturn(SUBSCRIBER_ID);
+
+        // when & then
+        assertThatThrownBy(() -> service.subscribe(PLAYLIST_ID, SUBSCRIBER_ID))
+                .isInstanceOf(SelfSubscriptionNotAllowedException.class);
+
+        then(subscribeRepository).shouldHaveNoInteractions();
+        then(playlistRepository).should(never()).increaseSubscriberCount(any());
     }
 
     @Test
@@ -107,11 +138,14 @@ public class BasicPlaylistSubscriptionServiceTest {
         // given
         Playlist playlist = mock(Playlist.class);
         User subscriber = mock(User.class);
+        User owner = mock(User.class);
 
         given(playlistRepository.findById(PLAYLIST_ID))
                 .willReturn(Optional.of(playlist));
         given(userRepository.findById(SUBSCRIBER_ID))
                 .willReturn(Optional.of(subscriber));
+        given(playlist.getOwner()).willReturn(owner);
+        given(owner.getId()).willReturn(UUID.randomUUID());
         given(subscribeRepository.existsBySubscriberAndPlaylist(subscriber, playlist))
                 .willReturn(true);
 
@@ -120,7 +154,7 @@ public class BasicPlaylistSubscriptionServiceTest {
                 .isInstanceOf(AlreadySubscribedException.class);
 
         then(subscribeRepository).should(never()).save(any());
-        then(playlist).should(never()).increaseSubscriberCount();
+        then(playlistRepository).should(never()).increaseSubscriberCount(any());;
     }
 
     @Test
@@ -143,7 +177,7 @@ public class BasicPlaylistSubscriptionServiceTest {
 
         // then
         then(subscribeRepository).should().delete(subscribe);
-        then(playlist).should().decreaseSubscriberCount();
+        then(playlistRepository).should().decreaseSubscriberCount(PLAYLIST_ID);
     }
 
     @Test
@@ -159,6 +193,7 @@ public class BasicPlaylistSubscriptionServiceTest {
 
         then(userRepository).shouldHaveNoInteractions();
         then(subscribeRepository).shouldHaveNoInteractions();
+        then(playlistRepository).should(never()).decreaseSubscriberCount(any());
     }
 
     @Test
@@ -176,7 +211,7 @@ public class BasicPlaylistSubscriptionServiceTest {
                 .isInstanceOf(UserNotFoundException.class);
 
         then(subscribeRepository).shouldHaveNoInteractions();
-        then(playlist).should(never()).decreaseSubscriberCount();
+        then(playlistRepository).should(never()).decreaseSubscriberCount(any());
     }
 
     @Test
@@ -198,6 +233,6 @@ public class BasicPlaylistSubscriptionServiceTest {
                 .isInstanceOf(NotSubscribedException.class);
 
         then(subscribeRepository).should(never()).delete(any());
-        then(playlist).should(never()).decreaseSubscriberCount();
+        then(playlistRepository).should(never()).decreaseSubscriberCount(any());
     }
 }
