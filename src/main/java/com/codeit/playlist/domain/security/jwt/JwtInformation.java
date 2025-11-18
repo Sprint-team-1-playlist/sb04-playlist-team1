@@ -9,6 +9,5 @@ public record JwtInformation(UserDto userDto,
                              Instant accessTokenIssuedAt,
                              String refreshToken,
                              Instant refreshTokenExpiresAt,
-                             Instant refreshTokenIssuedAt){
-
+                             Instant refreshTokenIssuedAt) {
 }

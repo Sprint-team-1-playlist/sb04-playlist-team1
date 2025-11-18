@@ -11,5 +11,4 @@ public class SseController {
   public ResponseEntity<String> dummy() {
     return ResponseEntity.ok("SSE temporarily disabled");
   }
-
 }

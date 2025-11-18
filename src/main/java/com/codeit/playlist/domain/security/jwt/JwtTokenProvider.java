@@ -238,5 +238,4 @@ public class JwtTokenProvider {
                   .sameSite("Lax")
                   .build();
   }
-
 }
