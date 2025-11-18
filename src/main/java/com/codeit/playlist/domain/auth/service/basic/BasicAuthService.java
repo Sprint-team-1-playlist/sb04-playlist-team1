@@ -122,57 +122,61 @@ public class BasicAuthService implements AuthService {
       throw RefreshTokenException.withToken(refreshToken);
     }
 
-      if (!jwtTokenProvider.validateRefreshToken(refreshToken)
-          || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
-        throw InvalidOrExpiredException.withToken(refreshToken);
-      }
-
-      String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
-      UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-      PlaylistUserDetails playlistUser = (PlaylistUserDetails) userDetails;
-
-      try {
-
-        Instant accessIssuedAt = Instant.now();
-        Instant refreshIssuedAt = Instant.now();
-
-        String newAccess = jwtTokenProvider.generateAccessToken(playlistUser, accessIssuedAt);
-        String newRefresh = jwtTokenProvider.generateRefreshToken(playlistUser, refreshIssuedAt);
-
-        Instant accessExp = jwtTokenProvider.getExpiryFromToken(newAccess);
-        Instant refreshExp = jwtTokenProvider.getExpiryFromToken(newRefresh);
-
-        JwtInformation info = new JwtInformation(
-            playlistUser.getUserDto(),
-            newAccess, accessExp, accessIssuedAt,
-            newRefresh, refreshExp, refreshIssuedAt
-        );
-
-        boolean rotated = jwtRegistry.rotateJwtInformation(refreshToken, info);
-        if (!rotated) {
-          throw InvalidOrExpiredException.withToken(refreshToken);
-        }
-        log.info("[인증 관리] : Token 발급 완료 ");
-        return info;
-
-      } catch (JOSEException e) {
-        throw JwtInternalServerErrorException.jwtError(e);
-      }
+    if (!jwtTokenProvider.validateRefreshToken(refreshToken)
+        || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
+      throw new InvalidOrExpiredException();
     }
 
-    @Override
-    public void logout (String refreshToken){
-      log.debug("[인증 관리] : 로그아웃 시작");
-      if (refreshToken == null || refreshToken.isBlank()) {
-        return;
-      }
+    String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
+    UserDetails userDetails;
+    try {
+      userDetails = userDetailsService.loadUserByUsername(username);
+    } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+      throw new InvalidOrExpiredException();
+    }
+    PlaylistUserDetails playlistUser = (PlaylistUserDetails) userDetails;
 
-      if (jwtTokenProvider.validateRefreshToken(refreshToken)) {
-        UUID userId = jwtTokenProvider.getUserId(refreshToken);
-        jwtRegistry.invalidateJwtInformationByUserId(userId);
+    try {
+
+      Instant accessIssuedAt = Instant.now();
+      Instant refreshIssuedAt = Instant.now();
+
+      String newAccess = jwtTokenProvider.generateAccessToken(playlistUser, accessIssuedAt);
+      String newRefresh = jwtTokenProvider.generateRefreshToken(playlistUser, refreshIssuedAt);
+
+      Instant accessExp = jwtTokenProvider.getExpiryFromToken(newAccess);
+      Instant refreshExp = jwtTokenProvider.getExpiryFromToken(newRefresh);
+
+      JwtInformation info = new JwtInformation(
+          playlistUser.getUserDto(),
+          newAccess, accessExp, accessIssuedAt,
+          newRefresh, refreshExp, refreshIssuedAt
+      );
+
+      boolean rotated = jwtRegistry.rotateJwtInformation(refreshToken, info);
+      if (!rotated) {
+        throw new InvalidOrExpiredException();
       }
-      jwtRegistry.revokeByToken(refreshToken);
-      log.info("[인증 관리] : 로그아웃 완료");
+      log.info("[인증 관리] : Token 발급 완료 ");
+      return info;
+
+    } catch (JOSEException e) {
+      throw JwtInternalServerErrorException.jwtError(e);
     }
   }
+
+  @Override
+  public void logout(String refreshToken) {
+    log.debug("[인증 관리] : 로그아웃 시작");
+    if (refreshToken == null || refreshToken.isBlank()) {
+      return;
+    }
+
+    if (jwtTokenProvider.validateRefreshToken(refreshToken)) {
+      UUID userId = jwtTokenProvider.getUserId(refreshToken);
+      jwtRegistry.invalidateJwtInformationByUserId(userId);
+    }
+    jwtRegistry.revokeByToken(refreshToken);
+    log.info("[인증 관리] : 로그아웃 완료");
+  }
+}
