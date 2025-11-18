@@ -34,6 +34,7 @@ public class BasicPlaylistService implements PlaylistService {
     private final UserRepository userRepository;
     private final PlaylistMapper playlistMapper;
 
+    //플레이리스트 생성
     @Transactional
     @Override
     public PlaylistDto createPlaylist(PlaylistCreateRequest request, UUID ownerId) {
@@ -52,6 +53,7 @@ public class BasicPlaylistService implements PlaylistService {
         return dto;
     }
 
+    //플레이리스트 수정
     @Transactional
     @Override
     public PlaylistDto updatePlaylist(UUID playlistId, PlaylistUpdateRequest request) {
@@ -80,6 +82,7 @@ public class BasicPlaylistService implements PlaylistService {
         return playlistMapper.toDto(playlist);
     }
 
+    //플레이리스트 논리 삭제
     @Transactional
     @Override
     public void softDeletePlaylist(UUID playlistId, UUID requesterUserId) {
@@ -108,6 +111,7 @@ public class BasicPlaylistService implements PlaylistService {
                 playlistId, requesterUserId);
     }
 
+    //플레이리스트 일반 삭제(논리 삭제 호출)
     @Transactional
     @Override
     public void deletePlaylist(UUID playlistId) {
@@ -115,6 +119,7 @@ public class BasicPlaylistService implements PlaylistService {
         softDeletePlaylist(playlistId, ownerId);
     }
 
+    //플레이리스트 목록 조회
     @Transactional(readOnly = true)
     @Override
     public CursorResponsePlaylistDto findPlaylists(String keywordLike, UUID ownerIdEqual,
@@ -207,6 +212,37 @@ public class BasicPlaylistService implements PlaylistService {
                 data.size(), hasNext, totalCount, nextCursor, nextIdAfter);
 
         return response;
+    }
+
+    //플레이리스트 단건 조회
+    @Transactional(readOnly = true)
+    @Override
+    public PlaylistDto getPlaylist(UUID playlistId) {
+        log.debug("[플레이리스트] 단건 조회 시작: playlistId={}", playlistId);
+
+        //플레이리스트와 연관 객체 로딩
+        Playlist playlist = playlistRepository.findWithDetailsById(playlistId)
+                .orElseThrow(() -> PlaylistNotFoundException.withId(playlistId));
+
+        //로그인 사용자의 구독 여부(임시) -> 구독 구현 시 변경 예정
+        boolean subscribedByMe = false;
+
+        //Entity -> DTO
+        PlaylistDto dto = playlistMapper.toDto(playlist);
+
+        PlaylistDto result = new PlaylistDto(
+                dto.id(),
+                dto.owner(),
+                dto.title(),
+                dto.description(),
+                dto.updatedAt(),
+                dto.subscriberCount(),
+                subscribedByMe,
+                dto.contents()
+        );
+
+        log.info("[플레이리스트] 단건 조회 완료: playlistId={}", playlistId);
+        return result;
     }
 
     /*TODO : 시큐리티 구현 후 SecurityContext 에서 현재 사용자 ID 를 꺼내도록 변경 예정*/

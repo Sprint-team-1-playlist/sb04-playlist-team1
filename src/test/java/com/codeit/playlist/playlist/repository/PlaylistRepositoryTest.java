@@ -1,13 +1,18 @@
 package com.codeit.playlist.playlist.repository;
 
 import com.codeit.playlist.domain.config.QuerydslConfig;
+import com.codeit.playlist.domain.content.entity.Content;
+import com.codeit.playlist.domain.content.entity.Type;
+import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.playlist.entity.Playlist;
+import com.codeit.playlist.domain.playlist.entity.PlaylistContent;
 import com.codeit.playlist.domain.playlist.entity.Subscribe;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +25,9 @@ import org.springframework.data.domain.Slice;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +47,8 @@ public class PlaylistRepositoryTest {
 
     @Autowired
     private TestEntityManager entityManager;
+    @Autowired
+    private ContentRepository contentRepository;
 
     @Test
     @DisplayName("searchPlaylists 성공 - 구독자 필터로 자신이 구독한 플레이리스트만 조회")
@@ -155,7 +164,7 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("test@email.com");
         entityManager.persist(owner);
 
-        Playlist playlist = new Playlist(owner, "제목", "설명", 0L);
+        Playlist playlist = new Playlist(owner, "제목", "설명", 0L, new java.util.ArrayList<>());
         entityManager.persist(playlist);
         entityManager.flush();
         entityManager.clear();
@@ -179,7 +188,7 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("testmail@test.com");
         entityManager.persist(owner);
 
-        Playlist playlist = new Playlist(owner, "제목", "설명", 0L);
+        Playlist playlist = new Playlist(owner, "제목", "설명", 0L, new java.util.ArrayList<>());
         playlist.setDeletedAt(LocalDateTime.now());
         entityManager.persist(playlist);
         entityManager.flush();
@@ -203,13 +212,13 @@ public class PlaylistRepositoryTest {
 
         LocalDateTime now = LocalDateTime.now();
 
-        Playlist oldDeleted = new Playlist(owner, "old", "old desc", 0L);
+        Playlist oldDeleted = new Playlist(owner, "old", "old desc", 0L, new java.util.ArrayList<>());
         oldDeleted.setDeletedAt(now.minusDays(8)); // 7일보다 더 이전
 
-        Playlist recentDeleted = new Playlist(owner, "recent", "desc", 0L);
+        Playlist recentDeleted = new Playlist(owner, "recent", "desc", 0L, new java.util.ArrayList<>());
         recentDeleted.setDeletedAt(now.minusDays(3)); // 7일 이전이 아님
 
-        Playlist notDeleted = new Playlist(owner, "notDeleted", "desc", 0L);
+        Playlist notDeleted = new Playlist(owner, "notDeleted", "desc", 0L, new java.util.ArrayList<>());
 
         entityManager.persist(oldDeleted);
         entityManager.persist(recentDeleted);
@@ -235,7 +244,7 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("test@mail.com");
         entityManager.persist(owner);
 
-        Playlist playlist = new Playlist(owner, "normal", "desc", 0L);
+        Playlist playlist = new Playlist(owner, "normal", "desc", 0L, new java.util.ArrayList<>());
         entityManager.persist(playlist);
 
         entityManager.flush();
@@ -257,10 +266,10 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("email@test.com");
         entityManager.persist(owner);
 
-        Playlist playlist = new Playlist(owner, "recent", "desc", 0L);
+        Playlist playlist = new Playlist(owner, "recent", "desc", 0L, new java.util.ArrayList<>());
         entityManager.persist(playlist);
 
-        // 👉 deletedAt 강제 세팅 (ReflectionTestUtils 사용)
+        // deletedAt 강제 세팅 (ReflectionTestUtils 사용)
         ReflectionTestUtils.setField(playlist, "deletedAt",
                 LocalDateTime.now().minusDays(3)); // 7일 이전 X
 
@@ -276,15 +285,116 @@ public class PlaylistRepositoryTest {
         assertThat(result).isEmpty();
     }
 
+    @Test
+    @DisplayName("findWithDetailsById로 플레이리스트와 소유자, 콘텐츠를 함께 조회한다.")
+    void successWithfindWithDetailsById() {
+        //given
+        User owner = createTestUser("test@mail.com");
+        userRepository.save(owner);
+
+        Playlist playlist = new Playlist(owner, "테스트 플리", "테스트용 설명", 0L, new java.util.ArrayList<>());
+        playlistRepository.save(playlist);
+
+        Content content1 = createTestContent("콘텐츠1");
+        Content content2 = createTestContent("content2");
+        contentRepository.saveAll(List.of(content1, content2));
+
+        playlist.addContent(content1);
+        playlist.addContent(content2);
+
+        playlistRepository.save(playlist);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        //when
+        Optional<Playlist> opt = playlistRepository.findWithDetailsById(playlist.getId());
+
+        //then
+        assertThat(opt).isPresent();
+        Playlist found = opt.get();
+
+        // (1) 플레이리스트 기본 필드 검증
+        assertThat(found.getTitle()).isEqualTo("테스트 플리");
+        assertThat(found.getDescription()).isEqualTo("테스트용 설명");
+
+        // (2) 소유자 검증
+        assertThat(found.getOwner()).isNotNull();
+        assertThat(found.getOwner().getEmail()).isEqualTo(owner.getEmail());
+
+        // (3) 플레이리스트 안의 콘텐츠(PlaylistContent) 검증
+        List<PlaylistContent> playlistContents = found.getPlaylistContents();
+        assertThat(playlistContents).hasSize(2);
+
+        List<String> contentTitles = playlistContents.stream()
+                .map(pc -> pc.getContent().getTitle())
+                .toList();
+
+        assertThat(contentTitles)
+                .containsExactlyInAnyOrder("콘텐츠1", "content2");
+
+        assertThat(Hibernate.isInitialized(found.getOwner())).isTrue();
+        assertThat(Hibernate.isInitialized(found.getPlaylistContents())).isTrue();
+        assertThat(Hibernate.isInitialized(found.getPlaylistContents().get(0).getContent())).isTrue();
+    }
+
+    @Test
+    @DisplayName("findWithDetailsById 실패 - 존재하지 않는 ID면 빈 Optional을 반환한다.")
+    void failWithFindWithDetailsByIdNotFound() {
+        // given
+        User owner = createTestUser("test@mail.com");
+        userRepository.save(owner);
+
+        Playlist playlist = new Playlist(owner, "플리", "설명", 0L, new ArrayList<>());
+        playlistRepository.save(playlist);
+
+        // 실제로 저장되지 않은 랜덤 ID
+        UUID notExistId = UUID.randomUUID();
+
+        // when
+        Optional<Playlist> opt = playlistRepository.findWithDetailsById(notExistId);
+
+        // then
+        assertThat(opt).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findWithDetailsById 실패 - 논리삭제된 플레이리스트는 조회되지 않는다.")
+    void failWithFindWithDetailsByIdSoftDeleted() {
+        // given
+        User owner = createTestUser("delete@test.com");
+        userRepository.save(owner);
+
+        Playlist playlist = new Playlist(owner, "삭제될 플리", "설명", 0L, new ArrayList<>());
+        playlistRepository.save(playlist);
+
+        // 논리 삭제
+        playlist.setDeletedAt(LocalDateTime.now());
+        playlistRepository.save(playlist);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        Optional<Playlist> opt = playlistRepository.findWithDetailsById(playlist.getId());
+
+        // then
+        assertThat(opt).isEmpty();
+    }
+
 
     // ==== 테스트용 엔티티 생성 헬퍼 메서드 ====
 
     private Playlist createPlaylist(User owner, String title) {
-        Playlist playlist = new Playlist(owner, title, "설명입니다", 0L);
+        Playlist playlist = new Playlist(owner, title, "설명입니다", 0L, null);
         return playlist;
     }
 
     public static User createTestUser(String email) {
         return new User(email, "password", "test-user", null, Role.USER);
+    }
+
+    public static Content createTestContent(String title) {
+        return new Content(Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
     }
 }
