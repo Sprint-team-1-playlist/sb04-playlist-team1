@@ -81,7 +81,11 @@ public class BasicUserService implements UserService {
   public void changePassword(UUID userId, ChangePasswordRequest request) {
     log.debug("[사용자 관리] 패스워드 변경 시작 : userId = {}", userId);
 
-    PlaylistUserDetails principal = (PlaylistUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof PlaylistUserDetails)) {
+            throw AuthAccessDeniedException.withId(userId);
+          }
+        PlaylistUserDetails principal = (PlaylistUserDetails) authentication.getPrincipal();
 
     UUID loginUserId = principal.getUserDto().id();
 
