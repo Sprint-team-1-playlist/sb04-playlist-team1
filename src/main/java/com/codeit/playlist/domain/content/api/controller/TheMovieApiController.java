@@ -13,16 +13,16 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
+@RequestMapping
 public class TheMovieApiController {
     private final TheMovieApiService theMovieApiService;
 
-    @GetMapping(value = "/movie", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<String> getMovie(@RequestParam String query) {
         return theMovieApiService.getApiMovie(query);
     }
 
-    @GetMapping(value = "/tv", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<String> getTv(@RequestParam String query) {
         return theMovieApiService.getApiTv(query);
     }
