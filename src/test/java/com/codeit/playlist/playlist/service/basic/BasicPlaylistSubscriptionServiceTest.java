@@ -6,6 +6,7 @@ import com.codeit.playlist.domain.playlist.exception.AlreadySubscribedException;
 import com.codeit.playlist.domain.playlist.exception.NotSubscribedException;
 import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
 import com.codeit.playlist.domain.playlist.exception.SelfSubscriptionNotAllowedException;
+import com.codeit.playlist.domain.playlist.exception.SubscriptionUpdateException;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.playlist.service.basic.BasicPlaylistSubscriptionService;
@@ -63,6 +64,8 @@ public class BasicPlaylistSubscriptionServiceTest {
                 .willReturn(Optional.of(subscriber));
         given(subscribeRepository.existsBySubscriberAndPlaylist(subscriber, playlist))
                 .willReturn(false);
+        given(playlistRepository.increaseSubscriberCount(PLAYLIST_ID))
+                .willReturn(1);
 
         // when
         service.subscribe(PLAYLIST_ID, SUBSCRIBER_ID);
@@ -158,6 +161,34 @@ public class BasicPlaylistSubscriptionServiceTest {
     }
 
     @Test
+    @DisplayName("구독 실패 - subscriberCount 증가에 실패하면 SubscriptionUpdateException 발생")
+    void subscribeFailWhenSubscriptionCountUpdateFailed() {
+        // given
+        Playlist playlist = mock(Playlist.class);
+        User subscriber = mock(User.class);
+        User owner = mock(User.class);
+
+        given(playlistRepository.findById(PLAYLIST_ID))
+                .willReturn(Optional.of(playlist));
+        given(userRepository.findById(SUBSCRIBER_ID))
+                .willReturn(Optional.of(subscriber));
+        given(playlist.getOwner()).willReturn(owner);
+        given(owner.getId()).willReturn(UUID.randomUUID()); // self 구독 아님
+        given(subscribeRepository.existsBySubscriberAndPlaylist(subscriber, playlist))
+                .willReturn(false);
+
+        given(playlistRepository.increaseSubscriberCount(PLAYLIST_ID))
+                .willReturn(0); // 업데이트 실패 상황
+
+        // when & then
+        assertThatThrownBy(() -> service.subscribe(PLAYLIST_ID, SUBSCRIBER_ID))
+                .isInstanceOf(SubscriptionUpdateException.class);
+
+        then(subscribeRepository).should().save(any(Subscribe.class));
+        then(playlistRepository).should().increaseSubscriberCount(PLAYLIST_ID);
+    }
+
+    @Test
     @DisplayName("구독 해제 성공 - 구독 중인 플레이리스트를 정상적으로 해제한다")
     void unsubscribeSuccess() {
         // given
@@ -171,6 +202,8 @@ public class BasicPlaylistSubscriptionServiceTest {
                 .willReturn(Optional.of(subscriber));
         given(subscribeRepository.findBySubscriberAndPlaylist(subscriber, playlist))
                 .willReturn(Optional.of(subscribe));
+        given(playlistRepository.decreaseSubscriberCount(PLAYLIST_ID))
+                .willReturn(1);
 
         // when
         service.unsubscribe(PLAYLIST_ID, SUBSCRIBER_ID);
@@ -234,5 +267,30 @@ public class BasicPlaylistSubscriptionServiceTest {
 
         then(subscribeRepository).should(never()).delete(any());
         then(playlistRepository).should(never()).decreaseSubscriberCount(any());
+    }
+
+    @Test
+    @DisplayName("구독 해제 실패 - subscriberCount 감소에 실패하면 SubscriptionUpdateException 발생")
+    void unsubscribeFailWhenSubscriptionCountUpdateFailed() {
+        // given
+        Playlist playlist = mock(Playlist.class);
+        User subscriber = mock(User.class);
+        Subscribe subscribe = mock(Subscribe.class);
+
+        given(playlistRepository.findById(PLAYLIST_ID))
+                .willReturn(Optional.of(playlist));
+        given(userRepository.findById(SUBSCRIBER_ID))
+                .willReturn(Optional.of(subscriber));
+        given(subscribeRepository.findBySubscriberAndPlaylist(subscriber, playlist))
+                .willReturn(Optional.of(subscribe));
+        given(playlistRepository.decreaseSubscriberCount(PLAYLIST_ID))
+                .willReturn(0); // 감소 실패
+
+        // when & then
+        assertThatThrownBy(() -> service.unsubscribe(PLAYLIST_ID, SUBSCRIBER_ID))
+                .isInstanceOf(SubscriptionUpdateException.class);
+
+        then(subscribeRepository).should().delete(subscribe);
+        then(playlistRepository).should().decreaseSubscriberCount(PLAYLIST_ID);
     }
 }

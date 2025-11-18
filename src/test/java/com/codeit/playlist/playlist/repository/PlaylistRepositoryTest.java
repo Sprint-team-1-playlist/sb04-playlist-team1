@@ -287,7 +287,7 @@ public class PlaylistRepositoryTest {
 
     @Test
     @DisplayName("findWithDetailsById로 플레이리스트와 소유자, 콘텐츠를 함께 조회한다.")
-    void successWithfindWithDetailsById() {
+    void successWithFindWithDetailsById() {
         //given
         User owner = createTestUser("test@mail.com");
         userRepository.save(owner);
@@ -448,7 +448,6 @@ public class PlaylistRepositoryTest {
                 .orElseThrow();
         assertThat(reloaded.getSubscriberCount()).isEqualTo(0L);
     }
-
 
     // ==== 테스트용 엔티티 생성 헬퍼 메서드 ====
 

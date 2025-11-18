@@ -6,6 +6,7 @@ import com.codeit.playlist.domain.playlist.exception.AlreadySubscribedException;
 import com.codeit.playlist.domain.playlist.exception.NotSubscribedException;
 import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
 import com.codeit.playlist.domain.playlist.exception.SelfSubscriptionNotAllowedException;
+import com.codeit.playlist.domain.playlist.exception.SubscriptionUpdateException;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.playlist.service.PlaylistSubscriptionService;
@@ -59,7 +60,12 @@ public class BasicPlaylistSubscriptionService implements PlaylistSubscriptionSer
         Subscribe subscribe = new Subscribe(subscriber, playlist);
         subscribeRepository.save(subscribe);
 
-        playlistRepository.increaseSubscriberCount(playlistId);
+        int updatedRow = playlistRepository.increaseSubscriberCount(playlistId);
+        if (updatedRow == 0) {
+            log.error("[구독] subscriberCount 증가 실패 : playlistId={}", playlistId);
+            throw SubscriptionUpdateException.withId(playlistId);
+        }
+
 
         log.info("[구독] 성공 : playlistId={}, subscriberId={}", playlistId, subscriberId);
     }
@@ -83,7 +89,11 @@ public class BasicPlaylistSubscriptionService implements PlaylistSubscriptionSer
 
         subscribeRepository.delete(subscribe);
 
-        playlistRepository.decreaseSubscriberCount(playlistId);
+        int updatedRow = playlistRepository.decreaseSubscriberCount(playlistId);
+        if (updatedRow == 0) {
+            log.error("[구독] subscriberCount 감소 실패 : playlistId={}", playlistId);
+            throw SubscriptionUpdateException.withId(playlistId);
+        }
 
         log.info("[구독] 구독 해제 성공 : playlistId={}, subscriberId={}", playlistId, subscriberId);
     }
