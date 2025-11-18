@@ -34,14 +34,15 @@ public class AuthController {
 
   @GetMapping("/csrf-token")
   public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
-    log.debug("CSRF 토큰 요청");
+    log.debug("[인증 관리] : CSRF 토큰 요청 시작");
 
     if (csrfToken != null) {
-      log.debug("CSRF 토큰: {}", csrfToken.getToken());
+      log.debug("[인증 관리] CSRF 토큰이 존재합니다.");
     } else {
-      log.trace("CSRF 토큰이 존재하지 않습니다.");
+      log.trace("[인증 관리] : CSRF 토큰이 존재하지 않습니다.");
     }
 
+    log.info(("[인증 관리] : CSRF 토근 요청 완료"));
     return ResponseEntity
         .status(HttpStatus.NO_CONTENT)
         .build();
@@ -51,7 +52,7 @@ public class AuthController {
   public ResponseEntity<JwtDto> refresh(
       @CookieValue(value = "REFRESH_TOKEN", required = false) String refreshToken,
       HttpServletResponse response) {
-    log.info("토큰 리프레시 요청");
+    log.debug("[인증 관리] : 토큰 리프레시 요청 시작");
     JwtInformation jwtInformation = authService.refreshToken(refreshToken);
     ResponseCookie refreshCookie = jwtTokenProvider.generateRefreshTokenCookie(
         jwtInformation.refreshToken());
@@ -61,6 +62,8 @@ public class AuthController {
         jwtInformation.userDto(),
         jwtInformation.accessToken()
     );
+
+    log.info("[인증 관리] : 토큰 리프레시 요청 완료");
     return ResponseEntity
         .status(HttpStatus.OK)
         .body(body);
@@ -70,6 +73,7 @@ public class AuthController {
   public ResponseEntity<JwtDto> signIn(@RequestParam String username,
       @RequestParam String password,
       HttpServletResponse response) throws JOSEException {
+    log.debug("[인증 관리] : 로그인 요청 시작");
 
     JwtInformation info = authService.signIn(username, password);
 
@@ -80,6 +84,7 @@ public class AuthController {
     // FE 로는 access token + user 정보만 보냄
     JwtDto body = new JwtDto(info.userDto(), info.accessToken());
 
+    log.info("[인증 관리] : 로그인 요청 완료");
     return ResponseEntity.ok(body);
   }
 
@@ -87,7 +92,7 @@ public class AuthController {
   public ResponseEntity<Void> logout(
       @CookieValue(value = "REFRESH_TOKEN", required = false) String refreshToken,
       HttpServletResponse response) {
-    log.info("로그아웃 요청");
+    log.debug("[인증 관리] : 로그아웃 요청 시작");
 
     // 쿠키가 없으면 그냥 성공 처리 (클라이언트에서 이미 삭제된 경우)
     if (refreshToken != null && !refreshToken.isBlank()) {
@@ -97,6 +102,7 @@ public class AuthController {
     ResponseCookie deleteCookie = jwtTokenProvider.generateRefreshTokenExpirationCookie();
     response.addHeader("Set-Cookie", deleteCookie.toString());
 
+    log.info("[인증 관리] : 로그아웃 요청 완료");
     return ResponseEntity.noContent().build();
   }
 }
