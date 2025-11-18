@@ -2,6 +2,7 @@ package com.codeit.playlist.domain.message.service.basic;
 
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
+import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
@@ -36,17 +37,29 @@ public class BasicMessageService implements MessageService {
 
     UUID currentUserId = getCurrentUserId();
 
-    User sender = conversation.getUser1().getId().equals(currentUserId)
+    if (!conversation.getUser1().getId().equals(currentUserId)
+        && !conversation.getUser2().getId().equals(currentUserId)) {
+      throw NotConversationParticipantException.withId(currentUserId);
+    }
+
+    UUID user1Id = conversation.getUser1().getId();
+    UUID user2Id = conversation.getUser2().getId();
+
+    if (!user1Id.equals(currentUserId) && !user2Id.equals(currentUserId)) {
+      throw ConversationNotFoundException.withId(conversationId);
+    }
+
+    User sender = user1Id.equals(currentUserId)
         ? conversation.getUser1()
         : conversation.getUser2();
 
-    User receiver = conversation.getUser1().getId().equals(currentUserId)
+    User receiver = user1Id.equals(currentUserId)
         ? conversation.getUser2()
         : conversation.getUser1();
 
     Message savedMessage = messageRepository.save(new Message(conversation, sender, receiver, sendRequest.content()));
 
-    log.info("[Message] 메시지 저장 완료: {}", savedMessage);
+    log.info("[Message] 메시지 저장 완료: {}", savedMessage.getId());
 
     DirectMessageDto messageDto = messageMapper.toDto(savedMessage);
     return messageDto;

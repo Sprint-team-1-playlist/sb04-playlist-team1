@@ -3,6 +3,7 @@ package com.codeit.playlist.domain.message.controller;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
 import com.codeit.playlist.domain.message.service.MessageService;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ public class MessageController {
 
   @MessageMapping("/{conversationId}/direct-messages")
   public void sendMessage(@DestinationVariable UUID conversationId,
-      @Payload DirectMessageSendRequest sendRequest) {
+      @Payload @Valid DirectMessageSendRequest sendRequest) {
     log.debug("[Message] 메시지 전송 요청: {}", conversationId);
 
     DirectMessageDto messageDto = messageService.save(conversationId, sendRequest);
