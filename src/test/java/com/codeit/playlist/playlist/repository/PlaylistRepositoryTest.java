@@ -8,11 +8,11 @@ import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
-import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,7 +39,7 @@ public class PlaylistRepositoryTest {
     SubscribeRepository subscribeRepository;
 
     @Autowired
-    private JPAQueryFactory queryFactory;
+    private TestEntityManager entityManager;
 
     @Test
     @DisplayName("searchPlaylists 성공 - 구독자 필터로 자신이 구독한 플레이리스트만 조회")
@@ -146,6 +147,135 @@ public class PlaylistRepositoryTest {
         assertThat(slice.getContent()).isEmpty();
         assertThat(slice.hasNext()).isFalse();
     }
+
+    @Test
+    @DisplayName("논리삭제 - deletedAt이 null에서 현재 시간으로 업데이트된다.")
+    void successWithSoftDeletedById() {
+        //given
+        User owner = createTestUser("test@email.com");
+        entityManager.persist(owner);
+
+        Playlist playlist = new Playlist(owner, "제목", "설명", 0L);
+        entityManager.persist(playlist);
+        entityManager.flush();
+        entityManager.clear();
+
+        UUID playlistId = playlist.getId();
+
+        //when
+        int updatedCount = playlistRepository.softDeleteById(playlistId);
+
+        //then
+        assertThat(updatedCount).isEqualTo(1);
+
+        Playlist deleted = entityManager.find(Playlist.class, playlistId);
+        assertThat(deleted.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("논리삭제 - 이미 삭제되어 deletedAt이 not null인 경우 0을 반환한다.")
+    void failWithsoftDeleteByIdAlreadyDeleted() {
+        //given
+        User owner = createTestUser("testmail@test.com");
+        entityManager.persist(owner);
+
+        Playlist playlist = new Playlist(owner, "제목", "설명", 0L);
+        playlist.setDeletedAt(LocalDateTime.now());
+        entityManager.persist(playlist);
+        entityManager.flush();
+        entityManager.clear();
+
+        UUID playlistId = playlist.getId();
+
+        //when
+        int updatedCount = playlistRepository.softDeleteById(playlistId);
+
+        //then
+        assertThat(updatedCount).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("findAllDeletedBefore - threshold 이전에 soft delete 된 데이터만 조회된다")
+    void findAllDeletedBeforeSuccess() {
+        // given
+        User owner = createTestUser("testmail@test.com");
+        entityManager.persist(owner);
+
+        LocalDateTime now = LocalDateTime.now();
+
+        Playlist oldDeleted = new Playlist(owner, "old", "old desc", 0L);
+        oldDeleted.setDeletedAt(now.minusDays(8)); // 7일보다 더 이전
+
+        Playlist recentDeleted = new Playlist(owner, "recent", "desc", 0L);
+        recentDeleted.setDeletedAt(now.minusDays(3)); // 7일 이전이 아님
+
+        Playlist notDeleted = new Playlist(owner, "notDeleted", "desc", 0L);
+
+        entityManager.persist(oldDeleted);
+        entityManager.persist(recentDeleted);
+        entityManager.persist(notDeleted);
+        entityManager.flush();
+        entityManager.clear();
+
+        LocalDateTime threshold = now.minusDays(7);
+
+        // when
+        List<Playlist> result = playlistRepository.findAllDeletedBefore(threshold);
+
+        // then
+        assertThat(result)
+                .extracting(Playlist::getTitle)
+                .containsExactly("old");
+    }
+
+    @Test
+    @DisplayName("findAllDeletedBefore - 삭제된 데이터가 없으면 빈 리스트를 반환한다")
+    void findAllDeletedBeforeNoDeletedData() {
+        // given
+        User owner = createTestUser("test@mail.com");
+        entityManager.persist(owner);
+
+        Playlist playlist = new Playlist(owner, "normal", "desc", 0L);
+        entityManager.persist(playlist);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        LocalDateTime threshold = LocalDateTime.now().minusDays(7);
+
+        // when
+        List<Playlist> result = playlistRepository.findAllDeletedBefore(threshold);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findAllDeletedBefore - 삭제된지 7일이 지나지 않은 경우 결과에 포함되지 않는다")
+    void findAllDeletedBeforeNotOldEnough() {
+        // given
+        User owner = createTestUser("email@test.com");
+        entityManager.persist(owner);
+
+        Playlist playlist = new Playlist(owner, "recent", "desc", 0L);
+        entityManager.persist(playlist);
+
+        // 👉 deletedAt 강제 세팅 (ReflectionTestUtils 사용)
+        ReflectionTestUtils.setField(playlist, "deletedAt",
+                LocalDateTime.now().minusDays(3)); // 7일 이전 X
+
+        entityManager.flush();
+        entityManager.clear();
+
+        LocalDateTime threshold = LocalDateTime.now().minusDays(7);
+
+        // when
+        List<Playlist> result = playlistRepository.findAllDeletedBefore(threshold);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
 
     // ==== 테스트용 엔티티 생성 헬퍼 메서드 ====
 
