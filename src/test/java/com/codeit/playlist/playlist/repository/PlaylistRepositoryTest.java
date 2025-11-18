@@ -1,6 +1,6 @@
 package com.codeit.playlist.playlist.repository;
 
-import com.codeit.playlist.domain.config.QuerydslConfig;
+import com.codeit.playlist.global.config.QuerydslConfig;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
