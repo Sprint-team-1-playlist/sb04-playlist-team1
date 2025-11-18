@@ -16,13 +16,13 @@ import reactor.core.publisher.Mono;
 public class TheMovieApiController {
     private final TheMovieApiService theMovieApiService;
 
-    @GetMapping("/movie")
-    public String searchMovie(@RequestParam String query) {
-        return theMovieApiService.searchMovie(query);
+    @GetMapping
+    public Mono<String> getMovie(@RequestParam String query) {
+        return theMovieApiService.getApiMovie(query);
     }
 
-    @GetMapping("/tv")
-    public String searchTv(@RequestParam String query) {
-        return theMovieApiService.searchTv(query);
+    @GetMapping
+    public Mono<String> getTv(@RequestParam String query) {
+        return theMovieApiService.getApiTv(query);
     }
 }
