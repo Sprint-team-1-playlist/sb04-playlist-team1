@@ -174,6 +174,6 @@ public class BasicAuthService implements AuthService {
       jwtRegistry.invalidateJwtInformationByUserId(userId);
     }
     jwtRegistry.revokeByToken(refreshToken);
-    log.debug("[인증 관리] : 로그아웃 완료 ");
+    log.info("[인증 관리] : 로그아웃 완료 ");
   }
 }

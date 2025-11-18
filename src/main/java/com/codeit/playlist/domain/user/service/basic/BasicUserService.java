@@ -10,7 +10,7 @@ import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.exception.NewPasswordRequired;
-import com.codeit.playlist.domain.user.exception.PassWordMustCharacters;
+import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
@@ -98,7 +98,7 @@ public class BasicUserService implements UserService {
     }
 
     if (request.password().length() < 8) {
-      throw PassWordMustCharacters.withId(userId);
+      throw PasswordMustCharacters.withId(userId);
     }
 
     String encodedPassword = passwordEncoder.encode(request.password());

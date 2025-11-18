@@ -8,7 +8,6 @@ import com.codeit.playlist.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,7 +18,7 @@ public class PlaylistUserDetailsService implements UserDetailsService {
   private final UserMapper userMapper;
 
   @Override
-  public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+  public UserDetails loadUserByUsername(String username) {
     User user = userRepository.findByEmail(username)
         .orElseThrow(() -> UserNotFoundException.withUsername(username));
     UserDto userDto = userMapper.toDto(user);

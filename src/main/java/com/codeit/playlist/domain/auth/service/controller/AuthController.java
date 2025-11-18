@@ -42,7 +42,7 @@ public class AuthController {
       log.trace("[인증 관리] : CSRF 토큰이 존재하지 않습니다.");
     }
 
-    log.info(("[인증 관리] : CSRF 토근 요청 완료"));
+    log.info(("[인증 관리] : CSRF 토큰 요청 완료"));
     return ResponseEntity
         .status(HttpStatus.NO_CONTENT)
         .build();

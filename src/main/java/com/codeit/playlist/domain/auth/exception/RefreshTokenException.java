@@ -8,7 +8,7 @@ public class RefreshTokenException extends AuthException {
 
   public static RefreshTokenException withToken(String token) {
     RefreshTokenException exception = new RefreshTokenException();
-    exception.addDetail("Token", token);
+    exception.addDetail("token", token);
     return exception;
   }
 }

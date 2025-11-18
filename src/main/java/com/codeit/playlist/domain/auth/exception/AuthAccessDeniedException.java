@@ -12,6 +12,5 @@ public class AuthAccessDeniedException extends AuthException {
     AuthAccessDeniedException exception = new AuthAccessDeniedException();
     exception.addDetail("id", id);
     return exception;
-
   }
 }

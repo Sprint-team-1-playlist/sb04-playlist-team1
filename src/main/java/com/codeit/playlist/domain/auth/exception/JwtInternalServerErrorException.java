@@ -1,6 +1,6 @@
 package com.codeit.playlist.domain.auth.exception;
 
-public class JwtInternalServerErrorException extends AuthException{
+public class JwtInternalServerErrorException extends AuthException {
 
   public JwtInternalServerErrorException() {
     super(AuthErrorCode.JWT_INTERNAL_SERVER_ERROR_EXCEPTION);
@@ -10,6 +10,5 @@ public class JwtInternalServerErrorException extends AuthException{
     JwtInternalServerErrorException exception = new JwtInternalServerErrorException();
     exception.addDetail("error", error);
     return exception;
-
   }
 }
