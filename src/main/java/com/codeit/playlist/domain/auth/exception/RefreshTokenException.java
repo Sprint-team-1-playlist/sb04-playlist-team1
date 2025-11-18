@@ -8,7 +8,10 @@ public class RefreshTokenException extends AuthException {
 
   public static RefreshTokenException withToken(String token) {
     RefreshTokenException exception = new RefreshTokenException();
-    exception.addDetail("token", token);
+    String masked = token != null && token.length() > 8
+        ? token.substring(0, 8) + "..."
+        : "***";
+    exception.addDetail("tokenPrefix", masked);
     return exception;
   }
 }

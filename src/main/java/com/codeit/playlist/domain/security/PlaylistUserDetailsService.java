@@ -21,13 +21,13 @@ public class PlaylistUserDetailsService implements UserDetailsService {
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    log.debug("[인증 관리] : 유저의 이름을 불러오고 있습니다. : {}", username);
+    log.debug("[인증 관리] : 유저의 이름을 불러오고 있습니다.");
     User user = userRepository.findByEmail(username)
         .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
     UserDto userDto = userMapper.toDto(user);
 
 
-    log.info("유저를 불러오는데에 성공했습니다.: {}", username);
+    log.info("유저를 불러오는데에 성공했습니다.");
     return new PlaylistUserDetails(
         userDto,
         user.getPassword()
