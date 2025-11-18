@@ -2,6 +2,8 @@ package com.codeit.playlist.domain.playlist.service.basic;
 
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.entity.Subscribe;
+import com.codeit.playlist.domain.playlist.exception.AlreadySubscribedException;
+import com.codeit.playlist.domain.playlist.exception.NotSubscribedException;
 import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
@@ -39,7 +41,7 @@ public class BasicPlaylistSubscriptionService implements PlaylistSubscriptionSer
 
         // 이미 구독 중이면 예외
         if (subscribeRepository.existsBySubscriberAndPlaylist(subscriber, playlist)) {
-            throw new IllegalStateException("이미 구독한 플레이리스트입니다.");
+            throw AlreadySubscribedException.withDetail(playlistId, subscriberId);
         }
 
         Subscribe subscribe = new Subscribe(subscriber, playlist);
@@ -63,7 +65,7 @@ public class BasicPlaylistSubscriptionService implements PlaylistSubscriptionSer
 
         Subscribe subscribe = subscribeRepository
                 .findBySubscriberAndPlaylist(subscriber, playlist)
-                .orElseThrow(() -> new IllegalStateException("구독 중이 아닙니다."));
+                .orElseThrow(() -> NotSubscribedException.withDetail(playlistId, subscriberId));
 
         subscribeRepository.delete(subscribe);
         playlist.decreaseSubscriberCount();
