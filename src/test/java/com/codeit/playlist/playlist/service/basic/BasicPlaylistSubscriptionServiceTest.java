@@ -157,7 +157,7 @@ public class BasicPlaylistSubscriptionServiceTest {
                 .isInstanceOf(AlreadySubscribedException.class);
 
         then(subscribeRepository).should(never()).save(any());
-        then(playlistRepository).should(never()).increaseSubscriberCount(any());;
+        then(playlistRepository).should(never()).increaseSubscriberCount(any());
     }
 
     @Test

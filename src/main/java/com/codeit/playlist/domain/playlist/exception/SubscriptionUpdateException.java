@@ -5,7 +5,7 @@ import java.util.UUID;
 public class SubscriptionUpdateException extends PlaylistException {
     public SubscriptionUpdateException(UUID playlistId) {
         super(PlaylistErrorCode.SUBSCRIBER_COUNT_UPDATE_FAILED);
-      addDetail("playlistId", playlistId);
+        addDetail("playlistId", playlistId);
     }
 
   public static SubscriptionUpdateException withId(UUID playlistId) {
