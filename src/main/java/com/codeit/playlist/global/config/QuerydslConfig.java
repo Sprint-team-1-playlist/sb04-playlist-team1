@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.config;
+package com.codeit.playlist.global.config;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
