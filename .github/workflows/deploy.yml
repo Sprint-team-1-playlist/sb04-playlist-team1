@@ -42,6 +42,15 @@ jobs:
         run: |
           sed -i "s|dummy|${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}|g" task-definition.json
 
+      - name: Inject environment variables into task definition
+        run: |
+          sed -i "s|\"environment\": \[\]|\"environment\": [
+            {\"name\": \"SPRING_PROFILES_ACTIVE\", \"value\": \"prod\"},
+            {\"name\": \"SPRING_DATASOURCE_URL\", \"value\": \"${{ secrets.RDS_URL }}\"},
+            {\"name\": \"SPRING_DATASOURCE_USERNAME\", \"value\": \"${{ secrets.RDS_USERNAME }}\"},
+            {\"name\": \"SPRING_DATASOURCE_PASSWORD\", \"value\": \"${{ secrets.RDS_PASSWORD }}\"}
+          ]|g" task-definition.json
+
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
