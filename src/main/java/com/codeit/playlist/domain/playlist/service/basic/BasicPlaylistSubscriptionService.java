@@ -5,6 +5,7 @@ import com.codeit.playlist.domain.playlist.entity.Subscribe;
 import com.codeit.playlist.domain.playlist.exception.AlreadySubscribedException;
 import com.codeit.playlist.domain.playlist.exception.NotSubscribedException;
 import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
+import com.codeit.playlist.domain.playlist.exception.SelfSubscriptionNotAllowedException;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.playlist.service.PlaylistSubscriptionService;
@@ -33,21 +34,32 @@ public class BasicPlaylistSubscriptionService implements PlaylistSubscriptionSer
 
         log.debug("[구독] 시작 : playlistId={}, subscriberId={}", playlistId, subscriberId);
 
-        Playlist playlist = playlistRepository.findById(playlistId)
-                .orElseThrow(PlaylistNotFoundException::new);
+//        UUID currentUserId = SecurityUtil.getCurrentUserId();  //Security 적용 후 활성화
 
-        User subscriber = userRepository.findById(subscriberId)
-                .orElseThrow(UserNotFoundException::new);
+        Playlist playlist = playlistRepository.findById(playlistId)
+                .orElseThrow(() -> PlaylistNotFoundException.withId(playlistId));
+
+        User subscriber = userRepository.findById(subscriberId)  //Security 적용 후 currentUserId
+                .orElseThrow(() -> UserNotFoundException.withId(subscriberId)); //Security 적용 후 currentUserId
+
+        // 자기 자신이 만든 플레이리스트는 구독할 수 없음
+        if (playlist.getOwner().getId().equals(subscriberId)) {
+            log.error("[구독] 자기 자신의 플레이리스트는 구독할 수 없습니다. playlistId={}, ownerId={}, subscriberId={}",
+                    playlistId, playlist.getOwner().getId(), subscriberId);
+            throw SelfSubscriptionNotAllowedException.withDetail(playlistId, subscriberId);
+        }
 
         // 이미 구독 중이면 예외
         if (subscribeRepository.existsBySubscriberAndPlaylist(subscriber, playlist)) {
+            log.error("[구독] 이미 구독한 플레이리스트입니다. playlistId={}, subscriberId={}",
+                    playlistId, subscriberId);
             throw AlreadySubscribedException.withDetail(playlistId, subscriberId);
         }
 
         Subscribe subscribe = new Subscribe(subscriber, playlist);
         subscribeRepository.save(subscribe);
 
-        playlist.increaseSubscriberCount();
+        playlistRepository.increaseSubscriberCount(playlistId);
 
         log.info("[구독] 성공 : playlistId={}, subscriberId={}", playlistId, subscriberId);
     }
@@ -57,18 +69,21 @@ public class BasicPlaylistSubscriptionService implements PlaylistSubscriptionSer
     public void unsubscribe(UUID playlistId, UUID subscriberId) {
         log.debug("[구독] 구독 해제 시작 : playlistId={}, subscriberId={}", playlistId, subscriberId);
 
-        Playlist playlist = playlistRepository.findById(playlistId)
-                .orElseThrow(PlaylistNotFoundException::new);
+//        UUID currentUserId = SecurityUtil.getCurrentUserId();  //Security 적용 후 활성화
 
-        User subscriber = userRepository.findById(subscriberId)
-                .orElseThrow(UserNotFoundException::new);
+        Playlist playlist = playlistRepository.findById(playlistId)
+                .orElseThrow(() -> PlaylistNotFoundException.withId(playlistId));
+
+        User subscriber = userRepository.findById(subscriberId)  //Security 적용 후 currentUserId
+                .orElseThrow(() -> UserNotFoundException.withId(subscriberId)); //Security 적용 후 currentUserId
 
         Subscribe subscribe = subscribeRepository
                 .findBySubscriberAndPlaylist(subscriber, playlist)
                 .orElseThrow(() -> NotSubscribedException.withDetail(playlistId, subscriberId));
 
         subscribeRepository.delete(subscribe);
-        playlist.decreaseSubscriberCount();
+
+        playlistRepository.decreaseSubscriberCount(playlistId);
 
         log.info("[구독] 구독 해제 성공 : playlistId={}, subscriberId={}", playlistId, subscriberId);
     }

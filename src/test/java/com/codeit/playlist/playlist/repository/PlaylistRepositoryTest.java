@@ -382,8 +382,87 @@ public class PlaylistRepositoryTest {
         assertThat(opt).isEmpty();
     }
 
+    @Test
+    @DisplayName("increaseSubscriberCount 성공 - 해당 플레이리스트의 구독자 수가 1 증가한다")
+    void increaseSubscriberCountSuccess() {
+        // given
+        Playlist playlist = createPlaylistWithSubscriberCount(3L); // 초기값 3
+        UUID playlistId = playlist.getId();
+
+        // when
+        int updatedRows = playlistRepository.increaseSubscriberCount(playlistId);
+
+        // then
+        assertThat(updatedRows).isEqualTo(1);
+
+        Playlist reloaded = playlistRepository.findById(playlistId)
+                .orElseThrow();
+        assertThat(reloaded.getSubscriberCount()).isEqualTo(4L);
+    }
+
+    @Test
+    @DisplayName("increaseSubscriberCount 실패 - 존재하지 않는 플레이리스트 ID면 업데이트되지 않는다")
+    void increaseSubscriberCountFailWhenPlaylistNotFound() {
+        // given
+        UUID notExistingId = UUID.randomUUID();
+
+        // when
+        int updatedRows = playlistRepository.increaseSubscriberCount(notExistingId);
+
+        // then
+        assertThat(updatedRows).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("decreaseSubscriberCount 성공 - 구독자 수가 1 이상일 때 1 감소한다")
+    void decreaseSubscriberCountSuccess() {
+        // given
+        Playlist playlist = createPlaylistWithSubscriberCount(2L); // 초기값 2
+        UUID playlistId = playlist.getId();
+
+        // when
+        int updatedRows = playlistRepository.decreaseSubscriberCount(playlistId);
+
+        // then
+        assertThat(updatedRows).isEqualTo(1);
+
+        Playlist reloaded = playlistRepository.findById(playlistId)
+                .orElseThrow();
+        assertThat(reloaded.getSubscriberCount()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("decreaseSubscriberCount 실패 - 구독자 수가 0이면 감소하지 않는다")
+    void decreaseSubscriberCountFailWhenZero() {
+        // given
+        Playlist playlist = createPlaylistWithSubscriberCount(0L); // 초기값 0
+        UUID playlistId = playlist.getId();
+
+        // when
+        int updatedRows = playlistRepository.decreaseSubscriberCount(playlistId);
+
+        // then
+        assertThat(updatedRows).isEqualTo(0);
+
+        Playlist reloaded = playlistRepository.findById(playlistId)
+                .orElseThrow();
+        assertThat(reloaded.getSubscriberCount()).isEqualTo(0L);
+    }
+
 
     // ==== 테스트용 엔티티 생성 헬퍼 메서드 ====
+
+    private Playlist createPlaylistWithSubscriberCount(long subscriberCount) {
+
+        User owner = createTestUser("owner@test.com");
+        owner = userRepository.save(owner);
+
+        Playlist playlist = createPlaylist(owner, "테스트 제목");
+
+        ReflectionTestUtils.setField(playlist, "subscriberCount", subscriberCount);
+
+        return playlistRepository.saveAndFlush(playlist);
+    }
 
     private Playlist createPlaylist(User owner, String title) {
         Playlist playlist = new Playlist(owner, title, "설명입니다", 0L, null);
