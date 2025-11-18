@@ -60,8 +60,8 @@ public class BasicPlaylistSubscriptionService implements PlaylistSubscriptionSer
         Subscribe subscribe = new Subscribe(subscriber, playlist);
         subscribeRepository.save(subscribe);
 
-        int updatedRow = playlistRepository.increaseSubscriberCount(playlistId);
-        if (updatedRow == 0) {
+        int increased = playlistRepository.increaseSubscriberCount(playlistId);
+        if (increased == 0) {
             log.error("[구독] subscriberCount 증가 실패 : playlistId={}", playlistId);
             throw SubscriptionUpdateException.withId(playlistId);
         }
@@ -89,8 +89,8 @@ public class BasicPlaylistSubscriptionService implements PlaylistSubscriptionSer
 
         subscribeRepository.delete(subscribe);
 
-        int updatedRow = playlistRepository.decreaseSubscriberCount(playlistId);
-        if (updatedRow == 0) {
+        int decreased = playlistRepository.decreaseSubscriberCount(playlistId);
+        if (decreased == 0) {
             log.error("[구독] subscriberCount 감소 실패 : playlistId={}", playlistId);
             throw SubscriptionUpdateException.withId(playlistId);
         }
