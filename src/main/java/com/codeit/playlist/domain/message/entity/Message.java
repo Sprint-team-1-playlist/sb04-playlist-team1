@@ -1,6 +1,7 @@
-package com.codeit.playlist.domain.conversation.entity;
+package com.codeit.playlist.domain.message.entity;
 
 import com.codeit.playlist.domain.base.BaseEntity;
+import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

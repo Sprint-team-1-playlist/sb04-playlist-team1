@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.conversation.exception.conversation;
+package com.codeit.playlist.domain.conversation.exception;
 
 public class InvalidSortDirectionException extends ConversationException{
 
