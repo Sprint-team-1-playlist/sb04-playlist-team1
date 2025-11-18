@@ -31,7 +31,6 @@ public class TheMovieApiService {
 
     private Mono<String> searchTheMovieApi(String query, String type, String path) {
         log.info("TheMovie API {} 수집 시작, query = {}", type, query); // type 매개변수, Movie or TV, debug로 수정 필요 - 확인용 info
-        try {
             return webClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .scheme("https")
@@ -47,10 +46,8 @@ public class TheMovieApiService {
                             Retry.backoff(3, Duration.ofSeconds(2))
                                     .filter(exception -> exception instanceof WebClientResponseException webException && webException.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS)
                                     .transientErrors(true)
-                    );
-        } catch(WebClientResponseException e) {
-            log.error("TheMovie API {} 수집 오류 : status = {}, body = {}", query, e.getStatusCode(), e.getResponseBodyAsString());
-            throw e;
-        }
+                    )
+                    .doOnError(WebClientResponseException.class,
+                            e -> log.error("TheMovie API {} 수집 오류 : status = {}, body = {}", query, e.getStatusCode(), e.getResponseBodyAsString()));
     }
 }

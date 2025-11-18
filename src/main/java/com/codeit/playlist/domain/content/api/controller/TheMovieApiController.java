@@ -3,6 +3,7 @@ package com.codeit.playlist.domain.content.api.controller;
 import com.codeit.playlist.domain.content.api.service.TheMovieApiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,12 +17,12 @@ import reactor.core.publisher.Mono;
 public class TheMovieApiController {
     private final TheMovieApiService theMovieApiService;
 
-    @GetMapping
+    @GetMapping(value = "/movie", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<String> getMovie(@RequestParam String query) {
         return theMovieApiService.getApiMovie(query);
     }
 
-    @GetMapping
+    @GetMapping(value = "/tv", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<String> getTv(@RequestParam String query) {
         return theMovieApiService.getApiTv(query);
     }
