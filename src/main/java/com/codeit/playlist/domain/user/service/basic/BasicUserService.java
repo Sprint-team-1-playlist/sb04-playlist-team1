@@ -56,7 +56,7 @@ public class BasicUserService implements UserService {
     }
 
     String encodedPassword = passwordEncoder.encode(newUser.getPassword());
-    newUser.updatedPassword(encodedPassword);
+    newUser.updatePassword(encodedPassword);
     userRepository.save(newUser);
 
     log.info("[사용자 관리] 사용자 등록 완료 : email = {}", request.email());
@@ -102,7 +102,7 @@ public class BasicUserService implements UserService {
     }
 
     String encodedPassword = passwordEncoder.encode(request.password());
-    userRepository.updatedPassword(userId, encodedPassword);
+    userRepository.changePassword(userId, encodedPassword);
 
     jwtRegistry.invalidateJwtInformationByUserId(userId);
 
