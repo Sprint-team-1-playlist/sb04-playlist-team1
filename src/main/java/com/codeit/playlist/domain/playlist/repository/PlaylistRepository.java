@@ -55,6 +55,7 @@ public interface PlaylistRepository extends JpaRepository<Playlist, UUID>, Playl
     update Playlist p 
        set p.subscriberCount = p.subscriberCount + 1 
      where p.id = :playlistId
+     and p.deletedAt is null
 """)
     int increaseSubscriberCount(@Param("playlistId") UUID playlistId);
 
@@ -64,6 +65,7 @@ public interface PlaylistRepository extends JpaRepository<Playlist, UUID>, Playl
        set p.subscriberCount = p.subscriberCount - 1 
      where p.id = :playlistId
        and p.subscriberCount > 0
+       and p.deletedAt is null 
 """)
     int decreaseSubscriberCount(@Param("playlistId") UUID playlistId);
 

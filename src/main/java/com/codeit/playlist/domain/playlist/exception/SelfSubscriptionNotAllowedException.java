@@ -7,10 +7,10 @@ public class SelfSubscriptionNotAllowedException extends PlaylistException {
         super(PlaylistErrorCode.SELF_SUBSCRIPTION_NOT_ALLOWED);
     }
 
-    public static SelfSubscriptionNotAllowedException withDetail(UUID playlistId, UUID userId) {
+    public static SelfSubscriptionNotAllowedException withDetail(UUID playlistId, UUID subscriptionId) {
         SelfSubscriptionNotAllowedException ex = new SelfSubscriptionNotAllowedException();
         ex.addDetail("playlistId", playlistId);
-        ex.addDetail("userId", userId);
+        ex.addDetail("userId", subscriptionId);
         return ex;
     }
 }
