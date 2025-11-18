@@ -27,7 +27,7 @@ public class PlaylistUserDetailsService implements UserDetailsService {
     UserDto userDto = userMapper.toDto(user);
 
 
-    log.info("[인증 관리] : 유저를 불러오는데에 성공했습니다.");
+    log.info("[인증 관리] : 유저를 불러오는 데 성공했습니다.");
     return new PlaylistUserDetails(
         userDto,
         user.getPassword()
