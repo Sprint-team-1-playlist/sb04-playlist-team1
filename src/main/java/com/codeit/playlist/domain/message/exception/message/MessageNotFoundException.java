@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.conversation.exception.message;
+package com.codeit.playlist.domain.message.exception.message;
 
 import java.util.UUID;
 

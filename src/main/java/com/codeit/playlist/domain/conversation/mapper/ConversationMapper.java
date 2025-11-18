@@ -1,7 +1,7 @@
 package com.codeit.playlist.domain.conversation.mapper;
 
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
-import com.codeit.playlist.domain.conversation.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import org.mapstruct.Mapper;
