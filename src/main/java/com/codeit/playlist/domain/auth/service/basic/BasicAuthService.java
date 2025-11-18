@@ -1,5 +1,8 @@
 package com.codeit.playlist.domain.auth.service.basic;
 
+import com.codeit.playlist.domain.auth.exception.InvalidOrExpiredException;
+import com.codeit.playlist.domain.auth.exception.JwtInternalServerErrorException;
+import com.codeit.playlist.domain.auth.exception.RefreshTokenException;
 import com.codeit.playlist.domain.auth.service.AuthService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
@@ -71,6 +74,7 @@ public class BasicAuthService implements AuthService {
 
   @Override
   public JwtInformation signIn(String username, String password) throws JOSEException {
+    log.debug("[인증 관리] : 로그인 시작");
 
     Authentication auth = authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(username, password)
@@ -105,26 +109,31 @@ public class BasicAuthService implements AuthService {
 
     // DB 저장
     jwtRegistry.registerJwtInformation(info);
+    log.info("[인증 관리] : 로그인 완료");
 
     return info;
   }
 
-
   @Override
   public JwtInformation refreshToken(String refreshToken) {
+    log.debug("[인증 관리] : Token 발급 시작");
 
     if (refreshToken == null || refreshToken.isBlank()) {
-      throw new IllegalArgumentException("Refresh token is required");
+      throw RefreshTokenException.withToken(refreshToken);
     }
 
     if (!jwtTokenProvider.validateRefreshToken(refreshToken)
         || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
-      throw new IllegalArgumentException("Invalid or expired refresh token");
+      throw new InvalidOrExpiredException();
     }
 
     String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
-    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
+    UserDetails userDetails;
+    try {
+      userDetails = userDetailsService.loadUserByUsername(username);
+    } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+      throw new InvalidOrExpiredException();
+    }
     PlaylistUserDetails playlistUser = (PlaylistUserDetails) userDetails;
 
     try {
@@ -146,18 +155,19 @@ public class BasicAuthService implements AuthService {
 
       boolean rotated = jwtRegistry.rotateJwtInformation(refreshToken, info);
       if (!rotated) {
-        throw new IllegalStateException("Invalid or expired refresh token");
+        throw new InvalidOrExpiredException();
       }
-
+      log.info("[인증 관리] : Token 발급 완료 ");
       return info;
 
     } catch (JOSEException e) {
-      throw new IllegalArgumentException("INTERNAL_SERVER_ERROR", e);
+      throw JwtInternalServerErrorException.jwtError(e);
     }
   }
 
   @Override
   public void logout(String refreshToken) {
+    log.debug("[인증 관리] : 로그아웃 시작");
     if (refreshToken == null || refreshToken.isBlank()) {
       return;
     }
@@ -167,5 +177,6 @@ public class BasicAuthService implements AuthService {
       jwtRegistry.invalidateJwtInformationByUserId(userId);
     }
     jwtRegistry.revokeByToken(refreshToken);
+    log.info("[인증 관리] : 로그아웃 완료");
   }
 }
