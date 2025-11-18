@@ -28,15 +28,15 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.ECR_REPO }}:latest .
+          docker build -t ${{ secrets.ECR_REPO }}:${{ github.sha }} .
 
       - name: Tag Docker image
         run: |
-          docker tag ${{ secrets.ECR_REPO }}:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest
+          docker tag ${{ secrets.ECR_REPO }}:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
 
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
 
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
@@ -51,3 +51,4 @@ jobs:
             SPRING_DATASOURCE_URL=${{ secrets.RDS_URL }}
             SPRING_DATASOURCE_USERNAME=${{ secrets.RDS_USERNAME }}
             SPRING_DATASOURCE_PASSWORD=${{ secrets.RDS_PASSWORD }}
+            IMAGE_TAG=${{ github.sha }}
