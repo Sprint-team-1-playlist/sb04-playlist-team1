@@ -12,5 +12,5 @@ public interface UserService {
 
   UserDto find(UUID userId);
 
-  void changePassword(UUID userid, ChangePasswordRequest request) throws AccessDeniedException;
+  void changePassword(UUID userId, ChangePasswordRequest request) throws AccessDeniedException;
 }

@@ -1,12 +1,12 @@
 package com.codeit.playlist.domain.user.repository;
 
 import com.codeit.playlist.domain.user.entity.User;
-import io.lettuce.core.dynamic.annotation.Param;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
