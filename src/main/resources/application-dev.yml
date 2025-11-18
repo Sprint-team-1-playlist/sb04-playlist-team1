@@ -3,25 +3,29 @@ server:
 
 spring:
   datasource:
-    url: ${RDS_URL}
-    username: ${RDS_USERNAME}
-    password: ${RDS_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
-    show-sql: false
+    show-sql: true
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD}
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
 
+  batch:
+    jdbc:
+      initialize-schema: never
+    job:
+      enabled: false
 playlist:
   jwt:
     access-token:
@@ -31,15 +35,14 @@ playlist:
       secret: ${JWT_REFRESH_TOKEN_SECRET}
       expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7일
     cookie:
-      secure: true
+      secure: false
 
 logging:
   level:
-    root: info
-    com.codeit.playlist: info
-    org.hibernate.SQL: warn
-    org.hibernate.orm.jdbc.bind: warn
-    org.springframework.security: info
+    com.codeit.playlist: debug
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.springframework.security: trace
 
 management:
   endpoint:

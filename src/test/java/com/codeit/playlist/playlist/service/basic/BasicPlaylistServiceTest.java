@@ -7,6 +7,7 @@ import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
 import com.codeit.playlist.domain.playlist.dto.response.CursorResponsePlaylistDto;
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.exception.PlaylistAccessDeniedException;
+import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
 import com.codeit.playlist.domain.playlist.mapper.PlaylistMapper;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.service.basic.BasicPlaylistService;
@@ -43,6 +44,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -325,6 +327,83 @@ public class BasicPlaylistServiceTest {
                 eq("updatedAt"),
                 any()
         );
+    }
+
+    @Test
+    @DisplayName("softDeletePlaylist 성공 - 소유자와 요청자가 같고 아직 삭제되지 않은 경우")
+    void softDeletePlaylistSuccessWhenOwnerEquals() {
+        //given
+        UUID ownerId = UUID.randomUUID();
+        UUID playlistId = UUID.randomUUID();
+
+        User owner = mock(User.class);
+        when(owner.getId()).thenReturn(ownerId);
+
+        Playlist playlist = mock(Playlist.class);
+        when(playlist.getOwner()).thenReturn(owner);
+
+        // 아직 삭제되지 않은 플레이리스트
+        when(playlistRepository.findByIdAndDeletedAtIsNull(playlistId))
+                .thenReturn(Optional.of(playlist));
+
+        // 실제 soft delete 쿼리 결과 row 1개 업데이트
+        when(playlistRepository.softDeleteById(playlistId)).thenReturn(1);
+
+        //when
+        basicPlaylistService.softDeletePlaylist(playlistId, ownerId);
+
+        //then
+        verify(playlistRepository).findByIdAndDeletedAtIsNull(playlistId);
+        verify(playlistRepository).softDeleteById(playlistId);
+        verifyNoMoreInteractions(playlistRepository);
+    }
+
+    @Test
+    @DisplayName("softDeletePlaylist 실패 - 존재하지 않거나 이미 삭제된 경우 PlaylistNotFoundException 발생")
+    void softDeletePlaylistFailWhenPlaylistNotFoundOrAlreadyDeleted() {
+        // given
+        UUID playlistId = UUID.randomUUID();
+        UUID requesterId = UUID.randomUUID();
+
+        when(playlistRepository.findByIdAndDeletedAtIsNull(playlistId))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        assertThrows(
+                PlaylistNotFoundException.class,
+                () -> basicPlaylistService.softDeletePlaylist(playlistId, requesterId)
+        );
+
+        verify(playlistRepository).findByIdAndDeletedAtIsNull(playlistId);
+        verify(playlistRepository, never()).softDeleteById(any());
+    }
+
+    @Test
+    @DisplayName("softDeletePlaylist 실패 - 소유자와 요청자가 다르면 PlaylistAccessDeniedException 발생")
+    void softDeletePlaylistFailWhenOwnerDifferentFromRequester() {
+        // given
+        UUID playlistId = UUID.randomUUID();
+
+        UUID ownerId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        UUID requesterId = CURRENT_USER_ID;
+
+        User owner = mock(User.class);
+        when(owner.getId()).thenReturn(ownerId);
+
+        Playlist playlist = mock(Playlist.class);
+        when(playlist.getOwner()).thenReturn(owner);
+
+        when(playlistRepository.findByIdAndDeletedAtIsNull(playlistId))
+                .thenReturn(Optional.of(playlist));
+
+        // when & then
+        assertThrows(
+                PlaylistAccessDeniedException.class,
+                () -> basicPlaylistService.softDeletePlaylist(playlistId, requesterId)
+        );
+
+        verify(playlistRepository).findByIdAndDeletedAtIsNull(playlistId);
+        verify(playlistRepository, never()).softDeleteById(any());
     }
 
     private User createUserWithId(UUID id) {

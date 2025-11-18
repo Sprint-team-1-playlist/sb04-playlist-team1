@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.config;
+package com.codeit.playlist.global.config;
 
 import com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter;
 import com.codeit.playlist.domain.security.jwt.JwtLogoutSuccessHandler;
