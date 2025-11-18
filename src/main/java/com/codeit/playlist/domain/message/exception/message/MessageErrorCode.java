@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.conversation.exception.message;
+package com.codeit.playlist.domain.message.exception.message;
 
 import com.codeit.playlist.global.constant.ErrorCode;
 import lombok.AllArgsConstructor;

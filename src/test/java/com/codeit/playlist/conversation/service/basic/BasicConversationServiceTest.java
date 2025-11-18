@@ -10,18 +10,20 @@ import static org.mockito.Mockito.when;
 
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
-import com.codeit.playlist.domain.conversation.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
-import com.codeit.playlist.domain.conversation.exception.conversation.ConversationAlreadyExistsException;
-import com.codeit.playlist.domain.conversation.exception.conversation.InvalidCursorException;
-import com.codeit.playlist.domain.conversation.exception.conversation.SelfChatNotAllowedException;
+import com.codeit.playlist.domain.conversation.exception.ConversationAlreadyExistsException;
+import com.codeit.playlist.domain.conversation.exception.InvalidCursorException;
+import com.codeit.playlist.domain.conversation.exception.SelfChatNotAllowedException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
-import com.codeit.playlist.domain.conversation.mapper.MessageMapper;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
-import com.codeit.playlist.domain.conversation.repository.MessageRepository;
 import com.codeit.playlist.domain.conversation.service.basic.BasicConversationService;
+import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.message.mapper.MessageMapper;
+import com.codeit.playlist.domain.message.repository.MessageRepository;
+import com.codeit.playlist.domain.security.PlaylistUserDetails;
+import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
@@ -40,6 +42,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicConversationServiceTest {
@@ -80,6 +85,19 @@ public class BasicConversationServiceTest {
 
     setId(currentUser, currentUserId);
     setId(otherUser, otherUserId);
+
+    PlaylistUserDetails userDetails = new PlaylistUserDetails(
+        new UserDto(currentUser.getId(), LocalDateTime.now(), currentUser.getEmail(), currentUser.getName(),
+            currentUser.getProfileImageUrl(), currentUser.getRole(), currentUser.isLocked()),
+        currentUser.getPassword()
+    );
+
+    Authentication authentication = org.mockito.Mockito.mock(Authentication.class);
+    when(authentication.getPrincipal()).thenReturn(userDetails);
+
+    SecurityContext securityContext = org.mockito.Mockito.mock(SecurityContext.class);
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    SecurityContextHolder.setContext(securityContext);
   }
 
   @Test
@@ -98,7 +116,6 @@ public class BasicConversationServiceTest {
 
     DirectMessageDto lastMessageDto = null;
     when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(any())).thenReturn(Optional.empty());
-    when(messageMapper.toDto(null)).thenReturn(lastMessageDto);
 
     ConversationDto dto = new ConversationDto(savedConversation.getId(), withSummary, lastMessageDto, false);
     when(conversationMapper.toDto(any(), any(), nullable(DirectMessageDto.class))).thenReturn(dto);
