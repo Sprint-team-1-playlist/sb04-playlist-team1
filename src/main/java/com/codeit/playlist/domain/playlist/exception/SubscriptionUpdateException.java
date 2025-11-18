@@ -9,6 +9,6 @@ public class SubscriptionUpdateException extends PlaylistException {
     }
 
   public static SubscriptionUpdateException withId(UUID playlistId) {
-    return new SubscriptionUpdateException(playlistId);
+        return new SubscriptionUpdateException(playlistId);
   }
 }
