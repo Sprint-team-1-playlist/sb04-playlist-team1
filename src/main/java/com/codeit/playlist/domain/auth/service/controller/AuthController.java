@@ -36,11 +36,11 @@ public class AuthController {
   public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
     log.debug("CSRF 토큰 요청");
 
-        if (csrfToken != null) {
-            log.debug("CSRF 토큰: {}", csrfToken.getToken());
-          } else {
-            log.trace("CSRF 토큰이 존재하지 않습니다.");
-          }
+    if (csrfToken != null) {
+      log.debug("CSRF 토큰: {}", csrfToken.getToken());
+    } else {
+      log.trace("CSRF 토큰이 존재하지 않습니다.");
+    }
 
     return ResponseEntity
         .status(HttpStatus.NO_CONTENT)
@@ -48,7 +48,8 @@ public class AuthController {
   }
 
   @PostMapping("/refresh")
-  public ResponseEntity<JwtDto> refresh(@CookieValue(value = "REFRESH_TOKEN", required = false) String refreshToken,
+  public ResponseEntity<JwtDto> refresh(
+      @CookieValue(value = "REFRESH_TOKEN", required = false) String refreshToken,
       HttpServletResponse response) {
     log.info("토큰 리프레시 요청");
     JwtInformation jwtInformation = authService.refreshToken(refreshToken);
@@ -98,5 +99,4 @@ public class AuthController {
 
     return ResponseEntity.noContent().build();
   }
-
 }

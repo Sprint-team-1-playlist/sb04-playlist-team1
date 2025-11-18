@@ -1,15 +1,18 @@
 package com.codeit.playlist.domain.user.controller;
 
 import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.service.UserService;
 import jakarta.validation.Valid;
+import java.nio.file.AccessDeniedException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,5 +41,14 @@ public class UserController {
     UserDto user = userService.find(userId);
     log.info("[사용자 관리] 사용자 상세 조회 완료 : id = {} ", userId);
     return ResponseEntity.ok(user);
+  }
+
+  @PatchMapping("/{userId}/password")
+  public ResponseEntity<Void> changePassword(@PathVariable UUID userId,
+      @RequestBody ChangePasswordRequest changePasswordRequest) throws AccessDeniedException {
+    log.debug("[사용자 관리] 사용자 패스워드 변경 시작 : id = {} ", userId);
+    userService.changePassword(userId, changePasswordRequest);
+    log.info("[사용자 관리] 사용자 패스워드 변경 완료 : id = {} ", userId);
+    return ResponseEntity.ok().build();
   }
 }
