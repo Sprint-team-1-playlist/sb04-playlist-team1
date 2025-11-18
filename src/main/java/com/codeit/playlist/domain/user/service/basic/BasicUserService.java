@@ -56,7 +56,7 @@ public class BasicUserService implements UserService {
     }
 
     String encodedPassword = passwordEncoder.encode(newUser.getPassword());
-    newUser.updatePassword(encodedPassword);
+    newUser.updatedPassword(encodedPassword);
     userRepository.save(newUser);
 
     log.info("[사용자 관리] 사용자 등록 완료 : email = {}", request.email());
@@ -93,9 +93,6 @@ public class BasicUserService implements UserService {
       throw AuthAccessDeniedException.withId(userId);
     }
 
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> UserNotFoundException.withId(userId));
-
     if (request.password() == null || request.password().isBlank()) {
       throw NewPasswordRequired.withId(userId);
     }
@@ -105,7 +102,7 @@ public class BasicUserService implements UserService {
     }
 
     String encodedPassword = passwordEncoder.encode(request.password());
-    userRepository.updatedPassword(loginUserId, encodedPassword);
+    userRepository.updatedPassword(userId, encodedPassword);
 
     jwtRegistry.invalidateJwtInformationByUserId(userId);
 
