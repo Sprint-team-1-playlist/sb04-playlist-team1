@@ -6,6 +6,7 @@ import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
 import com.codeit.playlist.domain.playlist.dto.response.CursorResponsePlaylistDto;
 import com.codeit.playlist.domain.playlist.service.PlaylistService;
+import com.codeit.playlist.domain.playlist.service.PlaylistSubscriptionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ import java.util.UUID;
 public class PlaylistController {
 
     private final PlaylistService playlistService;
+    private final PlaylistSubscriptionService playlistSubscriptionService;
 
     //플레이리스트 생성
     @PostMapping
@@ -103,6 +105,7 @@ public class PlaylistController {
         return ResponseEntity.ok(playlists);
     }
 
+    //플레이리스트 단건 조회
     @GetMapping("/{playlistId}")
     public ResponseEntity<PlaylistDto> getPlaylist(@PathVariable UUID playlistId) {
         log.debug("[플레이리스트] 플레이리스트 단건 조회 시작: id={}", playlistId);
@@ -111,5 +114,27 @@ public class PlaylistController {
 
         log.info("[플레이리스트] 플레이리스트 단건 조회 성공: id={}", playlistId);
         return ResponseEntity.ok(response);
+    }
+
+    //플레이리스트 구독
+    @PostMapping("/{playlistId}/subscription")
+    public ResponseEntity<Void> playlistSubscription(@PathVariable UUID playlistId,
+                                                     @RequestHeader("USER-ID") UUID subscriberId) {//subscriberId는 Security 구현시 삭제
+        log.debug("[플레이리스트] 플레이리스트 구독 : playlistId={}, userId = {}", playlistId, subscriberId);
+
+        playlistSubscriptionService.subscribe(playlistId, subscriberId);
+
+        return ResponseEntity.ok().build();
+    }
+
+    //플레이리스트 구독 해제
+    @DeleteMapping("/{playlistId}/subscription")
+    public ResponseEntity<Void> playlistUnSubscription(@PathVariable UUID playlistId,
+                                                       @RequestHeader("USER-ID") UUID subscriberId) {//subscriberId는 Security 구현시 삭제
+        log.debug("[플레이리스트] 구독 해제 요청 : playlistId={}, userId={}", playlistId, subscriberId);
+
+        playlistSubscriptionService.unsubscribe(playlistId, subscriberId);
+
+        return ResponseEntity.noContent().build();
     }
 }

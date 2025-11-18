@@ -53,6 +53,16 @@ public class Playlist extends BaseDeletableEntity {
         playlistContents.removeIf(pc -> pc.getContent().equals(content));
     }
 
+    public void increaseSubscriberCount() {
+        this.subscriberCount += 1;
+    }
+
+    public void decreaseSubscriberCount() {
+        if (this.subscriberCount > 0) {
+            this.subscriberCount -= 1;
+        }
+    }
+
     public void updateInfo(String title, String description) {
         this.title = title;
         this.description = description;
