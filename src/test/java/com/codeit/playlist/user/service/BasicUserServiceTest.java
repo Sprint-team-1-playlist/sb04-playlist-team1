@@ -20,6 +20,7 @@ import com.codeit.playlist.domain.user.service.basic.BasicUserService;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,11 +45,11 @@ public class BasicUserServiceTest {
   @Mock
   private PasswordEncoder passwordEncoder;
 
+  @Mock
+  private JwtRegistry jwtRegistry;
+
   @InjectMocks
   private BasicUserService userService;
-
-  @Mock
-  private JwtRegistry  jwtRegistry;
 
   @Mock
   private Authentication authentication;
@@ -82,6 +83,11 @@ public class BasicUserServiceTest {
         user.getRole(),
         false
     );
+  }
+
+  @AfterEach
+  void tearDown() {
+    SecurityContextHolder.clearContext();
   }
 
   @Test

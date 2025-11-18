@@ -81,25 +81,26 @@ public class BasicUserService implements UserService {
   public void changePassword(UUID userId, ChangePasswordRequest request) {
     log.debug("[사용자 관리] 패스워드 변경 시작 : userId = {}", userId);
 
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof PlaylistUserDetails)) {
-            throw AuthAccessDeniedException.withId(userId);
-          }
-        PlaylistUserDetails principal = (PlaylistUserDetails) authentication.getPrincipal();
+    var authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || !(authentication.getPrincipal() instanceof PlaylistUserDetails)) {
+      throw AuthAccessDeniedException.withId(userId);
+    }
+    PlaylistUserDetails principal = (PlaylistUserDetails) authentication.getPrincipal();
 
     UUID loginUserId = principal.getUserDto().id();
 
-    if(!loginUserId.equals(userId)){
+    if (!loginUserId.equals(userId)) {
       throw AuthAccessDeniedException.withId(userId);
     }
 
-    User user = userRepository.findById(userId).orElseThrow(() -> UserNotFoundException.withId(userId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
 
-    if(request.password() == null || request.password().isBlank()){
+    if (request.password() == null || request.password().isBlank()) {
       throw NewPasswordRequired.withId(userId);
     }
 
-    if(request.password().length() < 8){
+    if (request.password().length() < 8) {
       throw PassWordMustCharacters.withId(userId);
     }
 
@@ -109,5 +110,5 @@ public class BasicUserService implements UserService {
     jwtRegistry.invalidateJwtInformationByUserId(userId);
 
     log.info("[사용자 관리] 패스워드 변경 완료 : userId = {}", userId);
-    }
   }
+}
