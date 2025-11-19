@@ -7,9 +7,10 @@ public class PlaylistContentAlreadyExistsException extends PlaylistException {
         super(PlaylistErrorCode.PLAYLIST_CONTENT_ALREADY_EXISTS);
     }
 
-    public PlaylistContentAlreadyExistsException(UUID playlistId, UUID contentId) {
-        super(PlaylistErrorCode.PLAYLIST_CONTENT_ALREADY_EXISTS);
-        this.addDetail("playlistId", playlistId.toString());
-        this.addDetail("contentId", contentId.toString());
+    public PlaylistContentAlreadyExistsException withIds(UUID playlistId, UUID contentId) {
+        PlaylistContentAlreadyExistsException exception = new PlaylistContentAlreadyExistsException();
+        exception.addDetail("playlistId", playlistId.toString());
+        exception.addDetail("contentId", contentId.toString());
+        return exception;
     }
 }

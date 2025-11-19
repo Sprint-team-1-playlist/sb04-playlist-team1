@@ -57,7 +57,7 @@ public class BasicPlaylistContentService implements PlaylistContentService {
         if (exists) {
             log.error("[플레이리스트] 콘텐츠 추가 실패 : 이미 존재하는 콘텐츠 playlistId={}, contentId={}",
                     playlistId, contentId);
-            throw new PlaylistContentAlreadyExistsException();
+            throw new PlaylistContentAlreadyExistsException().withIds(playlistId, contentId);
         }
 
         PlaylistContent playlistContent = new PlaylistContent(playlist, content);
