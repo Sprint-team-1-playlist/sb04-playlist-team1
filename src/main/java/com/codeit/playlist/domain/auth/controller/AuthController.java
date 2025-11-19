@@ -1,6 +1,6 @@
 package com.codeit.playlist.domain.auth.controller;
 
-import com.codeit.playlist.domain.auth.PasswordRateLimit.RateLimitService;
+import com.codeit.playlist.domain.auth.passwordRateLimit.RateLimitService;
 import com.codeit.playlist.domain.auth.service.AuthService;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;

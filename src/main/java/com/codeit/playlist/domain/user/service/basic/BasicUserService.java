@@ -20,7 +20,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,7 +36,6 @@ public class BasicUserService implements UserService {
   private final UserMapper userMapper;
   private final JwtRegistry jwtRegistry;
   private final TemporaryPasswordStore temporaryPasswordStore;
-  private final StringRedisTemplate redisTemplate;
 
   @Value("${ADMIN_EMAIL}")
   private String adminEmail;

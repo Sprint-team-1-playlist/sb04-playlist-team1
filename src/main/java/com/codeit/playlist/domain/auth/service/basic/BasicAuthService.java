@@ -23,11 +23,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +46,7 @@ public class BasicAuthService implements AuthService {
   private final JwtRegistry jwtRegistry;
   private final UserDetailsService userDetailsService;
   private final StringRedisTemplate redisTemplate;
+  private final PasswordEncoder passwordEncoder;
 
   @Override
   @PreAuthorize("hasRole('ADMIN')")
@@ -78,26 +81,28 @@ public class BasicAuthService implements AuthService {
   public JwtInformation signIn(String username, String password) throws JOSEException {
     log.debug("[인증 관리] : 로그인 시작");
 
-    // DB 유저 조회
-    User user = userRepository.findByEmail(username)
-        .orElseThrow(() -> UserNotFoundException.withUsername(username));
+    // 임시 비밀번호 체크를 위한 사용자 조회 (UserDetailsService 사용)
+    PlaylistUserDetails userDetails;
+    try {
+      userDetails = (PlaylistUserDetails) userDetailsService.loadUserByUsername(username);
+    } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+      // 사용자 존재 여부를 노출하지 않기 위해 일반 인증 실패로 처리
+      throw new BadCredentialsException("Invalid credentials");
+    }
 
-    String redisKey = "temp-password:" + user.getId();
-    String tempPassword = redisTemplate.opsForValue().get(redisKey);
+    UUID userId = userDetails.getUserDto().id();
+    String redisKey = "temp-password:" + userId;
+    String storedHashedTempPassword = redisTemplate.opsForValue().get(redisKey);
 
     // 임시 비밀번호 로그인 먼저 체크
-    if (tempPassword != null && tempPassword.equals(password)) {
-      log.debug("[임시 비밀번호] : 임시 비밀번호 로그인 성공");
+    if (storedHashedTempPassword != null && passwordEncoder.matches(password, storedHashedTempPassword)) {
+      log.info("[보안 감사] 임시 비밀번호 사용: userId={}", userId);
 
       // JWT 무효화
-      jwtRegistry.invalidateJwtInformationByUserId(user.getId());
+      jwtRegistry.invalidateJwtInformationByUserId(userId);
 
       // 임시 비밀번호는 1회용이므로 삭제
       redisTemplate.delete(redisKey);
-
-      // Security 인증 수동 생성
-      PlaylistUserDetails userDetails =
-          new PlaylistUserDetails(userMapper.toDto(user), user.getPassword());
 
       Authentication auth = new UsernamePasswordAuthenticationToken(
           userDetails,
@@ -120,7 +125,7 @@ public class BasicAuthService implements AuthService {
 
     SecurityContextHolder.getContext().setAuthentication(auth);
 
-    PlaylistUserDetails userDetails = (PlaylistUserDetails) auth.getPrincipal();
+    userDetails = (PlaylistUserDetails) auth.getPrincipal();
 
     // 기존 JWT 갱신 처리
     jwtRegistry.invalidateJwtInformationByUserId(userDetails.getUserDto().id());

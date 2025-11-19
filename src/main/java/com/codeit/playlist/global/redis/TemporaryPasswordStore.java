@@ -21,7 +21,7 @@ public class TemporaryPasswordStore {
   public boolean isValid(UUID userId, String providedPassword){
     String key = PREFIX + userId;
     String stored = redisTemplate.opsForValue().get(key);
-    return providedPassword.equals(stored);
+    return stored != null && stored.equals(providedPassword);
   }
 
   public void delete(UUID userId){
