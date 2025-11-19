@@ -134,7 +134,8 @@ public class BasicPlaylistServiceTest {
     void updatePlaylistSuccessWhenOwnerEqualsCurrentUser() {
         // given
         UUID playlistId = UUID.randomUUID();
-        User owner = createUserWithId(CURRENT_USER_ID);  // owner == currentUser
+        UUID currentUserId = CURRENT_USER_ID;
+        User owner = createUserWithId(currentUserId);  // owner == currentUser
 
         Playlist playlist = new Playlist(owner, "old title", "old description", 0L, null);
 
@@ -161,7 +162,7 @@ public class BasicPlaylistServiceTest {
         given(playlistMapper.toDto(playlist)).willReturn(expectedDto);
 
         // when
-        PlaylistDto result = basicPlaylistService.updatePlaylist(playlistId, request);
+        PlaylistDto result = basicPlaylistService.updatePlaylist(playlistId, request, currentUserId);
 
         // then
         assertThat(result.title()).isEqualTo("new title");
@@ -188,12 +189,14 @@ public class BasicPlaylistServiceTest {
         PlaylistUpdateRequest request =
                 new PlaylistUpdateRequest("new title", "new description");
 
+        UUID currentUserId = CURRENT_USER_ID;
+
         given(playlistRepository.findById(playlistId))
                 .willReturn(Optional.of(playlist));
 
         // when & then
         assertThrows(PlaylistAccessDeniedException.class,
-                () -> basicPlaylistService.updatePlaylist(playlistId, request));
+                () -> basicPlaylistService.updatePlaylist(playlistId, request, currentUserId));
 
         then(playlistRepository).should().findById(playlistId);
         then(playlistMapper).shouldHaveNoInteractions();
