@@ -2,6 +2,7 @@ package com.codeit.playlist.domain.message.service.basic;
 
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
+import com.codeit.playlist.domain.conversation.exception.InvalidCursorException;
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
@@ -14,6 +15,7 @@ import com.codeit.playlist.domain.message.service.MessageService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.entity.User;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -77,26 +79,34 @@ public class BasicMessageService implements MessageService {
   public CursorResponseDirectMessageDto findAll(UUID conversationId, String cursor,
       UUID idAfter, int limit, String sortDirection, String sortBy) {
 
-    LocalDateTime cursorTime = cursor != null ? LocalDateTime.parse(cursor) : null;
+    LocalDateTime cursorTime = null;
+    if (cursor != null) {
+      try {
+        cursorTime = LocalDateTime.parse(cursor);
+      } catch (DateTimeParseException e) {
+        throw InvalidCursorException.withCursor(cursor);
+      }
 
-    Pageable pageable = PageRequest.of(0, limit);
+    }
+    Pageable pageable = PageRequest.of(0, limit + 1);
     List<Message> messages = messageRepository.findMessagesByConversationWithCursor(
         conversationId, cursorTime, idAfter, pageable);
 
     String nextCursor = null;
     UUID nextIdAfter = null;
-    boolean hasNext = false;
+    boolean hasNext = messages.size() > limit;
 
-    if (!messages.isEmpty()) {
-      Message last = messages.get(messages.size() - 1);
+    List<Message> pageMessages = hasNext
+        ? messages.subList(0, limit)
+        : messages;
+
+    if (!pageMessages.isEmpty()) {
+      Message last = pageMessages.get(pageMessages.size() - 1);
       nextCursor = last.getCreatedAt().toString();
       nextIdAfter = last.getId();
-      if (messages.size() == limit) {
-        hasNext = true;
-      }
     }
 
-    List<DirectMessageDto> content = messages.stream()
+    List<DirectMessageDto> content = pageMessages.stream()
         .map(messageMapper::toDto)
         .collect(Collectors.toList());
 

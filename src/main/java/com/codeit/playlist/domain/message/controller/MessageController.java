@@ -2,6 +2,8 @@ package com.codeit.playlist.domain.message.controller;
 
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.service.MessageService;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,9 +27,9 @@ public class MessageController {
 
   @GetMapping("/{conversationId}/direct-messages")
   public ResponseEntity<CursorResponseDirectMessageDto> findAll(@PathVariable UUID conversationId,
-      @RequestParam String cursor,
-      @RequestParam UUID idAfter,
-      @RequestParam int limit,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(required = false) UUID idAfter,
+      @RequestParam @Min(1) @Max(100) int limit,
       @RequestParam String sortDirection,
       @RequestParam String sortBy) {
     log.debug("[Message] findAll");
