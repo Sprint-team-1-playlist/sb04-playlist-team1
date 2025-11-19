@@ -15,7 +15,7 @@ public class RateLimitService {
   private static final int MAX_REQ = 5;       // 5번 허용
   private static final int WINDOW_SEC = 60;   // 1분 동안
 
-    public boolean isAllowed(String key) {
+  public boolean isAllowed(String key) {
     RBucket<Integer> bucket = redissonClient.getBucket(key);
     Integer count = bucket.get();
 

@@ -36,11 +36,11 @@ public class BasicPasswordResetService implements PasswordResetService {
     log.info("[사용자 관리] : 임시 비밀번호 발급 완료");
   }
 
-    private String generateRandomPassword() {
-        StringBuilder password = new StringBuilder(PASSWORD_LENGTH);
-        for (int i = 0; i < PASSWORD_LENGTH; i++) {
-            password.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
-          }
-        return password.toString();
-      }
+  private String generateRandomPassword() {
+    StringBuilder password = new StringBuilder(PASSWORD_LENGTH);
+    for (int i = 0; i < PASSWORD_LENGTH; i++) {
+      password.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
+    }
+    return password.toString();
+  }
 }

@@ -95,7 +95,8 @@ public class BasicAuthService implements AuthService {
     String storedHashedTempPassword = redisTemplate.opsForValue().get(redisKey);
 
     // 임시 비밀번호 로그인 먼저 체크
-    if (storedHashedTempPassword != null && passwordEncoder.matches(password, storedHashedTempPassword)) {
+    if (storedHashedTempPassword != null && passwordEncoder.matches(password,
+        storedHashedTempPassword)) {
       log.info("[보안 감사] 임시 비밀번호 사용: userId={}", userId);
 
       // JWT 무효화

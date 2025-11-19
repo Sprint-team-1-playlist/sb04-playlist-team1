@@ -11,5 +11,5 @@ public interface UserService {
 
   UserDto find(UUID userId);
 
-  void changePassword(UUID userId, ChangePasswordRequest request) ;
+  void changePassword(UUID userId, ChangePasswordRequest request);
 }
