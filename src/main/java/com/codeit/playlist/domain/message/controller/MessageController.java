@@ -1,39 +1,42 @@
 package com.codeit.playlist.domain.message.controller;
 
-import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
-import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
+import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.service.MessageService;
-import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Controller;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RequiredArgsConstructor
+@RestController
 @Validated
-@Controller
-@MessageMapping("/conversations")
+@RequestMapping("/api/conversations")
 public class MessageController {
 
   private final MessageService messageService;
-  private final SimpMessagingTemplate messagingTemplate;
 
-  @MessageMapping("/{conversationId}/direct-messages")
-  public void sendMessage(@DestinationVariable UUID conversationId,
-      @Payload @Valid DirectMessageSendRequest sendRequest) {
-    log.debug("[Message] 메시지 전송 요청: {}", conversationId);
+  @GetMapping("/{conversationId}/direct-messages")
+  public ResponseEntity<CursorResponseDirectMessageDto> findAll(@PathVariable UUID conversationId,
+      @RequestParam String cursor,
+      @RequestParam UUID idAfter,
+      @RequestParam int limit,
+      @RequestParam String sortDirection,
+      @RequestParam String sortBy) {
+    log.debug("[Message] findAll");
 
-    DirectMessageDto messageDto = messageService.save(conversationId, sendRequest);
+    CursorResponseDirectMessageDto cursorMessageDto = messageService.findAll(conversationId, cursor, idAfter, limit, sortDirection, sortBy);
 
-    messagingTemplate.convertAndSend(
-        "/sub/conversations/" + conversationId + "/direct-messages", messageDto
-    );
-    log.info("[Message] 메시지 전송 응답: {}", conversationId);
+    log.info("[Message] findAll");
+    return ResponseEntity
+        .status(HttpStatus.OK)
+        .body(cursorMessageDto);
   }
 }

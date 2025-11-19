@@ -6,18 +6,25 @@ import com.codeit.playlist.domain.conversation.exception.NotConversationParticip
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
+import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.entity.Message;
 import com.codeit.playlist.domain.message.mapper.MessageMapper;
 import com.codeit.playlist.domain.message.repository.MessageRepository;
 import com.codeit.playlist.domain.message.service.MessageService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.entity.User;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -63,6 +70,46 @@ public class BasicMessageService implements MessageService {
 
     DirectMessageDto messageDto = messageMapper.toDto(savedMessage);
     return messageDto;
+  }
+
+  @Transactional(readOnly = true)
+  @Override
+  public CursorResponseDirectMessageDto findAll(UUID conversationId, String cursor,
+      UUID idAfter, int limit, String sortDirection, String sortBy) {
+
+    LocalDateTime cursorTime = cursor != null ? LocalDateTime.parse(cursor) : null;
+
+    Pageable pageable = PageRequest.of(0, limit);
+    List<Message> messages = messageRepository.findMessagesByConversationWithCursor(
+        conversationId, cursorTime, idAfter, pageable);
+
+    String nextCursor = null;
+    UUID nextIdAfter = null;
+    boolean hasNext = false;
+
+    if (!messages.isEmpty()) {
+      Message last = messages.get(messages.size() - 1);
+      nextCursor = last.getCreatedAt().toString();
+      nextIdAfter = last.getId();
+      if (messages.size() == limit) {
+        hasNext = true;
+      }
+    }
+
+    List<DirectMessageDto> content = messages.stream()
+        .map(messageMapper::toDto)
+        .collect(Collectors.toList());
+
+    long totalCount = messageRepository.countByConversationId(conversationId);
+
+    return new CursorResponseDirectMessageDto(content,
+        nextCursor,
+        nextIdAfter,
+        hasNext,
+        totalCount,
+        sortBy,
+        sortDirection
+    );
   }
 
   private UUID getCurrentUserId() {
