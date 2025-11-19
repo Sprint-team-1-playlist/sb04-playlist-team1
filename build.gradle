@@ -64,8 +64,8 @@ dependencies {
 
     // 비밀번호 재설정에서 Rate Limiting 을 적용시키기 위한 의존성
     implementation 'com.bucket4j:bucket4j-core:8.2.0'
-    implementation 'com.bucket4j:bucket4j-redis:8.2.0'
-    implementation 'org.redisson:redisson:3.23.4'
+    implementation 'com.bucket4j:bucket4j-redis:8.10.1'
+    implementation 'org.redisson:redisson:3.50.0'
 }
 
 tasks.named('test') {

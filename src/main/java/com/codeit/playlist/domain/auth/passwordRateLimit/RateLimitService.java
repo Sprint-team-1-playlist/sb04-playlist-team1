@@ -2,7 +2,7 @@ package com.codeit.playlist.domain.auth.passwordRateLimit;
 
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
-import org.redisson.api.RBucket;
+import org.redisson.api.RAtomicLong;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Component;
 
@@ -16,20 +16,15 @@ public class RateLimitService {
   private static final int WINDOW_SEC = 60;   // 1분 동안
 
   public boolean isAllowed(String key) {
-    RBucket<Integer> bucket = redissonClient.getBucket(key);
-    Integer count = bucket.get();
+    RAtomicLong counter = redissonClient.getAtomicLong(key);
 
-    if (count == null) {
-      bucket.set(1, WINDOW_SEC, TimeUnit.SECONDS);
-      return true;
+    long current = counter.incrementAndGet();
+
+    if (current == 1) {
+      // 첫 요청이므로 TTL 설정
+      counter.expire(WINDOW_SEC, TimeUnit.SECONDS);
     }
 
-    if (count < MAX_REQ) {
-      bucket.set(count + 1);
-      return true;
+    return current <= MAX_REQ;
     }
-
-    return false; // 초과 → 차단
   }
-
-}
