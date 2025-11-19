@@ -148,9 +148,9 @@ public class PlaylistController {
                                                      @PathVariable UUID contentId,
                                                      @AuthenticationPrincipal PlaylistUserDetails userDetails) {
 
-        log.debug("[플레이리스트] 콘텐츠 추가 시작 : playlistId = {}, contentId = {}, userId = {}", playlistId, contentId, userDetails.getUserDto().id());
-
         UUID currentUserId = userDetails.getUserDto().id();
+
+        log.debug("[플레이리스트] 콘텐츠 추가 시작 : playlistId = {}, contentId = {}, userId = {}", playlistId, contentId, currentUserId);
 
         playlistContentService.addContentToPlaylist(playlistId, contentId, currentUserId);
 
@@ -165,10 +165,10 @@ public class PlaylistController {
                                                           @PathVariable UUID contentId,
                                                           @AuthenticationPrincipal PlaylistUserDetails userDetails) {
 
-        log.debug("[플레이리스트] 콘텐츠 삭제 시작 : playlistId = {}, contentId = {}, userId = {}",
-                playlistId, contentId, userDetails.getUserDto().id());
-
         UUID currentUserId = userDetails.getUserDto().id();
+
+        log.debug("[플레이리스트] 콘텐츠 삭제 시작 : playlistId = {}, contentId = {}, userId = {}",
+                playlistId, contentId, currentUserId);
 
         playlistContentService.removeContentFromPlaylist(playlistId, contentId, currentUserId);
 
