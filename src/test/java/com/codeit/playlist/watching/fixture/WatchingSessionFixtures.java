@@ -48,7 +48,7 @@ public class WatchingSessionFixtures {
                 "email@test.com",
                 "name",
                 "profileImageUrl",
-                Role.USER,
+                Role.ADMIN,
                 false
         );
     }
