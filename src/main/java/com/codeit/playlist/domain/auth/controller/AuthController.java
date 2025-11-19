@@ -1,5 +1,6 @@
 package com.codeit.playlist.domain.auth.controller;
 
+import com.codeit.playlist.domain.auth.PasswordRateLimit.RateLimitService;
 import com.codeit.playlist.domain.auth.service.AuthService;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
@@ -10,6 +11,7 @@ import com.codeit.playlist.domain.user.service.PasswordResetService;
 import com.codeit.playlist.domain.user.service.UserService;
 import com.nimbusds.jose.JOSEException;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -35,6 +37,7 @@ public class AuthController {
   private final JwtTokenProvider jwtTokenProvider;
   private final JwtRegistry jwtRegistry;
   private final PasswordResetService passwordResetService;
+  private final RateLimitService rateLimitService;
 
   @GetMapping("/csrf-token")
   public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
@@ -111,10 +114,17 @@ public class AuthController {
   }
 
   @PostMapping("/reset-password")
-  public ResponseEntity<Void> TemporaryPassword(
-      @RequestBody ResetPasswordRequest request
+  public ResponseEntity<Void> resetPassword(
+      @Valid @RequestBody ResetPasswordRequest request
   ) {
+
+    String key = "rate-limit:reset:" + request.email();
+    if (!rateLimitService.isAllowed(key)) {
+      return ResponseEntity.status(429).build(); // Too Many Requests
+    }
+    // Todo : 이메일 전송 기능 구현 필요
+
     passwordResetService.sendTemporaryPassword(request);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 }
