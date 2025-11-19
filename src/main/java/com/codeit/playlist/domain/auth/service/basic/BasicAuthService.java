@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -42,6 +43,7 @@ public class BasicAuthService implements AuthService {
   private final JwtTokenProvider jwtTokenProvider;
   private final JwtRegistry jwtRegistry;
   private final UserDetailsService userDetailsService;
+  private final StringRedisTemplate redisTemplate;
 
   @Override
   @PreAuthorize("hasRole('ADMIN')")
@@ -76,6 +78,42 @@ public class BasicAuthService implements AuthService {
   public JwtInformation signIn(String username, String password) throws JOSEException {
     log.debug("[인증 관리] : 로그인 시작");
 
+    // DB 유저 조회
+    User user = userRepository.findByEmail(username)
+        .orElseThrow(() -> UserNotFoundException.withUsername(username));
+
+    String redisKey = "temp-password:" + user.getId();
+    String tempPassword = redisTemplate.opsForValue().get(redisKey);
+
+    // 임시 비밀번호 로그인 먼저 체크
+    if (tempPassword != null && tempPassword.equals(password)) {
+      log.debug("[임시 비밀번호] : 임시 비밀번호 로그인 성공");
+
+      // JWT 무효화
+      jwtRegistry.invalidateJwtInformationByUserId(user.getId());
+
+      // 임시 비밀번호는 1회용이므로 삭제
+      redisTemplate.delete(redisKey);
+
+      // Security 인증 수동 생성
+      PlaylistUserDetails userDetails =
+          new PlaylistUserDetails(userMapper.toDto(user), user.getPassword());
+
+      Authentication auth = new UsernamePasswordAuthenticationToken(
+          userDetails,
+          null,
+          userDetails.getAuthorities()
+      );
+      SecurityContextHolder.getContext().setAuthentication(auth);
+
+      // JWT 발급 및 저장
+      JwtInformation info = generateJwt(userDetails);
+      jwtRegistry.registerJwtInformation(info);
+
+      return info;
+    }
+
+    // 임시비밀번호가 아닐 때만 AuthenticationManager 사용
     Authentication auth = authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(username, password)
     );
@@ -83,34 +121,14 @@ public class BasicAuthService implements AuthService {
     SecurityContextHolder.getContext().setAuthentication(auth);
 
     PlaylistUserDetails userDetails = (PlaylistUserDetails) auth.getPrincipal();
-    UserDto userDto = userDetails.getUserDto();
 
-    jwtRegistry.invalidateJwtInformationByUserId(userDto.id());
+    // 기존 JWT 갱신 처리
+    jwtRegistry.invalidateJwtInformationByUserId(userDetails.getUserDto().id());
 
-    // Access 발급 시간
-    Instant accessIssuedAt = Instant.now();
-    String access = jwtTokenProvider.generateAccessToken(userDetails, accessIssuedAt);
-
-    // Refresh 발급 시간
-    Instant refreshIssuedAt = Instant.now();
-    String refresh = jwtTokenProvider.generateRefreshToken(userDetails, refreshIssuedAt);
-
-    // 만료 시간 추출
-    Instant accessExp = jwtTokenProvider.getExpiryFromToken(access);
-    Instant refreshExp = jwtTokenProvider.getExpiryFromToken(refresh);
-
-    JwtInformation info = new JwtInformation(
-        userDto,
-        access, accessExp,
-        accessIssuedAt,
-        refresh, refreshExp,
-        refreshIssuedAt
-    );
-
-    // DB 저장
+    JwtInformation info = generateJwt(userDetails);
     jwtRegistry.registerJwtInformation(info);
-    log.info("[인증 관리] : 로그인 완료");
 
+    log.info("[인증 관리] : 로그인 완료");
     return info;
   }
 
@@ -178,5 +196,25 @@ public class BasicAuthService implements AuthService {
     }
     jwtRegistry.revokeByToken(refreshToken);
     log.info("[인증 관리] : 로그아웃 완료");
+  }
+
+  private JwtInformation generateJwt(PlaylistUserDetails userDetails) throws JOSEException {
+
+    UserDto userDto = userDetails.getUserDto();
+
+    Instant accessIssuedAt = Instant.now();
+    String access = jwtTokenProvider.generateAccessToken(userDetails, accessIssuedAt);
+
+    Instant refreshIssuedAt = Instant.now();
+    String refresh = jwtTokenProvider.generateRefreshToken(userDetails, refreshIssuedAt);
+
+    Instant accessExp = jwtTokenProvider.getExpiryFromToken(access);
+    Instant refreshExp = jwtTokenProvider.getExpiryFromToken(refresh);
+
+    return new JwtInformation(
+        userDto,
+        access, accessExp, accessIssuedAt,
+        refresh, refreshExp, refreshIssuedAt
+    );
   }
 }

@@ -1,10 +1,12 @@
-package com.codeit.playlist.domain.auth.service.controller;
+package com.codeit.playlist.domain.auth.controller;
 
 import com.codeit.playlist.domain.auth.service.AuthService;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
 import com.codeit.playlist.domain.user.dto.data.JwtDto;
+import com.codeit.playlist.domain.user.dto.request.ResetPasswordRequest;
+import com.codeit.playlist.domain.user.service.PasswordResetService;
 import com.codeit.playlist.domain.user.service.UserService;
 import com.nimbusds.jose.JOSEException;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,6 +19,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +34,7 @@ public class AuthController {
   private final UserService userService;
   private final JwtTokenProvider jwtTokenProvider;
   private final JwtRegistry jwtRegistry;
+  private final PasswordResetService passwordResetService;
 
   @GetMapping("/csrf-token")
   public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
@@ -104,5 +108,13 @@ public class AuthController {
 
     log.info("[인증 관리] : 로그아웃 요청 완료");
     return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/reset-password")
+  public ResponseEntity<Void> TemporaryPassword(
+      @RequestBody ResetPasswordRequest request
+  ) {
+    passwordResetService.sendTemporaryPassword(request);
+    return ResponseEntity.ok().build();
   }
 }

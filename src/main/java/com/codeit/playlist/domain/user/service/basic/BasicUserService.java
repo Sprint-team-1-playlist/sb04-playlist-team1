@@ -15,10 +15,12 @@ import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.service.UserService;
+import com.codeit.playlist.global.redis.TemporaryPasswordStore;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,8 @@ public class BasicUserService implements UserService {
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
   private final JwtRegistry jwtRegistry;
+  private final TemporaryPasswordStore temporaryPasswordStore;
+  private final StringRedisTemplate redisTemplate;
 
   @Value("${ADMIN_EMAIL}")
   private String adminEmail;
@@ -105,6 +109,8 @@ public class BasicUserService implements UserService {
     userRepository.changePassword(userId, encodedPassword);
 
     jwtRegistry.invalidateJwtInformationByUserId(userId);
+
+    temporaryPasswordStore.delete(userId);
 
     log.info("[사용자 관리] 패스워드 변경 완료 : userId = {}", userId);
   }
