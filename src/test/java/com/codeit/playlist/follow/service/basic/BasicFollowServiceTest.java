@@ -1,17 +1,9 @@
 package com.codeit.playlist.follow.service.basic;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.follow.dto.data.FollowDto;
 import com.codeit.playlist.domain.follow.dto.request.FollowRequest;
 import com.codeit.playlist.domain.follow.entity.Follow;
@@ -21,10 +13,14 @@ import com.codeit.playlist.domain.follow.exception.FollowSelfNotAllowedException
 import com.codeit.playlist.domain.follow.mapper.FollowMapper;
 import com.codeit.playlist.domain.follow.repository.FollowRepository;
 import com.codeit.playlist.domain.follow.service.basic.BasicFollowService;
+import com.codeit.playlist.domain.security.PlaylistUserDetails;
+import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +30,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicFollowServiceTest {
@@ -59,22 +58,50 @@ public class BasicFollowServiceTest {
 
   @BeforeEach
   void setUp() {
-    followerId = UUID.fromString("11111111-1111-1111-1111-111111111111"); // 테스트용 임시 ID
+    followerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
     followeeId = UUID.randomUUID();
+
+    follower = new User("follower@test.com", "pw", "follower", null, Role.USER);
+    followee = new User("followee@test.com", "pw", "followee", null, Role.USER);
+
+    setId(follower, followerId);
+    setId(followee, followeeId);
+
     followRequest = new FollowRequest(followeeId);
 
-    follower = new User("follower@test.com", "1234", "follower", null, Role.USER);
-    followee = new User("followee@test.com", "1234", "followee", null, Role.USER);
+    follow = new Follow(follower, followee);
+    setId(follow, UUID.randomUUID());
 
-    follow = new Follow(followee, follower);
+    PlaylistUserDetails userDetails = new PlaylistUserDetails(
+        new UserDto(follower.getId(), LocalDateTime.now(), follower.getEmail(), follower.getName(),
+            follower.getProfileImageUrl(), follower.getRole(), follower.isLocked()),
+        follower.getPassword()
+    );
+
+    Authentication authentication = org.mockito.Mockito.mock(Authentication.class);
+    org.mockito.Mockito.lenient().when(authentication.getPrincipal()).thenReturn(userDetails);
+
+    SecurityContext securityContext = org.mockito.Mockito.mock(SecurityContext.class);
+    org.mockito.Mockito.lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+    SecurityContextHolder.setContext(securityContext);
   }
+
 
   @Test
   @DisplayName("팔로우 생성 성공")
   void createFollowSuccess() {
     // given
-    when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
+    UUID followeeId = UUID.randomUUID();
+    User followee = new User("followee@test.com", "pw", "followee", null, Role.USER);
+    setId(followee, followeeId);
+
+    FollowRequest followRequest = new FollowRequest(followeeId);
+    Follow follow = new Follow(follower, followee);
+    setId(follow, UUID.randomUUID());
+
+    // followerId stub 추가 (SecurityContext에서 가져오는 ID)
     when(userRepository.findById(followerId)).thenReturn(Optional.of(follower));
+    when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
     when(followRepository.save(any(Follow.class))).thenReturn(follow);
     when(followMapper.toDto(any(Follow.class))).thenReturn(new FollowDto(follow.getId(), followerId, followeeId));
 
@@ -90,12 +117,12 @@ public class BasicFollowServiceTest {
   @Test
   @DisplayName("팔로우 대상 유저가 존재하지 않을 때 400 예외 발생")
   void createFollowFolloweeNotFound() {
-    // given: userRepository에서 followee를 찾을 수 없도록 설정
+    UUID followeeId = UUID.randomUUID();
+    FollowRequest followRequest = new FollowRequest(followeeId);
+
     when(userRepository.findById(followeeId)).thenReturn(Optional.empty());
 
-    // when then: UserNotFoundException이 발생해야 함
     assertThrows(UserNotFoundException.class, () -> followService.create(followRequest));
-
     verify(userRepository, times(1)).findById(followeeId);
   }
 
@@ -103,13 +130,18 @@ public class BasicFollowServiceTest {
   @DisplayName("자기 자신을 팔로우할 경우 400 예외 발생")
   void createFollowSelfFollowNotAllowed() {
     FollowRequest selfRequest = new FollowRequest(followerId);
-
     assertThrows(FollowSelfNotAllowedException.class, () -> followService.create(selfRequest));
   }
 
   @Test
   @DisplayName("이미 팔로우 중일 경우 400 예외 발생")
   void createFollowAlreadyFollowing() {
+    UUID followeeId = UUID.randomUUID();
+    User followee = new User("followee@test.com", "pw", "followee", null, Role.USER);
+    setId(followee, followeeId);
+
+    FollowRequest followRequest = new FollowRequest(followeeId);
+
     when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
     when(followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)).thenReturn(true);
 
@@ -119,13 +151,11 @@ public class BasicFollowServiceTest {
   @Test
   @DisplayName("내가 특정 유저를 팔로우 중이면 true 반환")
   void followedByMeFollowing() {
-    // given
+    UUID followeeId = UUID.randomUUID();
     when(followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)).thenReturn(true);
 
-    // when
     Boolean result = followService.followedByMe(followeeId);
 
-    // then
     assertNotNull(result);
     assertTrue(result);
     verify(followRepository, times(1)).existsByFollowerIdAndFolloweeId(followerId, followeeId);
@@ -134,13 +164,11 @@ public class BasicFollowServiceTest {
   @Test
   @DisplayName("내가 특정 유저를 팔로우 중이 아니면 false 반환")
   void followedByMeNotFollowing() {
-    // given
+    UUID followeeId = UUID.randomUUID();
     when(followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)).thenReturn(false);
 
-    // when
     Boolean result = followService.followedByMe(followeeId);
 
-    // then
     assertNotNull(result);
     assertFalse(result);
     verify(followRepository, times(1)).existsByFollowerIdAndFolloweeId(followerId, followeeId);
@@ -149,40 +177,31 @@ public class BasicFollowServiceTest {
   @Test
   @DisplayName("자기 자신을 조회하면 예외 발생")
   void followedByMeSelfFollowNotAllowed() {
-    UUID selfId = followerId;
-
-    // then
-    assertThrows(FollowSelfNotAllowedException.class, () -> followService.followedByMe(selfId));
+    assertThrows(FollowSelfNotAllowedException.class, () -> followService.followedByMe(followerId));
   }
 
   @Test
   @DisplayName("특정 유저의 팔로워 수 조회 성공")
   void countFollowersSuccess() {
-    // given
     UUID followeeId = UUID.randomUUID();
     User followee = new User("followee@test.com", "1234", "followee", null, Role.USER);
     followee.increaseFollowCount();
 
     when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
 
-    // when
     Long result = followService.countFollowers(followeeId);
 
-    // then
     assertNotNull(result);
-    assertTrue(result >= 0);
-    assertTrue(result == 1L);
+    assertEquals(1L, result);
     verify(userRepository, times(1)).findById(followeeId);
   }
 
   @Test
   @DisplayName("팔로워 수 조회 시 유저가 존재하지 않으면 예외 발생")
   void countFollowersUserNotFound() {
-    // given
     UUID invalidId = UUID.randomUUID();
     when(userRepository.findById(invalidId)).thenReturn(Optional.empty());
 
-    // when & then
     assertThrows(UserNotFoundException.class, () -> followService.countFollowers(invalidId));
     verify(userRepository, times(1)).findById(invalidId);
   }
@@ -190,7 +209,6 @@ public class BasicFollowServiceTest {
   @Test
   @DisplayName("팔로우 삭제 성공 시 followee의 팔로워 수 감소")
   void deleteFollowSuccess() {
-    // given
     UUID followId = UUID.randomUUID();
     User followee = new User("followee@test.com", "1234", "followee", null, Role.USER);
     User follower = new User("follower@test.com", "1234", "follower", null, Role.USER);
@@ -200,10 +218,8 @@ public class BasicFollowServiceTest {
     when(followRepository.findById(followId)).thenReturn(Optional.of(follow));
     doNothing().when(followRepository).deleteById(followId);
 
-    // when
     followService.delete(followId);
 
-    // then
     assertEquals(0L, follow.getFollowee().getFollowCount());
     verify(followRepository, times(1)).findById(followId);
     verify(followRepository, times(1)).deleteById(followId);
@@ -212,15 +228,21 @@ public class BasicFollowServiceTest {
   @Test
   @DisplayName("팔로우 삭제 시 존재하지 않는 followId면 FollowNotFoundException 발생")
   void deleteFollowNotFound() {
-    // given
     UUID followId = UUID.randomUUID();
     when(followRepository.findById(followId)).thenReturn(Optional.empty());
 
-    // when & then
     assertThrows(FollowNotFoundException.class, () -> followService.delete(followId));
     verify(followRepository, times(1)).findById(followId);
     verify(followRepository, never()).deleteById(any());
   }
 
-
+  private void setId(Object entity, UUID id) {
+    try {
+      Field field = BaseEntity.class.getDeclaredField("id");
+      field.setAccessible(true);
+      field.set(entity, id);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

@@ -14,5 +14,4 @@ public record UserDto (
     Role role,
     boolean locked
 ){
-
 }

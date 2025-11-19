@@ -33,15 +33,15 @@ public class SecurityConfig {
       JwtLogoutSuccessHandler jwtLogoutSuccessHandler) throws Exception {
     return http
         .csrf(csrf -> csrf
-        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .ignoringRequestMatchers("/",
-                    "/index.html",
-                    "/vite.svg",
-                    "/assets/**",
-                    "/api/auth/sign-in",
-                    "/api/auth/sign-up",
-                    "/api/auth/sign-out",
-                    "/api/users")
+            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            .ignoringRequestMatchers("/",
+                "/index.html",
+                "/vite.svg",
+                "/assets/**",
+                "/api/auth/sign-in",
+                "/api/auth/sign-up",
+                "/api/auth/sign-out",
+                "/api/users")
         )
 
         .formLogin(AbstractHttpConfigurer::disable)
@@ -61,8 +61,8 @@ public class SecurityConfig {
             .requestMatchers("/api/auth/sign-up").permitAll()
             .requestMatchers("/api/auth/refresh").permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-            .requestMatchers(HttpMethod.POST,"/api/users").permitAll()
-            .requestMatchers("/api/sse","/api/sse/**").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+            .requestMatchers("/api/sse", "/api/sse/**").permitAll()
             .requestMatchers("/api/auth/csrf-token").permitAll()
 
             //정적 리소스
@@ -83,9 +83,9 @@ public class SecurityConfig {
   }
 
   @Bean
-  public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+  public AuthenticationManager authenticationManager(
+      AuthenticationConfiguration authenticationConfiguration)
       throws Exception {
     return authenticationConfiguration.getAuthenticationManager();
   }
-
 }

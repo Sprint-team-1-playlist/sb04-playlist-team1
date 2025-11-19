@@ -1,5 +1,7 @@
 package com.codeit.playlist.watching.fixture;
 
+import static org.mockito.Mockito.mock;
+
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
