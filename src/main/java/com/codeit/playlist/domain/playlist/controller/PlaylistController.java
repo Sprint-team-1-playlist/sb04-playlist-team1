@@ -142,6 +142,7 @@ public class PlaylistController {
         return ResponseEntity.noContent().build();
     }
 
+    //플레이리스트에 콘텐츠 추가
     @PostMapping("/{playlistId}/contents/{contentId}")
     public ResponseEntity<Void> addContentToPlaylist(@PathVariable UUID playlistId,
                                                      @PathVariable UUID contentId,
@@ -154,6 +155,25 @@ public class PlaylistController {
         playlistContentService.addContentToPlaylist(playlistId, contentId, currentUserId);
 
         log.info("[플레이리스트] 콘텐츠 추가 완료 : playlistId={}, contentId={}, userId={}", playlistId, contentId, currentUserId);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    //플레이리스트에 콘텐츠 삭제
+    @DeleteMapping("/{playlistId}/contents/{contentId}")
+    public ResponseEntity<Void> removeContentFromPlaylist(@PathVariable UUID playlistId,
+                                                          @PathVariable UUID contentId,
+                                                          @AuthenticationPrincipal PlaylistUserDetails userDetails) {
+
+        log.debug("[플레이리스트] 콘텐츠 삭제 시작 : playlistId={}, contentId={}, userId{}",
+                playlistId, contentId, userDetails.getUserDto().id());
+
+        UUID currentUserId = userDetails.getUserDto().id();
+
+        playlistContentService.removeContentFromPlaylist(playlistId, contentId, currentUserId);
+
+        log.info("[플레이리스트] 콘텐츠 삭제 완료 : playlistId={}, contentId={}, userId={}",
+                playlistId, contentId, currentUserId);
 
         return ResponseEntity.noContent().build();
     }
