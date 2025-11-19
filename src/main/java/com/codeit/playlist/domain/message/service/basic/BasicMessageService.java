@@ -79,6 +79,16 @@ public class BasicMessageService implements MessageService {
   public CursorResponseDirectMessageDto findAll(UUID conversationId, String cursor,
       UUID idAfter, int limit, String sortDirection, String sortBy) {
 
+    Conversation conversation = conversationRepository.findById(conversationId)
+        .orElseThrow(() -> ConversationNotFoundException.withId(conversationId));
+
+    UUID currentUserId = getCurrentUserId();
+
+    if (!conversation.getUser1().getId().equals(currentUserId)
+        && !conversation.getUser2().getId().equals(currentUserId)) {
+      throw NotConversationParticipantException.withId(currentUserId);
+    }
+
     LocalDateTime cursorTime = null;
     if (cursor != null) {
       try {
