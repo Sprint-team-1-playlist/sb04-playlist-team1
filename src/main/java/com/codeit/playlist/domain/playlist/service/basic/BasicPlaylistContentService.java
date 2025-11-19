@@ -1,0 +1,80 @@
+package com.codeit.playlist.domain.playlist.service.basic;
+
+import com.codeit.playlist.domain.content.entity.Content;
+import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
+import com.codeit.playlist.domain.content.repository.ContentRepository;
+import com.codeit.playlist.domain.playlist.entity.Playlist;
+import com.codeit.playlist.domain.playlist.entity.PlaylistContent;
+import com.codeit.playlist.domain.playlist.exception.PlaylistAccessDeniedException;
+import com.codeit.playlist.domain.playlist.exception.PlaylistContentAlreadyExistsException;
+import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
+import com.codeit.playlist.domain.playlist.repository.PlaylistContentRepository;
+import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
+import com.codeit.playlist.domain.playlist.service.PlaylistContentService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class BasicPlaylistContentService implements PlaylistContentService {
+
+    private final PlaylistRepository playlistRepository;
+    private final ContentRepository contentRepository;
+    private final PlaylistContentRepository playlistContentRepository;
+
+    @Override
+    @Transactional
+    public void addContentToPlaylist(UUID playlistId, UUID contentId, UUID currentUserId) {
+
+        log.debug("[플레이리스트] 콘텐츠 추가 시작 : playlistId={}, contentId={}, userId={}",
+                playlistId, contentId, currentUserId);
+
+        //삭제되지 않은 플레이리스트 조회
+        Playlist playlist = playlistRepository.findByIdAndDeletedAtIsNull(playlistId)
+                .orElseThrow(() -> {
+                    log.error("[플레이리스트] 콘텐츠 추가 실패 : 존재하지 않는 playlistId={}", playlistId);
+                    return PlaylistNotFoundException.withId(playlistId);
+                });
+
+        //소유자 검증
+        validateOwner(playlist, currentUserId);
+
+        //컨텐츠 조회
+        Content content = contentRepository.findById(contentId)
+                .orElseThrow(() -> {
+                    log.error("[플레이리스트] 콘텐츠 추가 실패 : 존재하지 않는 contentId={}", contentId);
+                    return ContentNotFoundException.withId(contentId);
+                });
+
+        boolean exists = playlistContentRepository.existsByPlaylist_IdAndContent_Id(playlistId, contentId);
+
+        //콘텐츠 중복 검사
+        if (exists) {
+            log.error("[플레이리스트] 콘텐츠 추가 실패 : 이미 존재하는 콘텐츠 playlistId={}, contentId={}",
+                    playlistId, contentId);
+            throw new PlaylistContentAlreadyExistsException();
+        }
+
+        PlaylistContent playlistContent = new PlaylistContent(playlist, content);
+        playlistContentRepository.save(playlistContent);
+
+        log.info("[플레이리스트] 콘텐츠 추가 : 저장 완료 및 종료 playlistId={}, contentId={}, userId={}",
+                playlistId, contentId, currentUserId);
+    }
+
+    //소유자 검증 로직
+    private void validateOwner(Playlist playlist, UUID currentUserId) {
+        if (!playlist.getOwner().getId().equals(currentUserId)) {
+            log.error("[플레이리스트] 소유자 검증 실패 - playlistOwnerId={}, currentUserId={}",
+                    playlist.getOwner().getId(), currentUserId);
+            throw new PlaylistAccessDeniedException();
+        }
+        log.debug("[플레이리스트] 소유자 검증 성공 : playlistOwnerId={}, currentUserId={}",
+                playlist.getOwner().getId(), currentUserId);
+    }
+}
