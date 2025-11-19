@@ -17,6 +17,7 @@ import java.util.UUID;
 @Repository
 public interface PlaylistRepository extends JpaRepository<Playlist, UUID>, PlaylistRepositoryCustom {
 
+    //삭제되지 않은 플레이리스트 조회
     Optional<Playlist> findByIdAndDeletedAtIsNull(UUID id);
 
     // Soft delete
