@@ -3,7 +3,8 @@ name: Deploy to ECS
 on:
   push:
     branches:
-      - develop # TODO: 나중에 main 으로 변경
+      - main
+      - develop
 
 jobs:
   deploy:
@@ -14,41 +15,58 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout source
+      - name: Checkout source # 소스코드 체크아웃
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials # AWS 권한 구성
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsECSRole
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: Login to Amazon ECR # ECR 로그인
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
+      - name: Build Docker image # 도커 이미지 빌드
         run: |
           docker build -t ${{ secrets.ECR_REPO }}:${{ github.sha }} .
 
-      - name: Tag Docker image
+      - name: Tag Docker image # 태그 붙이기
         run: |
           docker tag ${{ secrets.ECR_REPO }}:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
 
-      - name: Push Docker image to ECR
+      - name: Push Docker image to ECR # ECR 로 push
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
 
-      - name: Deploy to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      - name: Replace ACCOUNT_ID placeholder in task-definition.json # task-definition.json에 ACCOUNT_ID 대입
+        run: |
+          jq --arg ACCOUNT_ID "${{ secrets.AWS_ACCOUNT_ID }}" \
+             '.executionRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)
+              | .taskRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)' \
+             task-definition.json > tmp.json && mv tmp.json task-definition.json
+          
+      - name: Update image and env vars using jq # 이미지 + 환경변수 치환
+        run: |
+          jq \
+            --arg IMAGE "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}" \
+            --arg RDS_URL "${{ secrets.RDS_URL }}" \
+            --arg RDS_USERNAME "${{ secrets.RDS_USERNAME }}" \
+            --arg RDS_PASSWORD "${{ secrets.RDS_PASSWORD }}" \
+            '
+            .containerDefinitions[0].image = $IMAGE
+            | .containerDefinitions[0].environment = [
+                {"name": "SPRING_PROFILES_ACTIVE", "value": "prod"},
+                {"name": "SPRING_DATASOURCE_URL", "value": $RDS_URL},
+                {"name": "SPRING_DATASOURCE_USERNAME", "value": $RDS_USERNAME},
+                {"name": "SPRING_DATASOURCE_PASSWORD", "value": $RDS_PASSWORD}
+              ]
+            ' task-definition.json > tmp.json && mv tmp.json task-definition.json
+
+      - name: Deploy to ECS # ECS 배포
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          cluster: ${{ secrets.CLUSTER_NAME }}
+          task-definition: task-definition.json
           service: ${{ secrets.SERVICE_NAME }}
-          task-definition: ${{ secrets.TASK_DEFINITION }}
+          cluster: ${{ secrets.CLUSTER_NAME }}
           wait-for-service-stability: true
-          container-name: ${{ secrets.CONTAINER_NAME }}
-          environment-variables: |
-            SPRING_PROFILES_ACTIVE=prod
-            SPRING_DATASOURCE_URL=${{ secrets.RDS_URL }}
-            SPRING_DATASOURCE_USERNAME=${{ secrets.RDS_USERNAME }}
-            SPRING_DATASOURCE_PASSWORD=${{ secrets.RDS_PASSWORD }}
-            IMAGE_TAG=${{ github.sha }}
