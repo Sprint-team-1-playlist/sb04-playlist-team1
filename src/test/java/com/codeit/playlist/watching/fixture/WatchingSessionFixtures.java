@@ -4,6 +4,7 @@ import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.watching.dto.data.ChangeType;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
@@ -43,12 +44,12 @@ public class WatchingSessionFixtures {
 
     public static UserDto userDto() {
         return new UserDto(
-                "id",
+                FIXED_ID,
                 FIXED_TIME,
                 "email@test.com",
                 "name",
                 "profileImageUrl",
-                "role",
+                Role.ADMIN,
                 false
         );
     }
