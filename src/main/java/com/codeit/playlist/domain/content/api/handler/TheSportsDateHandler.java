@@ -29,7 +29,6 @@ public class TheSportsDateHandler {
 
     public List<TheSportsResponse> getSportsEvent(LocalDate localDate) {
         log.info("Sports API 수집 시작 : localDate = {}", localDate);
-        String stringDate = localDate.toString(); // String으로 변환해서 localDate를 uri에 넣음
 
         String sportsJson = webClient.get()
                 .uri("/123/eventsday.php?d=" + localDate)
@@ -67,7 +66,7 @@ public class TheSportsDateHandler {
             return sportsList;
 
         } catch (JsonProcessingException e) {
-            log.error("Sports API 단일 날짜 수집 실패, localDate = {}", localDate);
+            log.error("Sports API 단일 날짜 수집 실패, localDate = {}", localDate, e);
             return List.of();
         }
     }

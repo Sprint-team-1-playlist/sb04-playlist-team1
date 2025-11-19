@@ -19,9 +19,6 @@ public class TheSportsApiService {
     private final TheSportsDateHandler dateHandler;
 
     public List<TheSportsResponse> searchSports(int year, int month) {
-//        Calendar calendar = Calendar.getInstance();
-//        calendar.set(Calendar.YEAR, year);
-//        calendar.set(Calendar.MONTH, month - 1);
 
         YearMonth sportsMonth = YearMonth.of(year, month);
         LocalDate startDate = sportsMonth.atDay(1);

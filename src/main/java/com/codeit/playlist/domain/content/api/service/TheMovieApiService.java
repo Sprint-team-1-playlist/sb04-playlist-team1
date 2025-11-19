@@ -18,7 +18,7 @@ import java.time.Duration;
 public class TheMovieApiService {
     private final WebClient webClient;
 
-    @Value("${api.tmdb.key}")
+    @Value("${TMDB_API_KEY}")
     private String apikey; // tmdb API key
 
     public Mono<String> getApiMovie(String query) {
