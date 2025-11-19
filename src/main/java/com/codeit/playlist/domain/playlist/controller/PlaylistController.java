@@ -5,12 +5,16 @@ import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
 import com.codeit.playlist.domain.playlist.dto.response.CursorResponsePlaylistDto;
+import com.codeit.playlist.domain.playlist.service.PlaylistContentService;
 import com.codeit.playlist.domain.playlist.service.PlaylistService;
+import com.codeit.playlist.domain.playlist.service.PlaylistSubscriptionService;
+import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -31,6 +35,8 @@ import java.util.UUID;
 public class PlaylistController {
 
     private final PlaylistService playlistService;
+    private final PlaylistSubscriptionService playlistSubscriptionService;
+    private final PlaylistContentService playlistContentService;
 
     //플레이리스트 생성
     @PostMapping
@@ -103,6 +109,7 @@ public class PlaylistController {
         return ResponseEntity.ok(playlists);
     }
 
+    //플레이리스트 단건 조회
     @GetMapping("/{playlistId}")
     public ResponseEntity<PlaylistDto> getPlaylist(@PathVariable UUID playlistId) {
         log.debug("[플레이리스트] 플레이리스트 단건 조회 시작: id={}", playlistId);
@@ -111,5 +118,43 @@ public class PlaylistController {
 
         log.info("[플레이리스트] 플레이리스트 단건 조회 성공: id={}", playlistId);
         return ResponseEntity.ok(response);
+    }
+
+    //플레이리스트 구독
+    @PostMapping("/{playlistId}/subscription")
+    public ResponseEntity<Void> playlistSubscription(@PathVariable UUID playlistId,
+                                                     @RequestHeader("USER-ID") UUID subscriberId) {//subscriberId는 Security 구현시 삭제
+        log.debug("[플레이리스트] 플레이리스트 구독 : playlistId={}, userId = {}", playlistId, subscriberId);
+
+        playlistSubscriptionService.subscribe(playlistId, subscriberId);
+
+        return ResponseEntity.ok().build();
+    }
+
+    //플레이리스트 구독 해제
+    @DeleteMapping("/{playlistId}/subscription")
+    public ResponseEntity<Void> playlistUnSubscription(@PathVariable UUID playlistId,
+                                                       @RequestHeader("USER-ID") UUID subscriberId) {//subscriberId는 Security 구현시 삭제
+        log.debug("[플레이리스트] 구독 해제 요청 : playlistId={}, userId={}", playlistId, subscriberId);
+
+        playlistSubscriptionService.unsubscribe(playlistId, subscriberId);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{playlistId}/contents/{contentId}")
+    public ResponseEntity<Void> addContentToPlaylist(@PathVariable UUID playlistId,
+                                                     @PathVariable UUID contentId,
+                                                     @AuthenticationPrincipal PlaylistUserDetails userDetails) {
+
+        log.debug("[플레이리스트] 콘텐츠 추가 시작 : playlistId={}, contentId={}, userId{}", playlistId, contentId, userDetails.getUserDto().id());
+
+        UUID currentUserId = userDetails.getUserDto().id();
+
+        playlistContentService.addContentToPlaylist(playlistId, contentId, currentUserId);
+
+        log.info("[플레이리스트] 콘텐츠 추가 완료 : playlistId={}, contentId={}, userId={}", playlistId, contentId, currentUserId);
+
+        return ResponseEntity.noContent().build();
     }
 }

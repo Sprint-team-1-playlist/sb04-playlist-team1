@@ -17,13 +17,14 @@ public class RedisWatchingSessionRepository {
     }
 
     public boolean addWatcher(UUID contentId, UUID userId) {
-        Long result = redisTemplate.opsForSet()
-                .add(key(contentId), userId.toString());
-        return result != null && result > 0;
+        long timestamp = System.currentTimeMillis();
+        Boolean result = redisTemplate.opsForZSet()
+                .add(key(contentId), userId.toString(), timestamp);
+        return Boolean.TRUE.equals(result);
     }
 
     public boolean removeWatcher(UUID contentId, UUID userId) {
-        Long result = redisTemplate.opsForSet()
+        Long result = redisTemplate.opsForZSet()
                 .remove(key(contentId), userId.toString());
         return result != null && result > 0;
     }
