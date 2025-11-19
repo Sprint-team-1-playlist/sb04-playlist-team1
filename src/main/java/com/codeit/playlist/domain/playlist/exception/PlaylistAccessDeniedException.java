@@ -14,7 +14,7 @@ public class PlaylistAccessDeniedException extends PlaylistException {
     }
 
     //playlistId + 유저 정보
-    public static PlaylistAccessDeniedException withIds(UUID playlistId, UUID ownerId, UUID currentUserId) {
+    public PlaylistAccessDeniedException withIds(UUID playlistId, UUID ownerId, UUID currentUserId) {
         PlaylistAccessDeniedException exception = new PlaylistAccessDeniedException();
         exception.addDetail("playlistId", playlistId);
         exception.addDetail("ownerId", ownerId);

@@ -69,10 +69,11 @@ public class BasicPlaylistContentService implements PlaylistContentService {
 
     //소유자 검증 로직
     private void validateOwner(Playlist playlist, UUID currentUserId) {
-        if (!playlist.getOwner().getId().equals(currentUserId)) {
+        UUID ownerId = playlist.getOwner().getId();
+        if (!ownerId.equals(currentUserId)) {
             log.error("[플레이리스트] 소유자 검증 실패 - playlistOwnerId={}, currentUserId={}",
-                    playlist.getOwner().getId(), currentUserId);
-            throw new PlaylistAccessDeniedException();
+                    ownerId, currentUserId);
+            throw new PlaylistAccessDeniedException().withIds(playlist.getId(),ownerId, currentUserId);
         }
         log.debug("[플레이리스트] 소유자 검증 성공 : playlistOwnerId={}, currentUserId={}",
                 playlist.getOwner().getId(), currentUserId);
