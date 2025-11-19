@@ -7,6 +7,7 @@ import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.entity.PlaylistContent;
 import com.codeit.playlist.domain.playlist.exception.PlaylistAccessDeniedException;
 import com.codeit.playlist.domain.playlist.exception.PlaylistContentAlreadyExistsException;
+import com.codeit.playlist.domain.playlist.exception.PlaylistContentNotFoundException;
 import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
 import com.codeit.playlist.domain.playlist.repository.PlaylistContentRepository;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
@@ -73,6 +74,39 @@ public class BasicPlaylistContentService implements PlaylistContentService {
 
         log.info("[플레이리스트] 콘텐츠 추가 : 저장 완료 및 종료 playlistId={}, contentId={}, userId={}",
                 playlistId, contentId, currentUserId);
+    }
+
+    @Transactional
+    @Override
+    public void removeContentFromPlaylist(UUID playlistId, UUID contentId, UUID currentUserId) {
+
+        log.debug("[플레이리스트] 콘텐츠 삭제 시작 - playlistId={}, contentId={}, currentUserId={}",
+                playlistId, contentId, currentUserId);
+
+        //삭제되지 않은 플레이리스트 조회
+        Playlist playlist = playlistRepository.findByIdAndDeletedAtIsNull(playlistId)
+                .orElseThrow(() -> {
+                    log.error("[플레이리스트] 콘텐츠 삭제 실패 : 존재하지 않는 playlistId={}", playlistId);
+                    return PlaylistNotFoundException.withId(playlistId);
+                });
+
+        //소유자 검증
+        validateOwner(playlist, currentUserId);
+
+        //플레이리스트-콘텐츠 매핑 조회
+        PlaylistContent playlistContent = playlistContentRepository
+                .findByPlaylist_IdAndContent_Id(playlistId, contentId)
+                .orElseThrow(() -> {
+                    log.error("[플레이리스트] 콘텐츠 삭제 매핑 조회 실패 - playlistId={}, contentId={}",
+                            playlistId, contentId);
+                    return PlaylistContentNotFoundException.withIds(playlistId, contentId);
+                });
+
+        //삭제
+        playlistContentRepository.delete(playlistContent);
+
+        log.info("[플레이리스트] 콘텐츠 삭제 : 삭제 완료 playlistId={}, contentId={}",
+                playlistId, contentId);
     }
 
     //소유자 검증 로직
