@@ -1,0 +1,54 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches:
+      - develop # TODO: 나중에 main 으로 변경
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsECSRole
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.ECR_REPO }}:${{ github.sha }} .
+
+      - name: Tag Docker image
+        run: |
+          docker tag ${{ secrets.ECR_REPO }}:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          cluster: ${{ secrets.CLUSTER_NAME }}
+          service: ${{ secrets.SERVICE_NAME }}
+          task-definition: ${{ secrets.TASK_DEFINITION }}
+          wait-for-service-stability: true
+          container-name: ${{ secrets.CONTAINER_NAME }}
+          environment-variables: |
+            SPRING_PROFILES_ACTIVE=prod
+            SPRING_DATASOURCE_URL=${{ secrets.RDS_URL }}
+            SPRING_DATASOURCE_USERNAME=${{ secrets.RDS_USERNAME }}
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.RDS_PASSWORD }}
+            IMAGE_TAG=${{ github.sha }}

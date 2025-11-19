@@ -6,7 +6,6 @@ import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
-import com.codeit.playlist.domain.user.exception.RequestInValidUuidFormat;
 import com.codeit.playlist.domain.user.service.UserService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +20,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Component
 public class AdminInitializer implements ApplicationRunner {
-
-  // .env 파일에 개인이 사용할 환경변수 선언, CI/CD 배포 구축 후에 github secret 에 추후 수정할 것
 
   @Value("${ADMIN_USER}")
   private String name;
@@ -40,13 +37,9 @@ public class AdminInitializer implements ApplicationRunner {
     UserCreateRequest request = new UserCreateRequest(name, email, password);
     try {
       UserDto admin = userService.registerUser(request);
-      UUID adminId;
-      try{
-        adminId = UUID.fromString(admin.id());
-              } catch (IllegalArgumentException e) {
-                log.error("유효하지 않은 UUID 형식입니다: {}", admin.id());
-                throw RequestInValidUuidFormat.withId(admin.id());
-              }
+
+      UUID adminId = admin.id();
+
       authService.updateRoleInternal(new UserRoleUpdateRequest(Role.ADMIN),
           adminId);
       log.info("관리자 계정이 성공적으로 생성되었습니다.");
