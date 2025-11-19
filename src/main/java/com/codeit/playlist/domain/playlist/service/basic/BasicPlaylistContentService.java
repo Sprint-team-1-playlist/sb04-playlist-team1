@@ -13,6 +13,7 @@ import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.service.PlaylistContentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,8 +61,15 @@ public class BasicPlaylistContentService implements PlaylistContentService {
             throw PlaylistContentAlreadyExistsException.withIds(playlistId, contentId);
         }
 
-        PlaylistContent playlistContent = new PlaylistContent(playlist, content);
-        playlistContentRepository.save(playlistContent);
+        try {
+            PlaylistContent playlistContent = new PlaylistContent(playlist, content);
+            playlistContentRepository.save(playlistContent);
+
+        } catch (DataIntegrityViolationException e) {
+            log.error("[플레이리스트] 콘텐츠 추가 실패 : DB unique 제약조건 위반 playlistId={}, contentId={}",
+                    playlistId, contentId, e);
+            throw PlaylistContentAlreadyExistsException.withIds(playlistId, contentId);
+        }
 
         log.info("[플레이리스트] 콘텐츠 추가 : 저장 완료 및 종료 playlistId={}, contentId={}, userId={}",
                 playlistId, contentId, currentUserId);
