@@ -29,4 +29,3 @@ public interface JwtRegistry {
   void revokeByToken(String token);
 
 }
-

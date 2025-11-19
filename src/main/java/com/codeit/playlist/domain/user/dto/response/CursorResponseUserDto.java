@@ -14,5 +14,4 @@ public record CursorResponseUserDto(
     String sortBy,
     SortDirection sortDirection
 ) {
-
 }
