@@ -33,6 +33,4 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
   );
 
   long countByConversationId(UUID conversationId);
-
-  Message findLatestMessageByConversation(Conversation conversation);
 }

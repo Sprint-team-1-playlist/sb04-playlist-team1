@@ -1,21 +1,21 @@
 package com.codeit.playlist.domain.conversation.service.basic;
 
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
-import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
-import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
-import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
-import com.codeit.playlist.domain.message.entity.Message;
 import com.codeit.playlist.domain.conversation.exception.ConversationAlreadyExistsException;
+import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
 import com.codeit.playlist.domain.conversation.exception.InvalidCursorException;
+import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.exception.SelfChatNotAllowedException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
-import com.codeit.playlist.domain.message.mapper.MessageMapper;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
-import com.codeit.playlist.domain.message.repository.MessageRepository;
 import com.codeit.playlist.domain.conversation.service.ConversationService;
+import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.message.entity.Message;
+import com.codeit.playlist.domain.message.mapper.MessageMapper;
+import com.codeit.playlist.domain.message.repository.MessageRepository;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.User;
@@ -154,7 +154,7 @@ public class BasicConversationService implements ConversationService {
       nextIdAfter = last.getId();
     }
 
-    boolean hasNext = total > pageConversations.size();
+    boolean hasNext = conversations.size() > limit;
 
     CursorResponseConversationDto response = new CursorResponseConversationDto(
         dtos,
@@ -186,7 +186,8 @@ public class BasicConversationService implements ConversationService {
         conversation.getUser2() : conversation.getUser1();
     UserSummary userSummary = userMapper.toUserSummary(other);
 
-    Message lastestMessage = messageRepository.findLatestMessageByConversation(conversation);
+    Message lastestMessage = messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation)
+        .orElse(null);
     DirectMessageDto messageDto = messageMapper.toDto(lastestMessage);
 
     ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto);

@@ -15,6 +15,7 @@ import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConver
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationAlreadyExistsException;
 import com.codeit.playlist.domain.conversation.exception.InvalidCursorException;
+import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.exception.SelfChatNotAllowedException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
@@ -229,8 +230,8 @@ public class BasicConversationServiceTest {
 
     Message latestMessage = new Message(conversation, currentUser, otherUser, "hello");
     setId(latestMessage, UUID.randomUUID());
-    when(messageRepository.findLatestMessageByConversation(conversation))
-        .thenReturn(latestMessage);
+    when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation))
+        .thenReturn(Optional.of(latestMessage));
 
     DirectMessageDto messageDto = new DirectMessageDto(
         UUID.randomUUID(),
@@ -270,8 +271,8 @@ public class BasicConversationServiceTest {
     UserSummary summary = new UserSummary(otherUserId, otherUser.getName(), otherUser.getProfileImageUrl());
     when(userMapper.toUserSummary(otherUser)).thenReturn(summary);
 
-    when(messageRepository.findLatestMessageByConversation(conversation))
-        .thenReturn(null);
+    when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation))
+        .thenReturn(Optional.empty());
 
     when(messageMapper.toDto(null)).thenReturn(null);
 
@@ -304,7 +305,7 @@ public class BasicConversationServiceTest {
         .thenReturn(Optional.of(conversation));
 
     //when & then
-    assertThrows(RuntimeException.class, () -> conversationService.findById(conversationId));
+    assertThrows(NotConversationParticipantException.class, () -> conversationService.findById(conversationId));
   }
 
   private void setCreatedAt(BaseEntity entity, LocalDateTime time) {
