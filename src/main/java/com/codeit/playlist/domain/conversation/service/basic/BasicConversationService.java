@@ -85,6 +85,7 @@ public class BasicConversationService implements ConversationService {
     return conversationDto;
   }
 
+  @Transactional(readOnly = true)
   @Override
   public CursorResponseConversationDto findAll(
       String keywordLike,
