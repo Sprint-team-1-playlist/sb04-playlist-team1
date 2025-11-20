@@ -1,6 +1,8 @@
 package com.codeit.playlist.domain.conversation.service.basic;
 
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
+import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
+import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
@@ -124,8 +126,7 @@ public class BasicConversationService implements ConversationService {
         .collect(Collectors.toMap(
             message -> message.getConversation().getId(), message -> message));
 
-    boolean hasNext = conversations.size() > limit;
-    List<Conversation> pageConversations = hasNext
+    List<Conversation> pageConversations = conversations.size() > limit
         ? conversations.subList(0, limit)
         : conversations;
 
@@ -137,9 +138,9 @@ public class BasicConversationService implements ConversationService {
           UserSummary userSummary = userMapper.toUserSummary(otherUser);
 
           Message lastestMessage = lastestMessageMap.get(conversation.getId());
-          DirectMessageDto msgDto = messageMapper.toDto(lastestMessage);
+          DirectMessageDto messageDto = messageMapper.toDto(lastestMessage);
 
-          return conversationMapper.toDto(conversation, userSummary, msgDto);
+          return conversationMapper.toDto(conversation, userSummary, messageDto);
         })
         .toList();
 
@@ -152,6 +153,8 @@ public class BasicConversationService implements ConversationService {
       nextCursor = last.getCreatedAt().toString();
       nextIdAfter = last.getId();
     }
+
+    boolean hasNext = total > pageConversations.size();
 
     CursorResponseConversationDto response = new CursorResponseConversationDto(
         dtos,
@@ -166,6 +169,30 @@ public class BasicConversationService implements ConversationService {
     log.info("[Conversation] 대화 조회 완료: {}", response);
 
     return response;
+  }
+
+  @Override
+  public ConversationDto findById(UUID conversationId) {
+    log.debug("[Conversation] 대화 조회 시작: {}", conversationId);
+
+    Conversation conversation = conversationRepository.findById(conversationId)
+        .orElseThrow(() -> ConversationNotFoundException.withId(conversationId));
+    UUID currentUserId = getCurrentUserId();
+    if (!currentUserId.equals(conversation.getUser1().getId()) && !currentUserId.equals(conversation.getUser2().getId())) {
+      throw NotConversationParticipantException.withId(currentUserId);
+    }
+
+    User other = currentUserId.equals(conversation.getUser1().getId()) ?
+        conversation.getUser2() : conversation.getUser1();
+    UserSummary userSummary = userMapper.toUserSummary(other);
+
+    Message lastestMessage = messageRepository.findLatestMessageByConversation(conversation);
+    DirectMessageDto messageDto = messageMapper.toDto(lastestMessage);
+
+    ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto);
+
+    log.info("[Conversation] 대화 조회 완료: {}", conversationDto);
+    return conversationDto;
   }
 
   private UUID getCurrentUserId() {
