@@ -345,6 +345,11 @@ public class BasicConversationServiceTest {
     assertNotNull(result);
     assertEquals(convId, result.id());
     assertEquals(msgDto, result.lastestMessage());
+
+    assertNotNull(result.with());
+    assertEquals(otherUserId, result.with().userId());
+    assertEquals(otherUser.getName(), result.with().name());
+    assertEquals(otherUser.getProfileImageUrl(), result.with().profileImageUrl());
   }
 
   @Test
@@ -374,6 +379,11 @@ public class BasicConversationServiceTest {
     // then
     assertNotNull(result);
     assertNull(result.lastestMessage());
+
+    assertNotNull(result.with());
+    assertEquals(otherUserId, result.with().userId());
+    assertEquals(otherUser.getName(), result.with().name());
+    assertEquals(otherUser.getProfileImageUrl(), result.with().profileImageUrl());
   }
 
   @Test

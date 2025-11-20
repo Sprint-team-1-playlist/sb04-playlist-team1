@@ -42,7 +42,7 @@ public class BasicMessageService implements MessageService {
     log.debug("[Message] 메시지 저장 시작: {}", conversationId);
 
     Conversation conversation = conversationRepository.findById(conversationId)
-        .orElseThrow(ConversationNotFoundException::new);
+        .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
 
     UUID currentUserId = getCurrentUserId();
 
@@ -52,11 +52,6 @@ public class BasicMessageService implements MessageService {
     }
 
     UUID user1Id = conversation.getUser1().getId();
-    UUID user2Id = conversation.getUser2().getId();
-
-    if (!user1Id.equals(currentUserId) && !user2Id.equals(currentUserId)) {
-      throw ConversationNotFoundException.withConversationId(conversationId);
-    }
 
     User sender = user1Id.equals(currentUserId)
         ? conversation.getUser1()
