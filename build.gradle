@@ -54,6 +54,11 @@ dependencies {
     // Redis (Watching Session)
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+    // AWS SDK
+    implementation(platform("software.amazon.awssdk:bom:2.27.21"))
+    implementation "software.amazon.awssdk:s3"
+    implementation "software.amazon.awssdk:auth"
+
     //QueryDSL
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     implementation 'com.querydsl:querydsl-core:5.0.0'
