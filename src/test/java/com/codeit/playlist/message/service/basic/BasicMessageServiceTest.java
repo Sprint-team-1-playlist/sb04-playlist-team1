@@ -14,6 +14,8 @@ import static org.mockito.Mockito.when;
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
+import com.codeit.playlist.domain.conversation.exception.InvalidCursorException;
+import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
@@ -217,6 +219,8 @@ class BasicMessageServiceTest {
         "Hello 2"
     );
 
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+
     when(messageMapper.toDto(m1)).thenReturn(dto1);
     when(messageMapper.toDto(m2)).thenReturn(dto2);
 
@@ -255,6 +259,73 @@ class BasicMessageServiceTest {
 
     verify(messageMapper, times(1)).toDto(m1);
     verify(messageMapper, times(1)).toDto(m2);
+  }
+
+  @Test
+  @DisplayName("커서 기반 조회 실패 - 대화방이 존재하지 않으면 예외 발생")
+  void findAllMessagesConversationNotFound() {
+    // given
+    when(conversationRepository.findById(conversationId))
+        .thenReturn(Optional.empty());
+
+    // when & then
+    assertThrows(ConversationNotFoundException.class, () ->
+        messageService.findAll(conversationId, null, null, 10, "desc", "createdAt")
+    );
+
+    verify(messageRepository, never())
+        .findMessagesByConversationWithCursor(any(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("커서 기반 조회 실패 - 현재 유저가 대화 참여자가 아니면 예외 발생")
+  void findAllMessagesNotParticipant() {
+    // given
+    UUID strangerId = UUID.randomUUID();
+
+    PlaylistUserDetails userDetails = mock(PlaylistUserDetails.class);
+    when(userDetails.getUserDto()).thenReturn(
+        new com.codeit.playlist.domain.user.dto.data.UserDto(
+            strangerId, LocalDateTime.now(),
+            "stranger@test.com", "stranger", null, Role.USER, false
+        )
+    );
+
+    Authentication authentication = mock(Authentication.class);
+    when(authentication.getPrincipal()).thenReturn(userDetails);
+
+    SecurityContext securityContext = mock(SecurityContext.class);
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    SecurityContextHolder.setContext(securityContext);
+
+    when(conversationRepository.findById(conversationId))
+        .thenReturn(Optional.of(conversation));
+
+    // when & then
+    assertThrows(NotConversationParticipantException.class, () ->
+        messageService.findAll(conversationId, null, null, 10, "desc", "createdAt")
+    );
+
+    verify(messageRepository, never())
+        .findMessagesByConversationWithCursor(any(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("커서 기반 조회 실패 - cursor 형식이 잘못된 경우 InvalidCursorException 발생")
+  void findAllMessagesInvalidCursor() {
+    // given
+    when(conversationRepository.findById(conversationId))
+        .thenReturn(Optional.of(conversation));
+
+    String invalidCursor = "not-a-date";
+
+    // when & then
+    assertThrows(InvalidCursorException.class, () ->
+        messageService.findAll(conversationId, invalidCursor, null, 10, "desc", "createdAt")
+    );
+
+    verify(messageRepository, never())
+        .findMessagesByConversationWithCursor(any(), any(), any(), any());
   }
 
   private void setId(Object entity, UUID id) {
