@@ -66,6 +66,9 @@ dependencies {
     implementation 'com.bucket4j:bucket4j-core:8.2.0'
     implementation 'com.bucket4j:bucket4j-redis:8.10.1'
     implementation 'org.redisson:redisson:3.50.0'
+
+    //이메일로 임시 비밀번호 전송을 위한 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 tasks.named('test') {

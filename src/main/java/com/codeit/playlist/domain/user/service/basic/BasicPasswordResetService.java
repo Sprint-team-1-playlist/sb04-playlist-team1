@@ -8,6 +8,7 @@ import com.codeit.playlist.domain.user.service.PasswordResetService;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,9 @@ public class BasicPasswordResetService implements PasswordResetService {
 
   private static final long TTL_SECONDS = 180;
 
+  @Value("${spring.profiles.active:dev}")
+  private String activeProfile;
+
   @Override
   public void sendTemporaryPassword(ResetPasswordRequest request) {
     log.debug("[사용자 관리] : 임시 비밀번호 발급");
@@ -33,6 +37,11 @@ public class BasicPasswordResetService implements PasswordResetService {
         .orElseThrow(() -> UserNotFoundException.withUsername(request.email()));
 
     String tempPassword = generateRandomPassword();
+
+    if (activeProfile.equals("local") || activeProfile.equals("dev")) {
+      log.warn("[DEV ONLY] 임시 비밀번호 (이메일: {}): {}", request.email(), tempPassword);
+    }
+
     String hashedPassword = passwordEncoder.encode(tempPassword);
     //Redis 에 저장 (3분 TTL)
     tempStore.save(user.getId(), hashedPassword, TTL_SECONDS);

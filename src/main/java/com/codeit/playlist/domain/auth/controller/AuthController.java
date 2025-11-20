@@ -117,6 +117,7 @@ public class AuthController {
   public ResponseEntity<Void> resetPassword(
       @Valid @RequestBody ResetPasswordRequest request
   ) {
+    log.debug("[인증 관리] : 비밀번호 초기화 요청 시작");
 
     String key = "rate-limit:reset:" + request.email();
     if (!rateLimitService.isAllowed(key)) {
@@ -125,6 +126,7 @@ public class AuthController {
     // Todo : 이메일 전송 기능 구현 필요
 
     passwordResetService.sendTemporaryPassword(request);
+    log.info("[인증 관리] : 비밀번호 초기화 요청 완료");
     return ResponseEntity.noContent().build();
   }
 }
