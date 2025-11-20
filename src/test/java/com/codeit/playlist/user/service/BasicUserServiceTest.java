@@ -168,7 +168,7 @@ public class BasicUserServiceTest {
 
     // Then
     verify(passwordEncoder).encode("newPassword123");
-    verify(userRepository).updatedPassword(eq(FIXED_ID), eq("encodedPwd"));
+    verify(userRepository).changePassword(eq(FIXED_ID), eq("encodedPwd"));
     verify(jwtRegistry).invalidateJwtInformationByUserId(FIXED_ID);
   }
 

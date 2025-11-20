@@ -1,14 +1,13 @@
 package com.codeit.playlist.domain.auth.controller;
 
-import com.codeit.playlist.domain.auth.passwordRateLimit.RateLimitService;
+import com.codeit.playlist.domain.auth.passwordratelimit.RateLimitService;
 import com.codeit.playlist.domain.auth.service.AuthService;
+import com.codeit.playlist.domain.auth.service.EmailService;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
-import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
 import com.codeit.playlist.domain.user.dto.data.JwtDto;
 import com.codeit.playlist.domain.user.dto.request.ResetPasswordRequest;
 import com.codeit.playlist.domain.user.service.PasswordResetService;
-import com.codeit.playlist.domain.user.service.UserService;
 import com.nimbusds.jose.JOSEException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -33,9 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
   private final AuthService authService;
-  private final UserService userService;
   private final JwtTokenProvider jwtTokenProvider;
-  private final JwtRegistry jwtRegistry;
   private final PasswordResetService passwordResetService;
   private final RateLimitService rateLimitService;
 

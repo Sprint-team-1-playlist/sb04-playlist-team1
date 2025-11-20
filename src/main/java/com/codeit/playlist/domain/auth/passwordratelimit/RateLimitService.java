@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.auth.passwordRateLimit;
+package com.codeit.playlist.domain.auth.passwordratelimit;
 
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;

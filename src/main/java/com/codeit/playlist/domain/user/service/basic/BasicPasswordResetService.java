@@ -1,5 +1,6 @@
 package com.codeit.playlist.domain.user.service.basic;
 
+import com.codeit.playlist.domain.auth.service.EmailService;
 import com.codeit.playlist.domain.user.dto.request.ResetPasswordRequest;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 public class BasicPasswordResetService implements PasswordResetService {
 
   private final UserRepository userRepository;
+  private final EmailService emailService;
   private final TemporaryPasswordStore tempStore;
   private final PasswordEncoder passwordEncoder;
   private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
@@ -48,6 +50,8 @@ public class BasicPasswordResetService implements PasswordResetService {
 
     // TODO: 이메일로 tempPassword (평문) 전송
     // 주의: hashedPassword가 아닌 tempPassword를 전송해야 함
+
+    emailService.sendTemporaryPassword(request.email(), tempPassword);
 
     log.info("[사용자 관리] : 임시 비밀번호 발급 완료");
   }
