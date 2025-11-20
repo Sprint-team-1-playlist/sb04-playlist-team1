@@ -3,6 +3,7 @@ package com.codeit.playlist.message.service.basic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -13,9 +14,12 @@ import static org.mockito.Mockito.when;
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
+import com.codeit.playlist.domain.conversation.exception.InvalidCursorException;
+import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
+import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.entity.Message;
 import com.codeit.playlist.domain.message.mapper.MessageMapper;
 import com.codeit.playlist.domain.message.repository.MessageRepository;
@@ -26,6 +30,7 @@ import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +42,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -177,12 +183,166 @@ class BasicMessageServiceTest {
     assertEquals(user2.getId(), result.receiver().userId());
   }
 
+  @Test
+  @DisplayName("대화 메시지 커서 기반 조회 성공")
+  void findAllMessagesSuccess() {
+    // given
+    UUID messageId1 = UUID.randomUUID();
+    UUID messageId2 = UUID.randomUUID();
+
+    LocalDateTime time1 = LocalDateTime.now().minusMinutes(10);
+    LocalDateTime time2 = LocalDateTime.now().minusMinutes(5);
+
+    Message m1 = new Message(conversation, user1, user2, "Hello 1");
+    setId(m1, messageId1);
+    setCreatedAt(m1, time1);
+
+    Message m2 = new Message(conversation, user1, user2, "Hello 2");
+    setId(m2, messageId2);
+    setCreatedAt(m2, time2);
+
+    DirectMessageDto dto1 = new DirectMessageDto(
+        messageId1,
+        conversationId,
+        time1,
+        new UserSummary(user1.getId(), user1.getName(), user1.getProfileImageUrl()),
+        new UserSummary(user2.getId(), user2.getName(), user2.getProfileImageUrl()),
+        "Hello 1"
+    );
+
+    DirectMessageDto dto2 = new DirectMessageDto(
+        messageId2,
+        conversationId,
+        time2,
+        new UserSummary(user1.getId(), user1.getName(), user1.getProfileImageUrl()),
+        new UserSummary(user2.getId(), user2.getName(), user2.getProfileImageUrl()),
+        "Hello 2"
+    );
+
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+
+    when(messageMapper.toDto(m1)).thenReturn(dto1);
+    when(messageMapper.toDto(m2)).thenReturn(dto2);
+
+    List<Message> messages = List.of(m1, m2);
+
+    when(messageRepository.findMessagesByConversationWithCursor(
+        any(UUID.class),
+        nullable(LocalDateTime.class),
+        nullable(UUID.class),
+        any(Pageable.class)
+    )).thenReturn(messages);
+
+    when(messageRepository.countByConversationId(conversationId)).thenReturn(5L);
+
+    String cursor = null;
+    UUID idAfter = null;
+    int limit = 2;
+
+    // when
+    CursorResponseDirectMessageDto result = messageService.findAll(conversationId, cursor, idAfter, limit, "desc", "createdAt");
+
+    // then
+    assertNotNull(result);
+    assertEquals(2, result.data().size());
+    assertEquals(time2.toString(), result.nextCursor());
+    assertEquals(messageId2, result.nextIdAfter());
+    assertEquals(true, result.hasNext());
+    assertEquals("createdAt", result.sortBy());
+    assertEquals("desc", result.sortDirection());
+    assertEquals(5, result.totalCount());
+
+    verify(messageRepository, times(1))
+        .findMessagesByConversationWithCursor(any(UUID.class), nullable(LocalDateTime.class), nullable(UUID.class), any(Pageable.class));
+
+    verify(messageRepository, times(1)).countByConversationId(conversationId);
+
+    verify(messageMapper, times(1)).toDto(m1);
+    verify(messageMapper, times(1)).toDto(m2);
+  }
+
+  @Test
+  @DisplayName("커서 기반 조회 실패 - 대화방이 존재하지 않으면 예외 발생")
+  void findAllMessagesConversationNotFound() {
+    // given
+    when(conversationRepository.findById(conversationId))
+        .thenReturn(Optional.empty());
+
+    // when & then
+    assertThrows(ConversationNotFoundException.class, () ->
+        messageService.findAll(conversationId, null, null, 10, "desc", "createdAt")
+    );
+
+    verify(messageRepository, never())
+        .findMessagesByConversationWithCursor(any(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("커서 기반 조회 실패 - 현재 유저가 대화 참여자가 아니면 예외 발생")
+  void findAllMessagesNotParticipant() {
+    // given
+    UUID strangerId = UUID.randomUUID();
+
+    PlaylistUserDetails userDetails = mock(PlaylistUserDetails.class);
+    when(userDetails.getUserDto()).thenReturn(
+        new com.codeit.playlist.domain.user.dto.data.UserDto(
+            strangerId, LocalDateTime.now(),
+            "stranger@test.com", "stranger", null, Role.USER, false
+        )
+    );
+
+    Authentication authentication = mock(Authentication.class);
+    when(authentication.getPrincipal()).thenReturn(userDetails);
+
+    SecurityContext securityContext = mock(SecurityContext.class);
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    SecurityContextHolder.setContext(securityContext);
+
+    when(conversationRepository.findById(conversationId))
+        .thenReturn(Optional.of(conversation));
+
+    // when & then
+    assertThrows(NotConversationParticipantException.class, () ->
+        messageService.findAll(conversationId, null, null, 10, "desc", "createdAt")
+    );
+
+    verify(messageRepository, never())
+        .findMessagesByConversationWithCursor(any(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("커서 기반 조회 실패 - cursor 형식이 잘못된 경우 InvalidCursorException 발생")
+  void findAllMessagesInvalidCursor() {
+    // given
+    when(conversationRepository.findById(conversationId))
+        .thenReturn(Optional.of(conversation));
+
+    String invalidCursor = "not-a-date";
+
+    // when & then
+    assertThrows(InvalidCursorException.class, () ->
+        messageService.findAll(conversationId, invalidCursor, null, 10, "desc", "createdAt")
+    );
+
+    verify(messageRepository, never())
+        .findMessagesByConversationWithCursor(any(), any(), any(), any());
+  }
 
   private void setId(Object entity, UUID id) {
     try {
       Field field = BaseEntity.class.getDeclaredField("id");
       field.setAccessible(true);
       field.set(entity, id);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void setCreatedAt(BaseEntity entity, LocalDateTime time) {
+    try {
+      Field field = BaseEntity.class.getDeclaredField("createdAt");
+      field.setAccessible(true);
+      field.set(entity, time);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
