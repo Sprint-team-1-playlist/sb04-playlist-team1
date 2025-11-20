@@ -1,7 +1,6 @@
 package com.codeit.playlist.domain.file;
 
 import com.codeit.playlist.domain.file.exception.FailDeleteFromS3;
-import com.codeit.playlist.domain.file.exception.FailGeneratePresignedUrl;
 import com.codeit.playlist.domain.file.exception.FailUploadToS3Exception;
 import com.codeit.playlist.global.config.S3Properties;
 import lombok.RequiredArgsConstructor;
@@ -11,13 +10,9 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
-import java.time.Duration;
+import java.io.File;
 
 @Component
 @RequiredArgsConstructor
@@ -25,7 +20,6 @@ import java.time.Duration;
 public class S3Uploader {
     private final S3Client s3Client;
     private final S3Properties s3Properties;
-    private final S3Presigner s3Presigner;
 
     public String upload(String bucket, String key, MultipartFile file) {
         try {
@@ -39,24 +33,7 @@ public class S3Uploader {
 
             return generateFileUrl(bucket, key);
         } catch (Exception e) {
-            log.error("[S3] 파일을 S3에 업로드하지 못함: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
-            throw FailUploadToS3Exception.withBucket(bucket);
-        }
-    }
-
-    public String uploadLogs(String bucket, String key, MultipartFile file) {
-        try {
-            PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(key)
-                    .contentType(file.getContentType()) // MultipartFile -> byte[]로 변환해 AWS SDK가 읽을 수 있게 변환
-                    .build();
-
-            s3Client.putObject(request, RequestBody.fromBytes(file.getBytes()));
-
-            return getPresignedUrl(bucket, key);
-        } catch (Exception e) {
-            log.error("[S3] 로그 파일을 S3에 업로드하지 못함: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
+            log.error("[S3] S3에 파일 업로드 살패: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
             throw FailUploadToS3Exception.withBucket(bucket);
         }
     }
@@ -75,24 +52,18 @@ public class S3Uploader {
         }
     }
 
-    public String getPresignedUrl(String bucket, String key) {
+    public void uploadLogs(String bucket, String key, File file) {
         try {
-            GetObjectRequest request = GetObjectRequest.builder()
+            PutObjectRequest request = PutObjectRequest.builder()
                     .bucket(bucket)
                     .key(key)
+                    .contentType("text/plain")
                     .build();
 
-            PresignedGetObjectRequest getPresigned = s3Presigner.presignGetObject(
-                    GetObjectPresignRequest.builder()
-                            .signatureDuration(Duration.ofMinutes(10))
-                            .getObjectRequest(request)
-                            .build()
-            );
-
-            return getPresigned.url().toString();
+            s3Client.putObject(request, RequestBody.fromFile(file));
         } catch (Exception e) {
-            log.error("[S3] presigned URL 생성 실패: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
-            throw FailGeneratePresignedUrl.withBucket(bucket);
+            log.error("[S3] S3에 로그 파일 업로드 살패: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
+            throw FailUploadToS3Exception.withBucket(bucket);
         }
     }
 
