@@ -28,6 +28,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class BasicPlaylistService implements PlaylistService {
 
     private final PlaylistRepository playlistRepository;
@@ -35,7 +36,6 @@ public class BasicPlaylistService implements PlaylistService {
     private final PlaylistMapper playlistMapper;
 
     //플레이리스트 생성
-    @Transactional
     @Override
     public PlaylistDto createPlaylist(PlaylistCreateRequest request, UUID ownerId) {
 
@@ -54,17 +54,13 @@ public class BasicPlaylistService implements PlaylistService {
     }
 
     //플레이리스트 수정
-    @Transactional
     @Override
-    public PlaylistDto updatePlaylist(UUID playlistId, PlaylistUpdateRequest request) {
-        log.debug("[플레이리스트] 수정 시작: playlistId={}", playlistId);
+    public PlaylistDto updatePlaylist(UUID playlistId, PlaylistUpdateRequest request, UUID currentUserId) {
+        log.debug("[플레이리스트] 수정 시작: playlistId={}, currentUserId={}", playlistId, currentUserId);
 
         //플레이리스트 조회
         Playlist playlist = playlistRepository.findById(playlistId)
                 .orElseThrow(() -> PlaylistNotFoundException.withId(playlistId));
-
-        // 2. 현재 로그인한 사용자 ID 조회(Security 생성 시 교체 예정)
-        UUID currentUserId = getCurrentUserIdForTest();
 
         //3. 소유자 검증
         UUID ownerId = playlist.getOwner().getId();
@@ -83,7 +79,6 @@ public class BasicPlaylistService implements PlaylistService {
     }
 
     //플레이리스트 논리 삭제
-    @Transactional
     @Override
     public void softDeletePlaylist(UUID playlistId, UUID requesterUserId) {
         log.debug("[플레이리스트] 삭제 시작 : playlistId={}, requesterUserId={}", playlistId, requesterUserId);
@@ -112,11 +107,10 @@ public class BasicPlaylistService implements PlaylistService {
     }
 
     //플레이리스트 일반 삭제(논리 삭제 호출)
-    @Transactional
     @Override
-    public void deletePlaylist(UUID playlistId) {
-        UUID ownerId = getCurrentUserIdForTest(); // Security 도입 전 임시
-        softDeletePlaylist(playlistId, ownerId);
+    public void deletePlaylist(UUID playlistId, UUID requesterUserId) {
+        log.debug("[플레이리스트] 삭제 시작 : playlistId = {}, requesterUserId = {}", playlistId, requesterUserId);
+        softDeletePlaylist(playlistId, requesterUserId);
     }
 
     //플레이리스트 목록 조회
@@ -243,11 +237,6 @@ public class BasicPlaylistService implements PlaylistService {
 
         log.info("[플레이리스트] 단건 조회 완료: playlistId={}", playlistId);
         return result;
-    }
-
-    /*TODO : 시큐리티 구현 후 SecurityContext 에서 현재 사용자 ID 를 꺼내도록 변경 예정*/
-    private UUID getCurrentUserIdForTest() {
-        return UUID.fromString("11111111-1111-1111-1111-111111111111");
     }
 
 }
