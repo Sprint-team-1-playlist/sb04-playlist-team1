@@ -35,12 +35,15 @@ public class SecurityConfig {
         .csrf(csrf -> csrf
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             .ignoringRequestMatchers("/",
+                "/error",
                 "/index.html",
                 "/vite.svg",
                 "/assets/**",
                 "/api/auth/sign-in",
                 "/api/auth/sign-up",
+                "/api/auth/reset-password",
                 "/api/auth/sign-out",
+                "/api/users/*/password",
                 "/api/users")
         )
 
@@ -57,8 +60,10 @@ public class SecurityConfig {
         )
         .authorizeHttpRequests((authorize) -> authorize
             //로그인 관련
+            .requestMatchers("/error").permitAll()
             .requestMatchers("/api/auth/sign-in").permitAll()
             .requestMatchers("/api/auth/sign-up").permitAll()
+            .requestMatchers("/api/auth/reset-password").permitAll()
             .requestMatchers("/api/auth/refresh").permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
