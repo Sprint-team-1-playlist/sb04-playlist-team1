@@ -74,16 +74,9 @@ public class BasicConversationService implements ConversationService {
     Conversation conversation = new Conversation(currentUser,user);
     conversationRepository.save(conversation);
 
-    UserSummary userSummary = userMapper.toUserSummary(user);
+    ConversationDto conversationDto = toConversationDto(conversation);
 
-    Message lastestMessage = messageRepository
-        .findFirstByConversationOrderByCreatedAtDesc(conversation)
-        .orElse(null);
-    DirectMessageDto messageDto = lastestMessage != null ? messageMapper.toDto(lastestMessage) : null;
-
-    ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto);
-
-    log.info("[Conversation] 대화 생성 완료 {}", conversationDto);
+    log.info("[Conversation] 대화 생성 완료 {}", conversationDto.id());
     return conversationDto;
   }
 
@@ -171,17 +164,52 @@ public class BasicConversationService implements ConversationService {
     return response;
   }
 
+  @Transactional(readOnly = true)
   @Override
   public ConversationDto findById(UUID conversationId) {
     log.debug("[Conversation] 대화 조회 시작: {}", conversationId);
 
     Conversation conversation = conversationRepository.findById(conversationId)
-        .orElseThrow(() -> ConversationNotFoundException.withId(conversationId));
+        .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
+
     UUID currentUserId = getCurrentUserId();
     if (!currentUserId.equals(conversation.getUser1().getId()) && !currentUserId.equals(conversation.getUser2().getId())) {
       throw NotConversationParticipantException.withId(currentUserId);
     }
 
+    ConversationDto conversationDto = toConversationDto(conversation);
+
+    log.info("[Conversation] 대화 조회 완료: {}", conversationDto.id());
+    return conversationDto;
+  }
+
+  @Transactional(readOnly = true)
+  @Override
+  public ConversationDto findByUserId(UUID userId) {
+    log.debug("[Conversation] 특정 사용자와의 대화 조회 시작: {}", userId);
+
+    UUID currentUserId = getCurrentUserId();
+    Conversation conversation = conversationRepository.findByUserIds(currentUserId, userId)
+            .orElseThrow(() -> ConversationNotFoundException.withUserId(userId));
+
+    if (!currentUserId.equals(conversation.getUser1().getId()) && !currentUserId.equals(conversation.getUser2().getId())) {
+      throw NotConversationParticipantException.withId(currentUserId);
+    }
+
+    ConversationDto conversationDto = toConversationDto(conversation);
+
+    log.info("[Conversation] 특정 사용자와의 대화 조회 완료: {}", conversationDto.id());
+    return conversationDto;
+  }
+
+  private UUID getCurrentUserId() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    PlaylistUserDetails userDetails = (PlaylistUserDetails) authentication.getPrincipal();
+    return userDetails.getUserDto().id();
+  }
+
+  private ConversationDto toConversationDto(Conversation conversation) {
+    UUID currentUserId = getCurrentUserId();
     User other = currentUserId.equals(conversation.getUser1().getId()) ?
         conversation.getUser2() : conversation.getUser1();
     UserSummary userSummary = userMapper.toUserSummary(other);
@@ -191,14 +219,6 @@ public class BasicConversationService implements ConversationService {
     DirectMessageDto messageDto = messageMapper.toDto(lastestMessage);
 
     ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto);
-
-    log.info("[Conversation] 대화 조회 완료: {}", conversationDto);
     return conversationDto;
-  }
-
-  private UUID getCurrentUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    PlaylistUserDetails userDetails = (PlaylistUserDetails) authentication.getPrincipal();
-    return userDetails.getUserDto().id();
   }
 }
