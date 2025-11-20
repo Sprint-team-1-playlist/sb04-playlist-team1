@@ -28,6 +28,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class BasicPlaylistService implements PlaylistService {
 
     private final PlaylistRepository playlistRepository;
@@ -35,7 +36,6 @@ public class BasicPlaylistService implements PlaylistService {
     private final PlaylistMapper playlistMapper;
 
     //플레이리스트 생성
-    @Transactional
     @Override
     public PlaylistDto createPlaylist(PlaylistCreateRequest request, UUID ownerId) {
 
@@ -54,7 +54,6 @@ public class BasicPlaylistService implements PlaylistService {
     }
 
     //플레이리스트 수정
-    @Transactional
     @Override
     public PlaylistDto updatePlaylist(UUID playlistId, PlaylistUpdateRequest request, UUID currentUserId) {
         log.debug("[플레이리스트] 수정 시작: playlistId={}, currentUserId={}", playlistId, currentUserId);
@@ -80,7 +79,6 @@ public class BasicPlaylistService implements PlaylistService {
     }
 
     //플레이리스트 논리 삭제
-    @Transactional
     @Override
     public void softDeletePlaylist(UUID playlistId, UUID requesterUserId) {
         log.debug("[플레이리스트] 삭제 시작 : playlistId={}, requesterUserId={}", playlistId, requesterUserId);
@@ -109,7 +107,6 @@ public class BasicPlaylistService implements PlaylistService {
     }
 
     //플레이리스트 일반 삭제(논리 삭제 호출)
-    @Transactional
     @Override
     public void deletePlaylist(UUID playlistId, UUID requesterUserId) {
         log.debug("[플레이리스트] 삭제 시작 : playlistId = {}, requesterUserId = {}", playlistId, requesterUserId);

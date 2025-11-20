@@ -23,13 +23,13 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class BasicPlaylistSubscriptionService implements PlaylistSubscriptionService {
 
     private final PlaylistRepository playlistRepository;
     private final SubscribeRepository subscribeRepository;
     private final UserRepository userRepository;
 
-    @Transactional
     @Override
     public void subscribe(UUID playlistId, UUID currentUserId) {
 
@@ -68,7 +68,6 @@ public class BasicPlaylistSubscriptionService implements PlaylistSubscriptionSer
         log.info("[구독] 성공 : playlistId={}, currentUserId={}", playlistId, currentUserId);
     }
 
-    @Transactional
     @Override
     public void unsubscribe(UUID playlistId, UUID currentUserId) {
         log.debug("[구독] 구독 해제 시작 : playlistId = {}, currentUserId = {}", playlistId, currentUserId);
