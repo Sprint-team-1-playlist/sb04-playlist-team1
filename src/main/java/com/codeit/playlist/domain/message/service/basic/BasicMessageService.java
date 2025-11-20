@@ -104,11 +104,13 @@ public class BasicMessageService implements MessageService {
 
     String nextCursor = null;
     UUID nextIdAfter = null;
-    boolean hasNext = messages.size() > limit;
-
-    List<Message> pageMessages = hasNext
+    List<Message> pageMessages = messages.size() > limit
         ? messages.subList(0, limit)
         : messages;
+
+    long totalCount = messageRepository.countByConversationId(conversationId);
+
+    boolean hasNext = totalCount > pageMessages.size();
 
     if (!pageMessages.isEmpty()) {
       Message last = pageMessages.get(pageMessages.size() - 1);
@@ -119,8 +121,6 @@ public class BasicMessageService implements MessageService {
     List<DirectMessageDto> content = pageMessages.stream()
         .map(messageMapper::toDto)
         .collect(Collectors.toList());
-
-    long totalCount = messageRepository.countByConversationId(conversationId);
 
     return new CursorResponseDirectMessageDto(content,
         nextCursor,

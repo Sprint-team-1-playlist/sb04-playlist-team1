@@ -15,4 +15,6 @@ public interface ConversationService {
       int limit,
       String sortDirection,
       String sortBy);
+
+  ConversationDto findById(UUID conversationId);
 }
