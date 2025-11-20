@@ -55,7 +55,7 @@ public class BasicMessageService implements MessageService {
     UUID user2Id = conversation.getUser2().getId();
 
     if (!user1Id.equals(currentUserId) && !user2Id.equals(currentUserId)) {
-      throw ConversationNotFoundException.withId(conversationId);
+      throw ConversationNotFoundException.withConversationId(conversationId);
     }
 
     User sender = user1Id.equals(currentUserId)
@@ -80,7 +80,7 @@ public class BasicMessageService implements MessageService {
       UUID idAfter, int limit, String sortDirection, String sortBy) {
 
     Conversation conversation = conversationRepository.findById(conversationId)
-        .orElseThrow(() -> ConversationNotFoundException.withId(conversationId));
+        .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
 
     UUID currentUserId = getCurrentUserId();
 
