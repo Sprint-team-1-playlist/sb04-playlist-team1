@@ -138,7 +138,8 @@ public class BasicAuthServiceTest {
     authService.updateRoleInternal(request, user.getId());
 
     //then
-    verify(jwtRegistry, org.mockito.Mockito.never()).invalidateJwtInformationByUserId(FIXED_ID);
+    verify(jwtRegistry, org.mockito.Mockito.never())
+        .invalidateJwtInformationByUserId(any());
   }
 
   @Test

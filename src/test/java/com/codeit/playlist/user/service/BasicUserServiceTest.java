@@ -112,7 +112,7 @@ public class BasicUserServiceTest {
     );
 
     User newUser = new User(
-        "강은혁",
+        "테스트",
         "123456789",
         "테스트",
         null,  // profileImageUrl
@@ -120,9 +120,9 @@ public class BasicUserServiceTest {
     );
 
     User savedUser = new User(
-        "강은혁",
+        "테스트",
         "encodedPassword",
-        "강은혁",
+        "테스트",
         null,
         Role.USER
     );
@@ -173,6 +173,7 @@ public class BasicUserServiceTest {
     when(userMapper.toEntity(request)).thenReturn(newUser);
     when(userRepository.existsByEmail(adminEmail)).thenReturn(false);
     when(passwordEncoder.encode("password123")).thenReturn("encodedPwd");
+    when(userRepository.save(any(User.class))).thenReturn(newUser);
     when(userMapper.toDto(newUser)).thenReturn(dto);
 
     // When
