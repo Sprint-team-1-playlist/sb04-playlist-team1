@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.codeit.playlist.domain.auth.exception.AuthAccessDeniedException;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
@@ -16,6 +17,8 @@ import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
+import com.codeit.playlist.domain.user.exception.NewPasswordRequired;
+import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
@@ -247,6 +250,75 @@ public class BasicUserServiceTest {
     verify(userRepository).changePassword(eq(FIXED_ID), eq("encodedPwd"));
     verify(jwtRegistry).invalidateJwtInformationByUserId(FIXED_ID);
     verify(temporaryPasswordStore).delete(FIXED_ID);
+  }
+
+
+  @Test
+  @DisplayName("비밀번호 변경 실패 - 인증 정보 없음")
+  void changePasswordFailNoAuthentication() {
+    SecurityContextHolder.clearContext(); // 인증 정보 없음
+
+    ChangePasswordRequest request = new ChangePasswordRequest("validPass123!");
+
+    assertThrows(AuthAccessDeniedException.class, () ->
+        userService.changePassword(FIXED_ID, request)
+    );
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 실패 - Principal 타입이 PlaylistUserDetails가 아님")
+  void changePasswordFailInvalidPrincipalType() {
+    when(authentication.getPrincipal()).thenReturn("anonymous");
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    SecurityContextHolder.setContext(securityContext);
+
+    assertThrows(AuthAccessDeniedException.class, () ->
+        userService.changePassword(FIXED_ID, new ChangePasswordRequest("validPass123"))
+    );
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 실패 - 로그인한 사용자와 대상 userId 불일치")
+  void changePasswordFailNotOwner() {
+    UUID otherUserId = UUID.randomUUID(); // 다른 사람
+
+    PlaylistUserDetails principal =
+        new PlaylistUserDetails(dto, user.getPassword());
+
+    when(authentication.getPrincipal()).thenReturn(principal);
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    SecurityContextHolder.setContext(securityContext);
+
+    ChangePasswordRequest request = new ChangePasswordRequest("validPass123");
+
+    assertThrows(AuthAccessDeniedException.class, () ->
+        userService.changePassword(otherUserId, request)
+    );
+  }
+  @Test
+  @DisplayName("비밀번호 변경 실패 - 비밀번호 null 또는 공백")
+  void changePasswordFail_BlankPassword() {
+    PlaylistUserDetails principal = new PlaylistUserDetails(dto, user.getPassword());
+    when(authentication.getPrincipal()).thenReturn(principal);
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    SecurityContextHolder.setContext(securityContext);
+
+    assertThrows(NewPasswordRequired.class, () ->
+        userService.changePassword(FIXED_ID, new ChangePasswordRequest(" "))
+    );
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 실패 - 비밀번호 길이 부족(8자 미만)")
+  void changePasswordFail_ShortPassword() {
+    PlaylistUserDetails principal = new PlaylistUserDetails(dto, user.getPassword());
+    when(authentication.getPrincipal()).thenReturn(principal);
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    SecurityContextHolder.setContext(securityContext);
+
+    assertThrows(PasswordMustCharacters.class, () ->
+        userService.changePassword(FIXED_ID, new ChangePasswordRequest("1234567"))
+    );
   }
 
 }
