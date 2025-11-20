@@ -17,8 +17,8 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.service.basic.BasicUserService;
+import com.codeit.playlist.global.redis.TemporaryPasswordStore;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,6 +47,9 @@ public class BasicUserServiceTest {
 
   @Mock
   private JwtRegistry jwtRegistry;
+
+  @Mock
+  TemporaryPasswordStore temporaryPasswordStore;
 
   @InjectMocks
   private BasicUserService userService;
@@ -153,14 +156,23 @@ public class BasicUserServiceTest {
   void changePasswordSuccess() {
     // Given
     ChangePasswordRequest request = new ChangePasswordRequest("newPassword123");
+
+    UserDto dto = new UserDto(
+        FIXED_ID,
+        LocalDateTime.now(),
+        user.getEmail(),
+        user.getName(),
+        user.getProfileImageUrl(),
+        user.getRole(),
+        user.isLocked()
+    );
+
     PlaylistUserDetails principal = new PlaylistUserDetails(dto, user.getPassword());
 
     when(authentication.getPrincipal()).thenReturn(principal);
     when(securityContext.getAuthentication()).thenReturn(authentication);
-
     SecurityContextHolder.setContext(securityContext);
 
-    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
     when(passwordEncoder.encode("newPassword123")).thenReturn("encodedPwd");
 
     // When
@@ -170,6 +182,7 @@ public class BasicUserServiceTest {
     verify(passwordEncoder).encode("newPassword123");
     verify(userRepository).changePassword(eq(FIXED_ID), eq("encodedPwd"));
     verify(jwtRegistry).invalidateJwtInformationByUserId(FIXED_ID);
+    verify(temporaryPasswordStore).delete(FIXED_ID);
   }
 
 }
