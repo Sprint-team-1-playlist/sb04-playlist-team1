@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,7 +55,7 @@ public class ConversationController {
     if (!sortDirection.equals("ASCENDING") && !sortDirection.equals("DESCENDING")) {
       throw InvalidSortDirectionException.withSortDirection(sortDirection);
     }
-    log.debug("[Conversation] 대화 조회 시작");
+    log.debug("[Conversation] 대화 조회 요청");
     CursorResponseConversationDto cursorConversationDto = conversationService.findAll(keywordLike,
         cursor,
         idAfter,
@@ -65,5 +66,17 @@ public class ConversationController {
     return  ResponseEntity
         .status(HttpStatus.OK)
         .body(cursorConversationDto);
+  }
+
+  @GetMapping("/{conversationId}")
+  public ResponseEntity<ConversationDto> findById(@PathVariable UUID conversationId){
+    log.debug("[Conversation] 대화 조회 요청: {}", conversationId);
+
+    ConversationDto conversationDto = conversationService.findById(conversationId);
+
+    log.info("[Conversation] 대화 조회 응답: {}", conversationDto);
+    return ResponseEntity
+        .status(HttpStatus.OK)
+        .body(conversationDto);
   }
 }

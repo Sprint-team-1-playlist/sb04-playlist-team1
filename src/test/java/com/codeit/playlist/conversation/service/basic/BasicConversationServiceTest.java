@@ -15,11 +15,13 @@ import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConver
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationAlreadyExistsException;
 import com.codeit.playlist.domain.conversation.exception.InvalidCursorException;
+import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.exception.SelfChatNotAllowedException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
 import com.codeit.playlist.domain.conversation.service.basic.BasicConversationService;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.message.entity.Message;
 import com.codeit.playlist.domain.message.mapper.MessageMapper;
 import com.codeit.playlist.domain.message.repository.MessageRepository;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
@@ -209,6 +211,101 @@ public class BasicConversationServiceTest {
     String sortDirection = "ASCENDING";
     assertThrows(InvalidCursorException.class,
         () -> conversationService.findAll(null, invalidCursor, null, 10, sortDirection, "createdAt"));
+  }
+
+  @Test
+  @DisplayName("대화 조회 성공 - 최신 메시지가 존재하는 경우")
+  void findByIdSuccessWithLatestMessage() {
+    // given
+    UUID conversationId = UUID.randomUUID();
+
+    Conversation conversation = new Conversation(currentUser, otherUser);
+    setId(conversation, conversationId);
+
+    when(conversationRepository.findById(conversationId))
+        .thenReturn(Optional.of(conversation));
+
+    UserSummary summary = new UserSummary(otherUserId, otherUser.getName(), otherUser.getProfileImageUrl());
+    when(userMapper.toUserSummary(otherUser)).thenReturn(summary);
+
+    Message latestMessage = new Message(conversation, currentUser, otherUser, "hello");
+    setId(latestMessage, UUID.randomUUID());
+    when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation))
+        .thenReturn(Optional.of(latestMessage));
+
+    DirectMessageDto messageDto = new DirectMessageDto(
+        UUID.randomUUID(),
+        conversationId,
+        LocalDateTime.now(),
+        new UserSummary(currentUserId, currentUser.getName(), currentUser.getProfileImageUrl()),
+        new UserSummary(otherUserId, otherUser.getName(), otherUser.getProfileImageUrl()),
+        "hello"
+    );
+
+    when(messageMapper.toDto(latestMessage)).thenReturn(messageDto);
+
+    ConversationDto expected = new ConversationDto(conversationId, summary, messageDto, false);
+    when(conversationMapper.toDto(conversation, summary, messageDto)).thenReturn(expected);
+
+    // when
+    ConversationDto result = conversationService.findById(conversationId);
+
+    // then
+    assertNotNull(result);
+    assertEquals(conversationId, result.id());
+    assertEquals(messageDto, result.lastestMessage());
+  }
+
+  @Test
+  @DisplayName("대화 조회 성공 - 최신 메시지가 없는 경우")
+  void findByIdSuccessWithoutLatestMessage() {
+    // given
+    UUID conversationId = UUID.randomUUID();
+
+    Conversation conversation = new Conversation(currentUser, otherUser);
+    setId(conversation, conversationId);
+
+    when(conversationRepository.findById(conversationId))
+        .thenReturn(Optional.of(conversation));
+
+    UserSummary summary = new UserSummary(otherUserId, otherUser.getName(), otherUser.getProfileImageUrl());
+    when(userMapper.toUserSummary(otherUser)).thenReturn(summary);
+
+    when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation))
+        .thenReturn(Optional.empty());
+
+    when(messageMapper.toDto(null)).thenReturn(null);
+
+    ConversationDto expected = new ConversationDto(conversationId, summary, null, false);
+    when(conversationMapper.toDto(conversation, summary, null)).thenReturn(expected);
+
+    // when
+    ConversationDto result = conversationService.findById(conversationId);
+
+    // then
+    assertNotNull(result);
+    assertNull(result.lastestMessage());
+  }
+
+  @Test
+  @DisplayName("대화 조회 실패 - 현재 사용자가 대화 참여자가 아닌 경우")
+  void findByIdFailsWhenNotParticipant() {
+    // given
+    UUID conversationId = UUID.randomUUID();
+
+    User userA = new User("a@test.com", "pw", "A", null, Role.USER);
+    User userB = new User("b@test.com", "pw", "B", null, Role.USER);
+    setId(userA, UUID.randomUUID());
+    setId(userB, UUID.randomUUID());
+
+    Conversation conversation = new Conversation(userA, userB);
+    setId(conversation, conversationId);
+
+    when(conversationRepository.findById(conversationId))
+        .thenReturn(Optional.of(conversation));
+
+    //when & then
+    assertThrows(NotConversationParticipantException.class, () -> conversationService.findById(conversationId));
   }
 
   private void setCreatedAt(BaseEntity entity, LocalDateTime time) {
