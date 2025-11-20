@@ -16,11 +16,13 @@ import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
+import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.service.basic.BasicUserService;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -191,6 +193,26 @@ public class BasicUserServiceTest {
 
     //Then
     assertThrows(EmailAlreadyExistsException.class, () -> userService.registerUser(request));
+  }
+
+  @Test
+  @DisplayName("사용자 조회 성공")
+  void findUserSuccess() {
+      when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+      when(userMapper.toDto(user)).thenReturn(dto);
+
+      UserDto result = userService.find(FIXED_ID);
+
+      assertEquals(dto.id(), result.id());
+      assertEquals(dto.email(), result.email());
+  }
+
+  @Test
+  @DisplayName("사용자 조회 실패 - 존재하지 않는 사용자")
+  void findUserFailNotFound() {
+      when(userRepository.findById(FIXED_ID)).thenReturn(Optional.empty());
+
+      assertThrows(UserNotFoundException.class, () -> userService.find(FIXED_ID));
   }
 
   @Test
