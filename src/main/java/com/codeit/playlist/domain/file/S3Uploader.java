@@ -33,7 +33,7 @@ public class S3Uploader {
 
             return generateFileUrl(bucket, key);
         } catch (Exception e) {
-            log.error("[S3] S3에 파일 업로드 살패: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
+            log.error("[S3] S3에 파일 업로드 실패: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
             throw FailUploadToS3Exception.withBucket(bucket);
         }
     }
@@ -47,7 +47,7 @@ public class S3Uploader {
 
             s3Client.deleteObject(request);
         } catch (Exception e) {
-            log.error("[S3] 파일을 S3에서 삭제하지 못함: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
+            log.error("[S3] S3에서 파일 삭제 실패: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
             throw FailDeleteFromS3.withBucket(bucket);
         }
     }
@@ -62,7 +62,7 @@ public class S3Uploader {
 
             s3Client.putObject(request, RequestBody.fromFile(file));
         } catch (Exception e) {
-            log.error("[S3] S3에 로그 파일 업로드 살패: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
+            log.error("[S3] S3에 로그 파일 업로드 실패: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
             throw FailUploadToS3Exception.withBucket(bucket);
         }
     }
