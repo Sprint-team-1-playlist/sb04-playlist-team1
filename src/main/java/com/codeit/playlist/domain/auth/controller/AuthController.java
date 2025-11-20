@@ -120,7 +120,6 @@ public class AuthController {
     if (!rateLimitService.isAllowed(key)) {
       return ResponseEntity.status(429).build(); // Too Many Requests
     }
-    // Todo : 이메일 전송 기능 구현 필요
 
     passwordResetService.sendTemporaryPassword(request);
     log.info("[인증 관리] : 비밀번호 초기화 요청 완료");
