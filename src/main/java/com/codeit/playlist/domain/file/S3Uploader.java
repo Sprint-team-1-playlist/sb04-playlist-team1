@@ -14,6 +14,10 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.File;
 
+/*
+ * 콘텐츠와 프로필 이미지는 GetObject 요청에 대해서만 Public 함
+ */
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
