@@ -39,14 +39,16 @@ public class BasicPasswordResetService implements PasswordResetService {
         .orElseThrow(() -> UserNotFoundException.withUsername(request.email()));
 
     String tempPassword = generateRandomPassword();
+    String hashedPassword = passwordEncoder.encode(tempPassword);
 
     if (activeProfile.equals("local") || activeProfile.equals("dev")) {
       log.warn("[DEV ONLY] 임시 비밀번호 (이메일: {}): {}", request.email(), tempPassword);
     }
 
-    String hashedPassword = passwordEncoder.encode(tempPassword);
     //Redis 에 해시된 임시 비밀번호 저장 (3분 TTL)
     tempStore.save(user.getId(), hashedPassword, TTL_SECONDS);
+
+    userRepository.changePassword(user.getId(), hashedPassword);
 
     //평문 임시 비밀번호를 이메일로 전송
     emailService.sendTemporaryPassword(request.email(), tempPassword);
