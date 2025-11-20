@@ -32,11 +32,14 @@ playlist:
       expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7일
     cookie:
       secure: true
-  s3:
-    content-bucket: playlist-content-bucket
-    profile-bucket: playlist-profile-bucket
-    logs-bucket: playlist-logs-bucket
-    backup-bucket: playlist-backup-bucket
+
+cloud:
+  aws:
+    s3:
+      content-bucket: ${CONTENT_BUCKET}
+      profile-bucket: ${PROFILE_BUCKET}
+      logs-bucket: ${LOGS_BUCKET}
+      region: ${AWS_REGION}
 
 logging:
   level:
@@ -50,6 +53,3 @@ management:
   endpoint:
     health:
       show-details: always
-  info:
-    env:
-      enabled: true
