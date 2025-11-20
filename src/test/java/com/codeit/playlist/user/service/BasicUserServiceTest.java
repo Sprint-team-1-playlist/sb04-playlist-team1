@@ -2,6 +2,7 @@ package com.codeit.playlist.user.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -14,6 +15,7 @@ import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
+import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.service.basic.BasicUserService;
@@ -32,6 +34,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicUserServiceTest {
@@ -94,25 +97,25 @@ public class BasicUserServiceTest {
   }
 
   @Test
-  @DisplayName("사용자 생성 테스트 성공")
+  @DisplayName("회원가입 성공")
   void registerUserSuccess() {
     // Given
     UserCreateRequest request = new UserCreateRequest(
-        "강은혁",
-        "dmsgur7305@naver.com",
+        "테스트",
+        "test@example.com",
         "123456789"
     );
 
     User newUser = new User(
-        "dmsgur7305@naver.com",
-        "123456789",
         "강은혁",
+        "123456789",
+        "테스트",
         null,  // profileImageUrl
         Role.USER
     );
 
     User savedUser = new User(
-        "dmsgur7305@naver.com",
+        "강은혁",
         "encodedPassword",
         "강은혁",
         null,
@@ -149,6 +152,45 @@ public class BasicUserServiceTest {
     verify(userRepository).existsByEmail(newUser.getEmail());
     verify(passwordEncoder).encode("123456789");
     verify(userRepository).save(any(User.class));
+  }
+
+  @Test
+  @DisplayName("회원가입 성공 - adminEmail일 경우 자동 ADMIN 권한 부여")
+  void registerUserSuccessAssignAdminRole(){
+    //Given
+    String adminEmail = "admin@test.com";
+    ReflectionTestUtils.setField(userService, "adminEmail", adminEmail);
+
+    UserCreateRequest request = new UserCreateRequest("관리자", adminEmail, "password123");
+
+    User newUser = new User(adminEmail, "password123", "관리자", null, null);
+
+    when(userMapper.toEntity(request)).thenReturn(newUser);
+    when(userRepository.existsByEmail(adminEmail)).thenReturn(false);
+    when(passwordEncoder.encode("password123")).thenReturn("encodedPwd");
+    when(userMapper.toDto(newUser)).thenReturn(dto);
+
+    // When
+    userService.registerUser(request);
+
+    // Then
+    assertEquals(Role.ADMIN, newUser.getRole());
+  }
+
+  @Test
+  @DisplayName("회원가입 실패 - 이메일 중복")
+  void registerUserFailEmailExists() {
+    //Given
+    UserCreateRequest request = new UserCreateRequest("name", "test@example.com", "password123");
+
+    User newUser = new User("test@example.com", "password123", "name", null, Role.USER);
+
+    //When
+    when(userMapper.toEntity(request)).thenReturn(newUser);
+    when(userRepository.existsByEmail(newUser.getEmail())).thenReturn(true);
+
+    //Then
+    assertThrows(EmailAlreadyExistsException.class, () -> userService.registerUser(request));
   }
 
   @Test
