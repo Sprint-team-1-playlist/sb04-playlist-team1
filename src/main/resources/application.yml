@@ -16,8 +16,8 @@ spring:
   mail:
     host: smtp.gmail.com        # SMTP 서버 호스트
     port: 587                   # SMTP 서버 포트
-    username: dmsgur7370@gmail.com                  # SMTP 서버 로그인 아이디
-    password: etoxcssvrtbongfo                   # SMTP 서버 로그인 비밀번호
+    username: ${MAIL_USERNAME}                # SMTP 서버 로그인 아이디
+    password: ${MAIL_PASSWORD}               # SMTP 서버 로그인 비밀번호
     properties:
       mail:
         smtp:

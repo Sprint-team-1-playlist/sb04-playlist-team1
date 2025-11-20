@@ -45,12 +45,10 @@ public class BasicPasswordResetService implements PasswordResetService {
     }
 
     String hashedPassword = passwordEncoder.encode(tempPassword);
-    //Redis 에 저장 (3분 TTL)
+    //Redis 에 해시된 임시 비밀번호 저장 (3분 TTL)
     tempStore.save(user.getId(), hashedPassword, TTL_SECONDS);
 
-    // TODO: 이메일로 tempPassword (평문) 전송
-    // 주의: hashedPassword가 아닌 tempPassword를 전송해야 함
-
+    //평문 임시 비밀번호를 이메일로 전송
     emailService.sendTemporaryPassword(request.email(), tempPassword);
 
     log.info("[사용자 관리] : 임시 비밀번호 발급 완료");
