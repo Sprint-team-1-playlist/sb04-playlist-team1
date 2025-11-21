@@ -27,12 +27,12 @@ public class Conversation extends BaseUpdatableEntity {
   private User user2;
 
   @Column(name = "has_unread", nullable = false)
-  private Boolean hasUnread = false;
+  private Boolean hasUnread = true;
 
   public Conversation(User user1, User user2) {
     this.user1 = user1;
     this.user2 = user2;
-    this.hasUnread = false;
+    this.hasUnread = true;
   }
 
   public void markAsRead() {
