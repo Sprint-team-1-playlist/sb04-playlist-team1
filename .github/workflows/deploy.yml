@@ -45,7 +45,7 @@ jobs:
              '.executionRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)
               | .taskRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)' \
              task-definition.json > tmp.json && mv tmp.json task-definition.json
-
+          
       - name: Update image and env vars using jq # 이미지 + 환경변수 치환
         run: |
           jq \
