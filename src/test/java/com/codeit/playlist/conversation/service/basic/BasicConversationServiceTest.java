@@ -368,8 +368,6 @@ public class BasicConversationServiceTest {
     when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation))
         .thenReturn(Optional.empty());
 
-    when(messageMapper.toDto(null)).thenReturn(null);
-
     ConversationDto expected = new ConversationDto(conversation.getId(), summary, null, false);
     when(conversationMapper.toDto(conversation, summary, null)).thenReturn(expected);
 

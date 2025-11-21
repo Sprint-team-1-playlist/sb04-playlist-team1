@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,13 +42,26 @@ public class MessageController {
       throw InvalidSortDirectionException.withSortDirection(sortDirection);
     }
 
-    log.debug("[Message] findAll");
+    log.debug("[Message] DM 목록 조회 요청: {}", conversationId);
 
     CursorResponseDirectMessageDto cursorMessageDto = messageService.findAll(conversationId, cursor, idAfter, limit, sortDirection, sortBy);
 
-    log.info("[Message] findAll");
+    log.info("[Message] DM 목록 조회 응답: {}", cursorMessageDto);
     return ResponseEntity
         .status(HttpStatus.OK)
         .body(cursorMessageDto);
+  }
+
+  @PostMapping("/{conversationId}/direct-messages/{directMessageId}/read")
+  public ResponseEntity<Void> markAsRead(@PathVariable UUID conversationId,
+      @PathVariable UUID directMessageId){
+    log.debug("[Message] DM 읽음 처리 요청: {}, {}", conversationId, directMessageId);
+
+    messageService.markMessageAsRead(conversationId, directMessageId);
+
+    log.info("[Message] DM 읽음 처리 응답");
+    return ResponseEntity
+        .status(HttpStatus.OK)
+        .build();
   }
 }

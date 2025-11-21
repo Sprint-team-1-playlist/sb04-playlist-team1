@@ -14,4 +14,6 @@ public interface MessageService {
       int limit,
       String sortDirection,
       String sortBy);
+
+  void markMessageAsRead(UUID conversationId, UUID directMessageId);
 }

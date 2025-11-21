@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.util.AssertionErrors.assertFalse;
 
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
@@ -21,6 +22,8 @@ import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.entity.Message;
+import com.codeit.playlist.domain.message.exception.InvalidMessageReadOperationException;
+import com.codeit.playlist.domain.message.exception.MessageNotFoundException;
 import com.codeit.playlist.domain.message.mapper.MessageMapper;
 import com.codeit.playlist.domain.message.repository.MessageRepository;
 import com.codeit.playlist.domain.message.service.basic.BasicMessageService;
@@ -100,7 +103,6 @@ class BasicMessageServiceTest {
 
     SecurityContextHolder.setContext(securityContext);
   }
-
 
   @Test
   @DisplayName("메시지 저장 성공")
@@ -326,6 +328,81 @@ class BasicMessageServiceTest {
 
     verify(messageRepository, never())
         .findMessagesByConversationWithCursor(any(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("DM 읽음 처리 성공")
+  void markMessageAsReadSuccess() {
+    // given
+    UUID messageId = UUID.randomUUID();
+    LocalDateTime time = LocalDateTime.now().minusMinutes(10);
+
+    Message message = new Message(conversation, user1, user2, "Hello 1");
+    setId(message, messageId);
+    setCreatedAt(message, time);
+
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+    when(messageRepository.findById(messageId)).thenReturn(Optional.of(message));
+    when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation))
+        .thenReturn(Optional.of(message));
+
+    // when
+    messageService.markMessageAsRead(conversationId, messageId);
+
+    // then
+    assertFalse("Conversation의 hasUnread가 false가 되어야 함", conversation.getHasUnread());
+  }
+
+  @Test
+  @DisplayName("DM 읽음 처리 실패 - Conversation 없음")
+  void markMessageAsReadFail_ConversationNotFound() {
+    // given
+    UUID messageId = UUID.randomUUID();
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.empty());
+
+    // when & then
+    assertThrows(
+        ConversationNotFoundException.class,
+        () -> messageService.markMessageAsRead(conversationId, messageId)
+    );
+  }
+
+  @Test
+  @DisplayName("DM 읽음 처리 실패 - Message 없음")
+  void markMessageAsReadFail_MessageNotFound() {
+    // given
+    UUID messageId = UUID.randomUUID();
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+    when(messageRepository.findById(messageId)).thenReturn(Optional.empty());
+
+    // when & then
+    assertThrows(
+        MessageNotFoundException.class,
+        () -> messageService.markMessageAsRead(conversationId, messageId)
+    );
+  }
+
+  @Test
+  @DisplayName("DM 읽음 처리 실패 - 최신 메시지가 아님")
+  void markMessageAsReadFail_InvalidMessage() {
+    // given
+    UUID messageId = UUID.randomUUID();
+    Message oldMessage = new Message(conversation, user1, user2, "Old message");
+    setId(oldMessage, messageId);
+
+    Message latestMessage = new Message(conversation, user1, user2, "Latest message");
+    setId(latestMessage, UUID.randomUUID());
+
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+    when(messageRepository.findById(messageId)).thenReturn(Optional.of(oldMessage));
+    when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation))
+        .thenReturn(Optional.of(latestMessage));
+
+    // when & then
+    assertThrows(
+        InvalidMessageReadOperationException.class,
+        () -> messageService.markMessageAsRead(conversationId, messageId)
+    );
   }
 
   private void setId(Object entity, UUID id) {
