@@ -45,7 +45,7 @@ jobs:
              '.executionRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)
               | .taskRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)' \
              task-definition.json > tmp.json && mv tmp.json task-definition.json
-          
+
       - name: Update image and env vars using jq # 이미지 + 환경변수 치환
         run: |
           jq \
@@ -53,13 +53,43 @@ jobs:
             --arg RDS_URL "${{ secrets.RDS_URL }}" \
             --arg RDS_USERNAME "${{ secrets.RDS_USERNAME }}" \
             --arg RDS_PASSWORD "${{ secrets.RDS_PASSWORD }}" \
+            --arg JWT_ACCESS_TOKEN_SECRET "${{ secrets.JWT_ACCESS_TOKEN_SECRET }}" \
+            --arg JWT_ACCESS_TOKEN_EXPIRATION_MS "${{ secrets.JWT_ACCESS_TOKEN_EXPIRATION_MS }}" \
+            --arg JWT_REFRESH_TOKEN_SECRET "${{ secrets.JWT_REFRESH_TOKEN_SECRET }}" \
+            --arg JWT_REFRESH_TOKEN_EXPIRATION_MS "${{ secrets.JWT_REFRESH_TOKEN_EXPIRATION_MS }}" \
+            --arg LOGS_BUCKET "${{ secrets.LOGS_BUCKET }}" \
+            --arg PROFILE_BUCKET "${{ secrets.PROFILE_BUCKET }}" \
+            --arg CONTENT_BUCKET "${{ secrets.CONTENT_BUCKET }}" \
+            --arg REDIS_HOST "${{ secrets.REDIS_HOST }}" \
+            --arg REDIS_PASSWORD "${{ secrets.REDIS_PASSWORD }}" \
+            --arg REDIS_PORT "${{ secrets.REDIS_PORT }}" \
+            --arg SPRING_MAIL_HOST "${{ secrets.SPRING_MAIL_HOST }}" \
+            --arg SPRING_MAIL_PASSWORD "${{ secrets.SPRING_MAIL_PASSWORD }}" \
+            --arg SPRING_MAIL_PORT "${{ secrets.SPRING_MAIL_PORT }}" \
+            --arg SPRING_MAIL_USERNAME "${{ secrets.SPRING_MAIL_USERNAME }}" \
+            --arg WEBSOCKET_ALLOWED_ORIGINS "${{ secrets.WEBSOCKET_ALLOWED_ORIGINS }}" \
             '
             .containerDefinitions[0].image = $IMAGE
             | .containerDefinitions[0].environment = [
                 {"name": "SPRING_PROFILES_ACTIVE", "value": "prod"},
                 {"name": "SPRING_DATASOURCE_URL", "value": $RDS_URL},
                 {"name": "SPRING_DATASOURCE_USERNAME", "value": $RDS_USERNAME},
-                {"name": "SPRING_DATASOURCE_PASSWORD", "value": $RDS_PASSWORD}
+                {"name": "SPRING_DATASOURCE_PASSWORD", "value": $RDS_PASSWORD},
+                {"name": "JWT_ACCESS_TOKEN_SECRET", "value": "$JWT_ACCESS_TOKEN_SECRET"},
+                {"name": "JWT_ACCESS_TOKEN_EXPIRATION_MS", "value": $JWT_ACCESS_TOKEN_EXPIRATION_MS},
+                {"name": "JWT_REFRESH_TOKEN_SECRET", "value": $JWT_REFRESH_TOKEN_SECRET},
+                {"name": "JWT_REFRESH_TOKEN_EXPIRATION_MS", "value": $JWT_REFRESH_TOKEN_EXPIRATION_MS},
+                {"name": "LOGS_BUCKET", "value": "$LOGS_BUCKET"},
+                {"name": "PROFILE_BUCKET", "value": $PROFILE_BUCKET},
+                {"name": "CONTENT_BUCKET", "value": $CONTENT_BUCKET},
+                {"name": "REDIS_HOST", "value": $REDIS_HOST},
+                {"name": "REDIS_PASSWORD", "value": "$REDIS_PASSWORD"},
+                {"name": "REDIS_PORT", "value": $REDIS_PORT},
+                {"name": "SPRING_MAIL_HOST", "value": $SPRING_MAIL_HOST},
+                {"name": "SPRING_MAIL_PASSWORD", "value": $SPRING_MAIL_PASSWORD},
+                {"name": "SPRING_MAIL_PORT", "value": $SPRING_MAIL_PORT},
+                {"name": "SPRING_MAIL_USERNAME", "value": $SPRING_MAIL_USERNAME},
+                {"name": "WEBSOCKET_ALLOWED_ORIGINS", "value": $WEBSOCKET_ALLOWED_ORIGINS}
               ]
             ' task-definition.json > tmp.json && mv tmp.json task-definition.json
 
