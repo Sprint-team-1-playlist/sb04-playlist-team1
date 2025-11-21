@@ -7,7 +7,7 @@ import java.util.UUID;
 public record ReviewDto(
         UUID id,
         UUID contentId,
-        UserSummary autor,
+        UserSummary author,
         String text,
         int rating
 ) {
