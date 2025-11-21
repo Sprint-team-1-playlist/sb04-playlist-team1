@@ -3,6 +3,7 @@ package com.codeit.playlist.message.service.basic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -10,7 +11,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.util.AssertionErrors.assertFalse;
 
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
@@ -350,7 +350,7 @@ class BasicMessageServiceTest {
     messageService.markMessageAsRead(conversationId, messageId);
 
     // then
-    assertFalse("Conversation의 hasUnread가 false가 되어야 함", conversation.getHasUnread());
+    assertFalse(conversation.getHasUnread(), "Conversation의 hasUnread가 false가 되어야 함");
   }
 
   @Test

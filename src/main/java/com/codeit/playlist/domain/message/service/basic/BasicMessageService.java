@@ -133,7 +133,7 @@ public class BasicMessageService implements MessageService {
         sortDirection
     );
 
-    log.info("[Message] DM 목록 조회 완료: {}", cursorMessageDto);
+    log.info("[Message] DM 목록 조회 완료: conversationId={}, count={}", conversationId, content.size());
 
     return cursorMessageDto;
   }
@@ -144,6 +144,13 @@ public class BasicMessageService implements MessageService {
 
     Conversation conversation = conversationRepository.findById(conversationId)
             .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
+
+    UUID currentUserId = getCurrentUserId();
+    if (!conversation.getUser1().getId().equals(currentUserId)
+        && !conversation.getUser2().getId().equals(currentUserId)) {
+      throw NotConversationParticipantException.withId(currentUserId);
+    }
+
     Message message = messageRepository.findById(directMessageId)
         .orElseThrow(() -> MessageNotFoundException.withId(directMessageId));
 

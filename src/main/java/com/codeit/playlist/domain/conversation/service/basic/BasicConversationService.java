@@ -159,7 +159,7 @@ public class BasicConversationService implements ConversationService {
         sortDirection
     );
 
-    log.info("[Conversation] 대화 조회 완료: {}", response);
+    log.info("[Conversation] 대화 조회 완료: total={}", total);
 
     return response;
   }
