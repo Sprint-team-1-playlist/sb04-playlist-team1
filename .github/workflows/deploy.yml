@@ -72,9 +72,9 @@ jobs:
             .containerDefinitions[0].image = $IMAGE
             | .containerDefinitions[0].environment = [
                 {"name": "SPRING_PROFILES_ACTIVE", "value": "prod"},
-                {"name": "SPRING_DATASOURCE_URL", "value": $RDS_URL},
-                {"name": "SPRING_DATASOURCE_USERNAME", "value": $RDS_USERNAME},
-                {"name": "SPRING_DATASOURCE_PASSWORD", "value": $RDS_PASSWORD},
+                {"name": "RDS_URL", "value": $RDS_URL},
+                {"name": "RDS_USERNAME", "value": $RDS_USERNAME},
+                {"name": "RDS_PASSWORD", "value": $RDS_PASSWORD},
                 {"name": "JWT_ACCESS_TOKEN_SECRET", "value": $JWT_ACCESS_TOKEN_SECRET},
                 {"name": "JWT_ACCESS_TOKEN_EXPIRATION_MS", "value": $JWT_ACCESS_TOKEN_EXPIRATION_MS},
                 {"name": "JWT_REFRESH_TOKEN_SECRET", "value": $JWT_REFRESH_TOKEN_SECRET},
