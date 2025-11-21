@@ -12,8 +12,8 @@ import com.codeit.playlist.domain.playlist.mapper.PlaylistMapper;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.service.PlaylistService;
 import com.codeit.playlist.domain.user.entity.User;
+import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -42,7 +42,7 @@ public class BasicPlaylistService implements PlaylistService {
         log.debug("[플레이리스트] 생성 요청: ownerId={}, title={}", ownerId, request.title());
 
         User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다. ID=" + ownerId));
+                .orElseThrow(() -> UserNotFoundException.withId(ownerId));
         Playlist playlist = playlistMapper.toEntity(request, owner);
 
         Playlist saved = playlistRepository.save(playlist);
