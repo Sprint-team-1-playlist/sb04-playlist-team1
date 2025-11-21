@@ -5,7 +5,10 @@ import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
+import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
 import com.codeit.playlist.domain.review.entity.Review;
+import com.codeit.playlist.domain.review.exception.ReviewAccessDeniedException;
+import com.codeit.playlist.domain.review.exception.ReviewNotFoundException;
 import com.codeit.playlist.domain.review.mapper.ReviewMapper;
 import com.codeit.playlist.domain.review.repository.ReviewRepository;
 import com.codeit.playlist.domain.review.service.basic.BasicReviewService;
@@ -171,5 +174,133 @@ public class BasicReviewServiceTest {
         then(reviewMapper).should().toEntity(request, content, reviewer);
         then(reviewRepository).should().save(reviewEntity);
         then(reviewMapper).should(never()).toDto(any());
+    }
+
+    @Test
+    @DisplayName("updateReview 성공 - 본인 리뷰를 정상적으로 수정하고 DTO를 반환")
+    void updateReviewSuccess() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        ReviewUpdateRequest request = new ReviewUpdateRequest("수정된 내용", 4);
+
+        User reviewer = mock(User.class);
+        given(reviewer.getId()).willReturn(currentUserId);
+
+        Review review = mock(Review.class);
+        given(review.getUser()).willReturn(reviewer);
+
+        Review savedReview = mock(Review.class);
+
+        ReviewDto expectedDto = new ReviewDto(
+                reviewId,
+                UUID.randomUUID(),
+                null,
+                "수정된 내용",
+                4
+        );
+
+        given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+        given(reviewRepository.save(review)).willReturn(savedReview);
+        given(reviewMapper.toDto(savedReview)).willReturn(expectedDto);
+
+        // when
+        ReviewDto result = basicReviewService.updateReview(reviewId, request, currentUserId);
+
+        // then
+        assertThat(result).isEqualTo(expectedDto);
+
+        then(reviewRepository).should().findById(reviewId);
+        then(review).should().updateReview("수정된 내용", 4);
+        then(reviewRepository).should().save(review);
+        then(reviewMapper).should().toDto(savedReview);
+    }
+
+    @Test
+    @DisplayName("updateReview 실패 - 리뷰가 존재하지 않으면 ReviewNotFoundException 발생")
+    void updateReviewFailWithNotFound() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        ReviewUpdateRequest request = new ReviewUpdateRequest("내용", 5);
+
+        given(reviewRepository.findById(reviewId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> basicReviewService.updateReview(reviewId, request, currentUserId))
+                .isInstanceOf(ReviewNotFoundException.class);
+
+        then(reviewRepository).should().findById(reviewId);
+        then(reviewRepository).shouldHaveNoMoreInteractions();
+        then(reviewMapper).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("updateReview 실패 - 리뷰 작성자의 User 정보가 없으면 UserNotFoundException 발생")
+    void updateReviewFail_UnauthorizedWithUserNotFound() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        ReviewUpdateRequest request = new ReviewUpdateRequest("내용", 5);
+
+        // 리뷰가 있고, reviewer.getId() 호출 시 null 또는 예외
+        User reviewer = mock(User.class);
+        given(reviewer.getId()).willThrow(new UserNotFoundException());
+
+        Review review = mock(Review.class);
+        given(review.getUser()).willReturn(reviewer);
+
+        given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+
+        // when & then
+        assertThatThrownBy(() -> basicReviewService.updateReview(reviewId, request, currentUserId))
+                .isInstanceOf(UserNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("updateReview 실패 - 리뷰 작성자가 아니면 ReviewAccessDeniedException 발생")
+    void updateReviewFailWithForbidden() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        UUID writerId = UUID.randomUUID(); // 다른 사람
+
+        ReviewUpdateRequest request = new ReviewUpdateRequest("내용", 5);
+
+        User reviewer = mock(User.class);
+        given(reviewer.getId()).willReturn(writerId);
+
+        Review review = mock(Review.class);
+        given(review.getUser()).willReturn(reviewer);
+
+        given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+
+        // when & then
+        assertThatThrownBy(() -> basicReviewService.updateReview(reviewId, request, currentUserId))
+                .isInstanceOf(ReviewAccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("updateReview 실패 - 저장 과정에서 예상치 못한 예외 발생 시 RuntimeException 발생")
+    void updateReviewFailWithInternalServerError() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        ReviewUpdateRequest request = new ReviewUpdateRequest("내용", 5);
+
+        User reviewer = mock(User.class);
+        given(reviewer.getId()).willReturn(currentUserId);
+
+        Review review = mock(Review.class);
+        given(review.getUser()).willReturn(reviewer);
+
+        given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+        // save에서 갑자기 터지도록 설정
+        given(reviewRepository.save(any())).willThrow(new RuntimeException("DB Failure"));
+
+        // when & then
+        assertThatThrownBy(() -> basicReviewService.updateReview(reviewId, request, currentUserId))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("DB Failure");
     }
 }
