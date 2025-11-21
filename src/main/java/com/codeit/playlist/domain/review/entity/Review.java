@@ -34,4 +34,10 @@ public class Review extends BaseUpdatableEntity {
 
     @Column(nullable = false)
     private int rating;
+
+    //편의 메서드
+    public void updateReview(String text, int rating) {
+        this.text = text;
+        this.rating = rating;
+    }
 }
