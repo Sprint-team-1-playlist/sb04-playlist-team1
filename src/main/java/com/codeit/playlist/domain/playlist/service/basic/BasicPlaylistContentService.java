@@ -23,6 +23,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class BasicPlaylistContentService implements PlaylistContentService {
 
     private final PlaylistRepository playlistRepository;
@@ -30,7 +31,6 @@ public class BasicPlaylistContentService implements PlaylistContentService {
     private final PlaylistContentRepository playlistContentRepository;
 
     @Override
-    @Transactional
     public void addContentToPlaylist(UUID playlistId, UUID contentId, UUID currentUserId) {
 
         log.debug("[플레이리스트] 콘텐츠 추가 시작 : playlistId={}, contentId={}, userId={}",
@@ -76,7 +76,6 @@ public class BasicPlaylistContentService implements PlaylistContentService {
                 playlistId, contentId, currentUserId);
     }
 
-    @Transactional
     @Override
     public void removeContentFromPlaylist(UUID playlistId, UUID contentId, UUID currentUserId) {
 

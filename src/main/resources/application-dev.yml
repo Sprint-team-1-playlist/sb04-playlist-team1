@@ -37,6 +37,14 @@ playlist:
     cookie:
       secure: false
 
+cloud:
+  aws:
+    s3:
+      content-bucket: ${CONTENT_BUCKET}
+      profile-bucket: ${PROFILE_BUCKET}
+      logs-bucket: ${LOGS_BUCKET}
+      region: ${S3_REGION}
+
 logging:
   level:
     com.codeit.playlist: debug

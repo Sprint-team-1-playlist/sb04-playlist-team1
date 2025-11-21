@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,7 +40,10 @@ public class PlaylistController {
     //플레이리스트 생성
     @PostMapping
     public ResponseEntity<PlaylistDto> create(@Valid @RequestBody PlaylistCreateRequest request,
-                                              @RequestHeader(value = "owner_id", required = false) UUID ownerId) { // 임시
+                                              @AuthenticationPrincipal PlaylistUserDetails userDetails) {
+
+        UUID ownerId = userDetails.getUserDto().id();
+
         log.debug("[플레이리스트] 생성 요청: title = {}, ownerId = {}", request.title(), ownerId);
 
         PlaylistDto playlist = playlistService.createPlaylist(request, ownerId);
@@ -55,10 +57,13 @@ public class PlaylistController {
     @PatchMapping("/{playlistId}")
     public ResponseEntity<PlaylistDto> update(
             @PathVariable UUID playlistId,
-            @Valid @RequestBody PlaylistUpdateRequest request) {
-        log.debug("[플레이리스트] 수정 요청: id = {}", playlistId);
+            @Valid @RequestBody PlaylistUpdateRequest request,
+            @AuthenticationPrincipal PlaylistUserDetails userDetails) {
 
-        PlaylistDto updatedPlaylist = playlistService.updatePlaylist(playlistId, request);
+        UUID currentUserId = userDetails.getUserDto().id();
+        log.debug("[플레이리스트] 수정 요청: playlistId = {}, currentUserId = {}", playlistId, currentUserId);
+
+        PlaylistDto updatedPlaylist = playlistService.updatePlaylist(playlistId, request, currentUserId);
 
         log.info("플레이리스트 수정 성공 - id = {}", updatedPlaylist.id());
 
@@ -67,10 +72,13 @@ public class PlaylistController {
 
     //플레이리스트 삭제
     @DeleteMapping("/{playlistId}")
-    public ResponseEntity<Void> delete(@PathVariable UUID playlistId) {
+    public ResponseEntity<Void> delete(@PathVariable UUID playlistId,
+                                       @AuthenticationPrincipal PlaylistUserDetails userDetails) {
 
-        log.debug("[플레이리스트] 삭제 요청: id = {}", playlistId);
-        playlistService.deletePlaylist(playlistId);
+        UUID currentUserId = userDetails.getUserDto().id();
+
+        log.debug("[플레이리스트] 삭제 요청: playlistId = {}, currentUserId = {}", playlistId, currentUserId);
+        playlistService.deletePlaylist(playlistId, currentUserId);
 
         log.info("플레이리스트 삭제 성공 - id = {}", playlistId);
         return ResponseEntity.noContent().build();
@@ -123,10 +131,13 @@ public class PlaylistController {
     //플레이리스트 구독
     @PostMapping("/{playlistId}/subscription")
     public ResponseEntity<Void> playlistSubscription(@PathVariable UUID playlistId,
-                                                     @RequestHeader("USER-ID") UUID subscriberId) {//subscriberId는 Security 구현시 삭제
-        log.debug("[플레이리스트] 플레이리스트 구독 : playlistId = {}, userId = {}", playlistId, subscriberId);
+                                                     @AuthenticationPrincipal PlaylistUserDetails userDetails) {
 
-        playlistSubscriptionService.subscribe(playlistId, subscriberId);
+        UUID currentUserId = userDetails.getUserDto().id();
+
+        log.debug("[플레이리스트] 플레이리스트 구독 : playlistId = {}, userId = {}", playlistId, currentUserId);
+
+        playlistSubscriptionService.subscribe(playlistId, currentUserId);
 
         return ResponseEntity.ok().build();
     }
@@ -134,10 +145,13 @@ public class PlaylistController {
     //플레이리스트 구독 해제
     @DeleteMapping("/{playlistId}/subscription")
     public ResponseEntity<Void> playlistUnSubscription(@PathVariable UUID playlistId,
-                                                       @RequestHeader("USER-ID") UUID subscriberId) {//subscriberId는 Security 구현시 삭제
-        log.debug("[플레이리스트] 구독 해제 요청 : playlistId = {}, userId = {}", playlistId, subscriberId);
+                                                       @AuthenticationPrincipal PlaylistUserDetails userDetails) {
 
-        playlistSubscriptionService.unsubscribe(playlistId, subscriberId);
+        UUID currentUserId = userDetails.getUserDto().id();
+
+        log.debug("[플레이리스트] 구독 해제 요청 : playlistId = {}, userId = {}", playlistId, currentUserId);
+
+        playlistSubscriptionService.unsubscribe(playlistId, currentUserId);
 
         return ResponseEntity.noContent().build();
     }
