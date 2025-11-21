@@ -5,7 +5,10 @@ import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
+import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
 import com.codeit.playlist.domain.review.entity.Review;
+import com.codeit.playlist.domain.review.exception.ReviewAccessDeniedException;
+import com.codeit.playlist.domain.review.exception.ReviewNotFoundException;
 import com.codeit.playlist.domain.review.mapper.ReviewMapper;
 import com.codeit.playlist.domain.review.repository.ReviewRepository;
 import com.codeit.playlist.domain.review.service.ReviewService;
@@ -53,6 +56,35 @@ public class BasicReviewService implements ReviewService {
         ReviewDto dto = reviewMapper.toDto(saved);
 
         log.info("[리뷰] 생성 완료: id={}", dto.id());
+        return dto;
+    }
+
+    //리뷰 수정
+    @Transactional
+    @Override
+    public ReviewDto updateReview(UUID reviewId, ReviewUpdateRequest request, UUID currentUserId) {
+        log.debug("[리뷰] 수정 시작: reviewId={}, currentUserId={}", reviewId, currentUserId);
+
+        //리뷰 조회
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> ReviewNotFoundException.withId(reviewId));
+
+        //작성자 검증
+        UUID authorId = review.getUser().getId();
+        if (!authorId.equals(currentUserId)) {
+            log.error("[리뷰] 수정 권한 없음: reviewId={}, authorId={}, currentUserId={}",
+                    reviewId, authorId, currentUserId);
+            throw ReviewAccessDeniedException.withId(reviewId);
+        }
+
+        review.updateReview(request.text(), request.rating());
+
+        Review saved = reviewRepository.save(review);
+
+        //DTO 변환
+        ReviewDto dto = reviewMapper.toDto(saved);
+
+        log.info("[리뷰] 리뷰 수정 성공: id= {}", reviewId);
         return dto;
     }
 }
