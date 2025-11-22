@@ -39,13 +39,16 @@ jobs:
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
 
-      - name: Replace ACCOUNT_ID placeholder in task-definition.json # task-definition.json에 ACCOUNT_ID 대입
+      - name: Replace placeholders in task-definition.json # task-definition.json에 ACCOUNT_ID, REDIS_PASSWORD 대입
         run: |
-          jq --arg ACCOUNT_ID "${{ secrets.AWS_ACCOUNT_ID }}" \
+          jq \ 
+            --arg ACCOUNT_ID "${{ secrets.AWS_ACCOUNT_ID }}" \
+            --arg REDIS_PASSWORD "${{ secrets.REDIS_PASSWORD }}" \
              '.executionRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)
-              | .taskRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)' \
+              | .taskRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID) \
+              | .containerDefinitions[1].environment[0].value = $REDIS_PASSWORD' \
              task-definition.json > tmp.json && mv tmp.json task-definition.json
-          
+
       - name: Update image and env vars using jq # 이미지 + 환경변수 치환
         run: |
           jq \
@@ -60,9 +63,6 @@ jobs:
             --arg LOGS_BUCKET "${{ secrets.LOGS_BUCKET }}" \
             --arg PROFILE_BUCKET "${{ secrets.PROFILE_BUCKET }}" \
             --arg CONTENT_BUCKET "${{ secrets.CONTENT_BUCKET }}" \
-            --arg REDIS_HOST "${{ secrets.REDIS_HOST }}" \
-            --arg REDIS_PASSWORD "${{ secrets.REDIS_PASSWORD }}" \
-            --arg REDIS_PORT "${{ secrets.REDIS_PORT }}" \
             --arg SPRING_MAIL_HOST "${{ secrets.SPRING_MAIL_HOST }}" \
             --arg SPRING_MAIL_PASSWORD "${{ secrets.SPRING_MAIL_PASSWORD }}" \
             --arg SPRING_MAIL_PORT "${{ secrets.SPRING_MAIL_PORT }}" \
@@ -82,9 +82,9 @@ jobs:
                 {"name": "LOGS_BUCKET", "value": $LOGS_BUCKET},
                 {"name": "PROFILE_BUCKET", "value": $PROFILE_BUCKET},
                 {"name": "CONTENT_BUCKET", "value": $CONTENT_BUCKET},
-                {"name": "REDIS_HOST", "value": $REDIS_HOST},
+                {"name": "REDIS_HOST", "value": "playlist-redis"},
                 {"name": "REDIS_PASSWORD", "value": $REDIS_PASSWORD},
-                {"name": "REDIS_PORT", "value": $REDIS_PORT},
+                {"name": "REDIS_PORT", "value": "6379"},
                 {"name": "SPRING_MAIL_HOST", "value": $SPRING_MAIL_HOST},
                 {"name": "SPRING_MAIL_PASSWORD", "value": $SPRING_MAIL_PASSWORD},
                 {"name": "SPRING_MAIL_PORT", "value": $SPRING_MAIL_PORT},
