@@ -3,6 +3,8 @@ package com.codeit.playlist.review.controller;
 import com.codeit.playlist.domain.review.controller.ReviewController;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
+import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
+import com.codeit.playlist.domain.review.exception.ReviewAccessDeniedException;
 import com.codeit.playlist.domain.review.service.ReviewService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
@@ -32,6 +34,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -156,5 +159,147 @@ public class ReviewControllerTest {
                 .andExpect(status().isUnauthorized());
 
         then(reviewService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("리뷰 수정 성공 - 본인 리뷰를 올바르게 수정하면 200과 수정된 ReviewDto를 반환")
+    void updateReviewSuccess() throws Exception {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        ReviewUpdateRequest request = new ReviewUpdateRequest(
+                "수정된 리뷰 내용",
+                4
+        );
+
+        ReviewDto responseDto = new ReviewDto(
+                reviewId,
+                UUID.randomUUID(),   // contentId
+                null,                // author(UserSummary) - 여기선 단순화
+                "수정된 리뷰 내용",
+                4
+        );
+
+        given(reviewService.updateReview(eq(reviewId), any(ReviewUpdateRequest.class), eq(currentUserId)))
+                .willReturn(responseDto);
+
+        // when & then
+        mockMvc.perform(patch("/api/reviews/{reviewId}", reviewId)
+                        .with(authentication(createAuthentication(currentUserId)))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(reviewId.toString()))
+                .andExpect(jsonPath("$.text").value("수정된 리뷰 내용"))
+                .andExpect(jsonPath("$.rating").value(4));
+
+        then(reviewService).should()
+                .updateReview(eq(reviewId), any(ReviewUpdateRequest.class), eq(currentUserId));
+    }
+
+    @Test
+    @DisplayName("리뷰 수정 실패 - 유효하지 않은 요청 본문이면 400을 반환")
+    void updateReviewFailWithBadRequest() throws Exception {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        // text가 빈 문자열, rating이 음수 등으로 Bean Validation 위반 유도
+        String invalidJson = """
+                {
+                  "text": "",
+                  "rating": -1
+                }
+                """;
+
+        // when & then
+        mockMvc.perform(patch("/api/reviews/{reviewId}", reviewId)
+                        .with(authentication(createAuthentication(currentUserId)))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidJson))
+                .andExpect(status().isBadRequest());
+
+        // 검증 단계에서 막혀야 하므로 서비스는 호출되면 안 됨
+        then(reviewService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("리뷰 수정 실패 - 인증되지 않은 사용자는 401을 반환")
+    void updateReviewFailWithUnauthorized() throws Exception {
+        // given
+        UUID reviewId = UUID.randomUUID();
+
+        ReviewUpdateRequest request = new ReviewUpdateRequest(
+                "수정 내용",
+                3
+        );
+
+        // when & then
+        mockMvc.perform(patch("/api/reviews/{reviewId}", reviewId)
+                        // 인증 정보 intentionally 없음
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+
+        then(reviewService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("리뷰 수정 실패 - 다른 사용자의 리뷰를 수정하려 하면 403을 반환")
+    void updateReviewFailWithForbidden() throws Exception {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        ReviewUpdateRequest request = new ReviewUpdateRequest(
+                "수정 내용",
+                3
+        );
+
+        // 서비스 계층에서 권한 예외 발생 시나리오
+        given(reviewService.updateReview(eq(reviewId), any(ReviewUpdateRequest.class), eq(currentUserId)))
+                .willThrow(ReviewAccessDeniedException.withId(reviewId));
+
+        // when & then
+        mockMvc.perform(patch("/api/reviews/{reviewId}", reviewId)
+                        .with(authentication(createAuthentication(currentUserId)))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+
+        then(reviewService).should()
+                .updateReview(eq(reviewId), any(ReviewUpdateRequest.class), eq(currentUserId));
+    }
+
+    @Test
+    @DisplayName("리뷰 수정 실패 - 서비스 내부에서 예기치 못한 예외가 발생하면 500을 반환")
+    void updateReviewFailWithInternalServerError() throws Exception {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        ReviewUpdateRequest request = new ReviewUpdateRequest(
+                "수정 내용",
+                3
+        );
+
+        given(reviewService.updateReview(eq(reviewId), any(ReviewUpdateRequest.class), eq(currentUserId)))
+                .willThrow(new RuntimeException("테스트용 예외"));
+
+        // when & then
+        mockMvc.perform(patch("/api/reviews/{reviewId}", reviewId)
+                        .with(authentication(createAuthentication(currentUserId)))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError());
+
+        then(reviewService).should()
+                .updateReview(eq(reviewId), any(ReviewUpdateRequest.class), eq(currentUserId));
     }
 }
