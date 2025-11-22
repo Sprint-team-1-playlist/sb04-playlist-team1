@@ -6,6 +6,14 @@ spring:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
+  api:
+    tmdb:
+      base-url: ${TMDB_BASE_URL}
+      key: ${TMDB_API_KEY}
+      access-token: ${TMDB_API_ACCESS_TOKEN}
+    sportsdb:
+      key: ${SPORTSDB_API_KEY}
+      base-url: ${SPORTSDB_BASE_URL}
 
   jpa:
     hibernate:

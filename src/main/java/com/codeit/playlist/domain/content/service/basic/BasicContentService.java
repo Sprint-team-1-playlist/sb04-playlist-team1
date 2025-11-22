@@ -32,7 +32,6 @@ public class BasicContentService implements ContentService {
     @Override
     public ContentDto create(ContentCreateRequest request, String thumbnail) {
         log.debug("컨텐츠 생성 시작 : request = {}", request);
-        thumbnail = "testThumbnail.jpg"; // 더미데이터
 
         log.debug("타입 생성 시작 : type = {}", request.type());
         Type type = null;
@@ -50,6 +49,10 @@ public class BasicContentService implements ContentService {
         }
         log.info("타입 생성 완료 : type = {}", type);
 
+        if(thumbnail == null || thumbnail.isBlank()) {
+            throw new ContentBadRequestException("썸네일은 필수입니다.");
+        }
+
         Content content = new Content(
                 type,
                 request.title(),
@@ -61,7 +64,7 @@ public class BasicContentService implements ContentService {
 
         contentRepository.save(content);
 
-        log.info("태그 생성 시작 : tags = {}", request.tags()); // 테스트 확인용 info
+        log.debug("태그 생성 시작 : tags = {}", request.tags());
         List<Tag> tagList = request.tags().stream()
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
@@ -74,16 +77,17 @@ public class BasicContentService implements ContentService {
         }
         log.info("태그 생성 완료 : tags = {}", tagList);
 
-        log.info("컨텐츠 생성 완료, id = {}, tag = {}", content.getId(), tagRepository.findByContentId(content.getId()));
+        log.info("컨텐츠 생성 완료, cotnent = {}, tag = {}", content, tagList);
         return contentMapper.toDto(content, tagList);
     }
 
     @Transactional
     @Override
     public ContentDto update(UUID contentId, ContentUpdateRequest request, String thumbnail) {
-        log.debug("컨텐츠 수정 시작 : id = {}", contentId);
         Content content = contentRepository.findById(contentId)
                 .orElseThrow(() -> ContentNotFoundException.withId(contentId));
+
+        log.debug("컨텐츠 수정 시작 : id = {}", contentId);
 
         thumbnail = "testThumbnail.jpg"; // 더미
 
@@ -91,11 +95,12 @@ public class BasicContentService implements ContentService {
         content.setDescription(request.description());
         content.setThumbnailUrl(thumbnail);
 
-        log.debug("태그 수정 시작 : tag = {}", request.tags());
         List<Tag> oldtags = tagRepository.findByContentId(contentId);
         if(!oldtags.isEmpty()) { // 비어있지 않다면, 싹 다 밀어버림
             tagRepository.deleteAll(oldtags);
         }
+
+        log.info("태그 수정 시작 : tag = {}", request.tags());
 
         List<String> newTags = request.tags();
         if(request.tags() == null) {
