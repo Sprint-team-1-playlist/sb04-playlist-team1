@@ -79,4 +79,17 @@ public class ConversationController {
         .status(HttpStatus.OK)
         .body(conversationDto);
   }
+
+  @GetMapping("/with")
+  public ResponseEntity<ConversationDto> findByUserId(@RequestParam UUID userId){
+    log.debug("[Conversation] 특정 사용자와의 대화 조회 요청: {}", userId);
+
+    ConversationDto conversationDto = conversationService.findByUserId(userId);
+
+    log.info("[Conversation] 특정 사용자와의 대화 조회 응답: {}", conversationDto);
+
+    return ResponseEntity
+        .status(HttpStatus.OK)
+        .body(conversationDto);
+  }
 }

@@ -11,11 +11,11 @@ import java.util.UUID;
 public interface PlaylistService {
     PlaylistDto createPlaylist(PlaylistCreateRequest request, UUID ownerId);
 
-    PlaylistDto updatePlaylist(UUID playlistId, PlaylistUpdateRequest request);
+    PlaylistDto updatePlaylist(UUID playlistId, PlaylistUpdateRequest request, UUID currentUserId);
 
     void softDeletePlaylist(UUID playlistId, UUID requesterUserId);
 
-    void deletePlaylist(UUID playlistId);
+    void deletePlaylist(UUID playlistId, UUID requesterUserId);
 
     CursorResponsePlaylistDto findPlaylists(String keywordLike, UUID ownerIdEqual,
                                             UUID subscriberIdEqual, String cursor,

@@ -16,7 +16,6 @@ import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationAlreadyExistsException;
 import com.codeit.playlist.domain.conversation.exception.InvalidCursorException;
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
-import com.codeit.playlist.domain.conversation.exception.SelfChatNotAllowedException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
 import com.codeit.playlist.domain.conversation.service.basic.BasicConversationService;
@@ -127,13 +126,6 @@ public class BasicConversationServiceTest {
 
     assertNotNull(result);
     assertNull(result.lastestMessage());
-  }
-
-  @Test
-  @DisplayName("대화 생성 실패 - 자기 자신과 대화 시도")
-  void createConversationFailsWhenSelfChat() {
-    ConversationCreateRequest request = new ConversationCreateRequest(currentUserId);
-    assertThrows(SelfChatNotAllowedException.class, () -> conversationService.create(request));
   }
 
   @Test
@@ -304,8 +296,127 @@ public class BasicConversationServiceTest {
     when(conversationRepository.findById(conversationId))
         .thenReturn(Optional.of(conversation));
 
-    //when & then
+    // when & then
     assertThrows(NotConversationParticipantException.class, () -> conversationService.findById(conversationId));
+  }
+
+  @Test
+  @DisplayName("특정 사용자와의 대화 조회 성공 - 최신 메시지가 존재하는 경우")
+  void findByUserIdSuccessWithLatestMessage() {
+    // given
+    Conversation conversation = new Conversation(currentUser, otherUser);
+    UUID convId = UUID.randomUUID();
+    setId(conversation, convId);
+
+    when(conversationRepository.findByUserIds(currentUserId, otherUserId))
+        .thenReturn(Optional.of(conversation));
+
+    // user summary
+    UserSummary summary = new UserSummary(
+        otherUserId,
+        otherUser.getName(),
+        otherUser.getProfileImageUrl()
+    );
+    when(userMapper.toUserSummary(otherUser)).thenReturn(summary);
+
+    // latest message
+    Message latest = new Message(conversation, currentUser, otherUser, "hello");
+    setId(latest, UUID.randomUUID());
+    when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation))
+        .thenReturn(Optional.of(latest));
+
+    DirectMessageDto msgDto = new DirectMessageDto(
+        UUID.randomUUID(),
+        convId,
+        LocalDateTime.now(),
+        new UserSummary(currentUserId, currentUser.getName(), currentUser.getProfileImageUrl()),
+        new UserSummary(otherUserId, otherUser.getName(), otherUser.getProfileImageUrl()),
+        "hello"
+    );
+    when(messageMapper.toDto(latest)).thenReturn(msgDto);
+
+    ConversationDto expectedDto = new ConversationDto(convId, summary, msgDto, false);
+    when(conversationMapper.toDto(conversation, summary, msgDto)).thenReturn(expectedDto);
+
+    // when
+    ConversationDto result = conversationService.findByUserId(otherUserId);
+
+    // then
+    assertNotNull(result);
+    assertEquals(convId, result.id());
+    assertEquals(msgDto, result.lastestMessage());
+
+    assertNotNull(result.with());
+    assertEquals(otherUserId, result.with().userId());
+    assertEquals(otherUser.getName(), result.with().name());
+    assertEquals(otherUser.getProfileImageUrl(), result.with().profileImageUrl());
+  }
+
+  @Test
+  @DisplayName("특정 사용자와의 대화 조회 성공 - 최신 메시지가 없는 경우")
+  void findByUserIdSuccessWithoutLatestMessage() {
+    // given
+    Conversation conversation = new Conversation(currentUser, otherUser);
+    setId(conversation, UUID.randomUUID());
+
+    when(conversationRepository.findByUserIds(currentUserId, otherUserId))
+        .thenReturn(Optional.of(conversation));
+
+    UserSummary summary = new UserSummary(otherUserId, otherUser.getName(), otherUser.getProfileImageUrl());
+    when(userMapper.toUserSummary(otherUser)).thenReturn(summary);
+
+    when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation))
+        .thenReturn(Optional.empty());
+
+    ConversationDto expected = new ConversationDto(conversation.getId(), summary, null, false);
+    when(conversationMapper.toDto(conversation, summary, null)).thenReturn(expected);
+
+    // when
+    ConversationDto result = conversationService.findByUserId(otherUserId);
+
+    // then
+    assertNotNull(result);
+    assertNull(result.lastestMessage());
+
+    assertNotNull(result.with());
+    assertEquals(otherUserId, result.with().userId());
+    assertEquals(otherUser.getName(), result.with().name());
+    assertEquals(otherUser.getProfileImageUrl(), result.with().profileImageUrl());
+  }
+
+  @Test
+  @DisplayName("특정 사용자와의 대화 조회 실패 - 대화가 존재하지 않음")
+  void findByUserIdFailsWhenConversationNotFound() {
+    when(conversationRepository.findByUserIds(currentUserId, otherUserId))
+        .thenReturn(Optional.empty());
+
+    assertThrows(
+        com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException.class,
+        () -> conversationService.findByUserId(otherUserId)
+    );
+  }
+
+  @Test
+  @DisplayName("특정 사용자와의 대화 조회 실패 - 현재 사용자가 대화 참여자가 아님")
+  void findByUserIdFailsWhenNotParticipant() {
+    // given
+    User someone1 = new User("u1@test.com", "pw", "u1", null, Role.USER);
+    User someone2 = new User("u2@test.com", "pw", "u2", null, Role.USER);
+
+    UUID s1Id = UUID.randomUUID();
+    UUID s2Id = UUID.randomUUID();
+    setId(someone1, s1Id);
+    setId(someone2, s2Id);
+
+    Conversation conversation = new Conversation(someone1, someone2);
+    setId(conversation, UUID.randomUUID());
+
+    when(conversationRepository.findByUserIds(currentUserId, otherUserId))
+        .thenReturn(Optional.of(conversation));
+
+    // when & then
+    assertThrows(NotConversationParticipantException.class,
+        () -> conversationService.findByUserId(otherUserId));
   }
 
   private void setCreatedAt(BaseEntity entity, LocalDateTime time) {

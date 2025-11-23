@@ -17,4 +17,6 @@ public interface ConversationService {
       String sortBy);
 
   ConversationDto findById(UUID conversationId);
+
+  ConversationDto findByUserId(UUID userId);
 }
