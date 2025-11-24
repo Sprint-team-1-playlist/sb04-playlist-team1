@@ -2,6 +2,7 @@ package com.codeit.playlist.domain.sse;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -29,15 +30,18 @@ public class SseMessageRepository {
 
   public List<SseMessage> findAllByEventIdAfterAndReceiverId(UUID eventId, UUID receiverId) {
     return eventIdQueue.stream()
-        .dropWhile(data -> !data.equals(eventId))
-        .skip(1)
+        .filter(Objects::nonNull)
+        .dropWhile(id -> eventId != null && !id.equals(eventId))
+        .skip(eventId != null ? 1 : 0)
         .map(messages::get)
-        .filter(sseMessage -> sseMessage.isReceivable(receiverId))
+        .filter(Objects::nonNull) // 동시 삭제 대비
+        .filter(msg -> msg.isReceivable(receiverId))
         .collect(Collectors.toList());
   }
 
   private void makeAvailableCapacity() {
-    int availableCapacity = eventQueueCapacity - eventIdQueue.size();
+    int capacity = Math.max(1, eventQueueCapacity);
+    int availableCapacity = capacity - eventIdQueue.size();
     while (availableCapacity < 1) {
       UUID removedEventId = eventIdQueue.removeFirst();
       messages.remove(removedEventId);

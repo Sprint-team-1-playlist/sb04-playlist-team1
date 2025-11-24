@@ -15,7 +15,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class SseMessage {
 
   private final UUID eventId;
-  private Set<UUID> receiverIds = new HashSet<>();
+  private Set<UUID> receiverIds;
   private boolean broadcast;
   private String eventName;
   private Object eventData;

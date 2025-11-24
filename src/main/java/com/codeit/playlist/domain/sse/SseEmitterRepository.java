@@ -17,15 +17,8 @@ public class SseEmitterRepository {
   private final ConcurrentMap<UUID, List<SseEmitter>> data = new ConcurrentHashMap<>();
 
   public SseEmitter save(UUID receiverId, SseEmitter sseEmitter) {
-    data.compute(receiverId, (key, emitters) -> {
-      if (emitters == null) {
-        return new CopyOnWriteArrayList<>(List.of(sseEmitter));
-      } else {
-        emitters.add(sseEmitter);
-        return emitters;
-      }
-    });
-
+    data.computeIfAbsent(receiverId, key -> new CopyOnWriteArrayList<>())
+        .add(sseEmitter);
     return sseEmitter;
   }
 

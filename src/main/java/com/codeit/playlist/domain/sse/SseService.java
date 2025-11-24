@@ -44,14 +44,17 @@ public class SseService {
     Optional.ofNullable(lastEventId)
         .ifPresentOrElse(
             id -> {
-              sseMessageRepository.findAllByEventIdAfterAndReceiverId(id, receiverId)
-                  .forEach(sseMessage -> {
-                    try {
-                      sseEmitter.send(sseMessage.toEvent());
-                    } catch (IOException e) {
-                      log.error(e.getMessage(), e);
-                    }
-                  });
+              for (SseMessage sseMessage :
+                  sseMessageRepository.findAllByEventIdAfterAndReceiverId(id, receiverId)) {
+                try {
+                  sseEmitter.send(sseMessage.toEvent());
+                } catch (IOException e) {
+                  log.error("SSE 재전송 실패 receiverId={}, eventId={}",
+                      receiverId, sseMessage.getEventId(), e);
+                  sseEmitter.completeWithError(e);
+                  break;
+                }
+              }
             },
             () -> {
               ping(sseEmitter);
@@ -68,7 +71,8 @@ public class SseService {
           try {
             sseEmitter.send(event);
           } catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error("SSE send 실패 receiverIds={}, eventName={}", receiverIds, eventName, e);
+            sseEmitter.completeWithError(e);
           }
         });
   }
@@ -81,7 +85,8 @@ public class SseService {
           try {
             sseEmitter.send(event);
           } catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error("SSE broadcast 실패 eventName={}", eventName, e);
+            sseEmitter.completeWithError(e);
           }
         });
   }
