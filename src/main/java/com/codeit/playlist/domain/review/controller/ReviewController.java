@@ -71,7 +71,7 @@ public class ReviewController {
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) UUID idAfter,
             @RequestParam int limit,
-            @RequestParam(defaultValue = "DESCENDING") SortDirection sortDirection,  //DESENDING, ASCENDING
+            @RequestParam(defaultValue = "DESCENDING") SortDirection sortDirection,  //DESCENDING, ASCENDING
             @RequestParam String sortBy  //createdAt, rating
     ) {
 
