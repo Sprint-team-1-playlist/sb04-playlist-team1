@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -99,14 +100,18 @@ public class SseService {
 
     SseMessage message = sseMessageRepository.save(SseMessage.createBroadcast(eventName, data));
     Set<DataWithMediaType> event = message.toEvent();
+    AtomicBoolean hasFailure = new AtomicBoolean(false);
     sseEmitterRepository.findAll().forEach(sseEmitter -> {
       try {
         sseEmitter.send(event);
       } catch (Exception e) {
-        log.error("SSE broadcast 실패 eventName={}", eventName, e);
-        throw SseSendFailedException.withId(null, message.getEventId());
+        log.error("SSE broadcast 실패 eventName={}, eventId={}", eventName, message.getEventId(), e);
+        hasFailure.set(true);
       }
     });
+    if (hasFailure.get()) {
+      throw SseSendFailedException.withId(null, message.getEventId());
+    }
   }
 
   @Scheduled(fixedRate = 1000 * 60 * 5)
