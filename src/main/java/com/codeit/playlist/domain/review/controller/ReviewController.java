@@ -67,7 +67,7 @@ public class ReviewController {
     //리뷰 목록 조회
     @GetMapping
     public ResponseEntity<CursorResponseReviewDto> geetReviewList(
-            @RequestParam(required = false) UUID contentId,
+            @RequestParam UUID contentId,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) UUID idAfter,
             @RequestParam int limit,
