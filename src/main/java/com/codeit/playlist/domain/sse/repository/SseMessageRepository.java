@@ -1,5 +1,6 @@
-package com.codeit.playlist.domain.sse;
+package com.codeit.playlist.domain.sse.repository;
 
+import com.codeit.playlist.domain.sse.entity.SseMessage;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

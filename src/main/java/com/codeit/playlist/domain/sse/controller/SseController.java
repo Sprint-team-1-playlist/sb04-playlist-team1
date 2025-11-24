@@ -1,6 +1,7 @@
-package com.codeit.playlist.domain.sse;
+package com.codeit.playlist.domain.sse.controller;
 
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
+import com.codeit.playlist.domain.sse.service.SseService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;

@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.sse;
+package com.codeit.playlist.domain.sse.entity;
 
 import java.util.Collection;
 import java.util.HashSet;

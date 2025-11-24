@@ -1,5 +1,6 @@
-package com.codeit.playlist.domain.sse;
+package com.codeit.playlist.domain.sse.repository;
 
+import com.codeit.playlist.domain.sse.exception.InvalidSseEmitterException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -17,16 +18,25 @@ public class SseEmitterRepository {
   private final ConcurrentMap<UUID, List<SseEmitter>> data = new ConcurrentHashMap<>();
 
   public SseEmitter save(UUID receiverId, SseEmitter sseEmitter) {
+    if (receiverId == null || sseEmitter == null) {
+      throw InvalidSseEmitterException.withId(receiverId, sseEmitter);
+    }
     data.computeIfAbsent(receiverId, key -> new CopyOnWriteArrayList<>())
         .add(sseEmitter);
     return sseEmitter;
   }
 
   public Optional<List<SseEmitter>> findByReceiverId(UUID receiverId) {
+    if (receiverId == null) {
+      return Optional.empty();
+    }
     return Optional.ofNullable(data.get(receiverId));
   }
 
   public List<SseEmitter> findAllByReceiverIdsIn(Collection<UUID> receiverIds) {
+    if (receiverIds == null || receiverIds.isEmpty()) {
+      return List.of();
+    }
     return data.entrySet().stream()
         .filter(entry -> receiverIds.contains(entry.getKey()))
         .map(Map.Entry::getValue)
@@ -41,6 +51,9 @@ public class SseEmitterRepository {
   }
 
   public void delete(UUID receiverId, SseEmitter sseEmitter) {
+    if (receiverId == null || sseEmitter == null) {
+      return;
+    }
     data.computeIfPresent(receiverId, (key, emitters) -> {
       emitters.remove(sseEmitter);
       return emitters.isEmpty() ? null : emitters;
