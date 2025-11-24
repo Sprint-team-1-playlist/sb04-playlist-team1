@@ -1,11 +1,13 @@
 package com.codeit.playlist.domain.review.service.basic;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
 import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
+import com.codeit.playlist.domain.review.dto.response.CursorResponseReviewDto;
 import com.codeit.playlist.domain.review.entity.Review;
 import com.codeit.playlist.domain.review.exception.ReviewAccessDeniedException;
 import com.codeit.playlist.domain.review.exception.ReviewNotFoundException;
@@ -17,9 +19,11 @@ import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -86,5 +90,85 @@ public class BasicReviewService implements ReviewService {
 
         log.info("[리뷰] 리뷰 수정 성공: id= {}", reviewId);
         return dto;
+    }
+
+    //리뷰 조회
+    @Transactional(readOnly = true)
+    @Override
+    public CursorResponseReviewDto findReviews(UUID contentId, String cursor,
+                                               UUID idAfter, int limit,
+                                               SortDirection sortDirection, String sortBy) {
+        log.debug("[리뷰] 목록 조회 서비스 호출: " +
+                        "contentId={}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
+                contentId, cursor, idAfter, limit, sortDirection, sortBy);
+
+        //파라미터 보정
+        if(limit <= 0 || limit > 50) {
+            limit = 10; //기본 페이지 크기(10개 가져옴)
+        }
+
+        //sortBy 허용값(createdAt / rating)
+        if (!"createdAt".equals(sortBy) && !"rating".equals(sortBy)) {
+            sortBy = "createdAt";
+        }
+
+        //커서 해석 (cursor가 메인)
+        UUID effectiveIdAfter = null;
+        if (cursor != null && !cursor.isBlank()) {
+            try {
+                effectiveIdAfter = UUID.fromString(cursor);
+            } catch (IllegalArgumentException e) {
+                log.error("[리뷰] 잘못된 cursor 형식: cursor={}", cursor);
+                effectiveIdAfter = null;
+            }
+        }
+
+        //idAfter가 보조
+        if (effectiveIdAfter == null && idAfter != null) {
+            effectiveIdAfter = idAfter;
+        }
+
+        Slice<Review> reviews = reviewRepository.findReviews(
+                contentId, cursor,
+                effectiveIdAfter, limit,
+                sortDirection, sortBy
+        );
+
+        //Entity -> DTO
+        List<ReviewDto> data = reviews.getContent().stream()
+                .map(reviewMapper::toDto)
+                .toList();
+
+        //nextCursor, nextIdAfter 계산
+        String nextCursor = null;
+        UUID nextIdAfter = null;
+
+        if (reviews.hasNext() && !reviews.isEmpty()) {
+            Review last = reviews.getContent().get(reviews.getNumberOfElements() - 1);
+            nextIdAfter = last.getId();
+            nextCursor = last.getId().toString(); // id를 커서로 사용
+        }
+
+        long totalCount;
+        if (contentId != null) {
+            totalCount = reviewRepository.countByContent_Id(contentId);
+        } else {
+            totalCount = reviewRepository.count();
+        }
+
+        CursorResponseReviewDto response = new CursorResponseReviewDto(
+                data,
+                nextCursor,
+                nextIdAfter,
+                reviews.hasNext(),
+                totalCount,
+                sortBy,
+                sortDirection
+        );
+
+        log.info("[리뷰] 목록 조회 완료: contentId={}, 반환개수={}, hasNext={}",
+                contentId, data.size(), reviews.hasNext());
+
+        return response;
     }
 }
