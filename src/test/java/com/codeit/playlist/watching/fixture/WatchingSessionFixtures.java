@@ -11,9 +11,12 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.watching.dto.data.ChangeType;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import static org.mockito.Mockito.mock;
 
 public class WatchingSessionFixtures {
     public static final UUID FIXED_ID = UUID.randomUUID();
