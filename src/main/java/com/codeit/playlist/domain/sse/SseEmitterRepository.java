@@ -41,9 +41,9 @@ public class SseEmitterRepository {
   }
 
   public void delete(UUID receiverId, SseEmitter sseEmitter) {
-    data.computeIfPresent(receiverId, (key, emmitters) -> {
-      emmitters.remove(sseEmitter);
-      return emmitters.isEmpty() ? null : emmitters;
+    data.computeIfPresent(receiverId, (key, emitters) -> {
+      emitters.remove(sseEmitter);
+      return emitters.isEmpty() ? null : emitters;
     });
   }
 }

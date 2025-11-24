@@ -57,7 +57,10 @@ public class SseService {
               }
             },
             () -> {
-              ping(sseEmitter);
+              if (!ping(sseEmitter)) {
+                log.error("Initial ping failed for receiverId={}", receiverId);
+                sseEmitter.completeWithError(new IOException("Initial ping failed"));
+              }
             }
         );
     return sseEmitter;
