@@ -77,12 +77,12 @@ public class BasicAuthService implements AuthService {
   }
 
   @Override
-  public JwtInformation signIn(String username, String password) throws JOSEException {
+  public JwtInformation signIn(String email, String password) throws JOSEException {
     log.debug("[인증 관리] : 로그인 시작");
 
     // AuthenticationManager를 통해 인증 (계정 상태 검증 포함)
     Authentication auth = authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(username, password)
+        new UsernamePasswordAuthenticationToken(email, password)
     );
 
     SecurityContextHolder.getContext().setAuthentication(auth);

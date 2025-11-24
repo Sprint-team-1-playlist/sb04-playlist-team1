@@ -81,7 +81,7 @@ public class AuthController {
       HttpServletResponse response) throws JOSEException {
     log.debug("[인증 관리] : 로그인 요청 시작");
 
-    JwtInformation info = authService.signIn(signInRequest.username(), signInRequest.password());
+    JwtInformation info = authService.signIn(signInRequest.email(), signInRequest.password());
 
     // refresh 쿠키 설정
     ResponseCookie cookie = jwtTokenProvider.generateRefreshTokenCookie(info.refreshToken());
