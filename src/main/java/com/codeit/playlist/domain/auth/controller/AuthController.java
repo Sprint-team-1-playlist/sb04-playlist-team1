@@ -106,7 +106,7 @@ public class AuthController {
     }
 
     ResponseCookie deleteCookie = jwtTokenProvider.generateRefreshTokenExpirationCookie();
-    response.addHeader("Set-Cookie", deleteCookie.toString());
+    response.addHeader("Set-cookie", deleteCookie.toString());
 
     log.info("[인증 관리] : 로그아웃 요청 완료");
     return ResponseEntity.noContent().build();

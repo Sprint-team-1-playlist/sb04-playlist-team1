@@ -100,100 +100,100 @@ public class BasicAuthService implements AuthService {
       // 임시 비밀번호는 1회용이므로 삭제
       redisTemplate.delete(redisKey);
     }
-      // 기존 JWT 갱신 처리
-      jwtRegistry.invalidateJwtInformationByUserId(userId);
+    // 기존 JWT 갱신 처리
+    jwtRegistry.invalidateJwtInformationByUserId(userId);
 
-      JwtInformation info = generateJwt(userDetails);
-      jwtRegistry.registerJwtInformation(info);
+    JwtInformation info = generateJwt(userDetails);
+    jwtRegistry.registerJwtInformation(info);
 
-      log.info("[인증 관리] : 로그인 완료");
-      return info;
+    log.info("[인증 관리] : 로그인 완료");
+    return info;
 
   }
 
-    @Override
-    public JwtInformation refreshToken (String refreshToken){
-      log.debug("[인증 관리] : Token 발급 시작");
+  @Override
+  public JwtInformation refreshToken(String refreshToken) {
+    log.debug("[인증 관리] : Token 발급 시작");
 
-      if (refreshToken == null || refreshToken.isBlank()) {
-        throw RefreshTokenException.withToken(refreshToken);
-      }
-
-      if (!jwtTokenProvider.validateRefreshToken(refreshToken)
-          || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
-        throw new InvalidOrExpiredException();
-      }
-
-      String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
-      UserDetails userDetails;
-      try {
-        userDetails = userDetailsService.loadUserByUsername(username);
-      } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
-        throw new InvalidOrExpiredException();
-      }
-      PlaylistUserDetails playlistUser = (PlaylistUserDetails) userDetails;
-
-      try {
-
-        Instant accessIssuedAt = Instant.now();
-        Instant refreshIssuedAt = Instant.now();
-
-        String newAccess = jwtTokenProvider.generateAccessToken(playlistUser, accessIssuedAt);
-        String newRefresh = jwtTokenProvider.generateRefreshToken(playlistUser, refreshIssuedAt);
-
-        Instant accessExp = jwtTokenProvider.getExpiryFromToken(newAccess);
-        Instant refreshExp = jwtTokenProvider.getExpiryFromToken(newRefresh);
-
-        JwtInformation info = new JwtInformation(
-            playlistUser.getUserDto(),
-            newAccess, accessExp, accessIssuedAt,
-            newRefresh, refreshExp, refreshIssuedAt
-        );
-
-        boolean rotated = jwtRegistry.rotateJwtInformation(refreshToken, info);
-        if (!rotated) {
-          throw new InvalidOrExpiredException();
-        }
-        log.info("[인증 관리] : Token 발급 완료 ");
-        return info;
-
-      } catch (JOSEException e) {
-        throw JwtInternalServerErrorException.jwtError(e);
-      }
+    if (refreshToken == null || refreshToken.isBlank()) {
+      throw RefreshTokenException.withToken(refreshToken);
     }
 
-    @Override
-    public void logout (String refreshToken){
-      log.debug("[인증 관리] : 로그아웃 시작");
-      if (refreshToken == null || refreshToken.isBlank()) {
-        return;
-      }
-
-      if (jwtTokenProvider.validateRefreshToken(refreshToken)) {
-        UUID userId = jwtTokenProvider.getUserId(refreshToken);
-        jwtRegistry.invalidateJwtInformationByUserId(userId);
-      }
-      jwtRegistry.revokeByToken(refreshToken);
-      log.info("[인증 관리] : 로그아웃 완료");
+    if (!jwtTokenProvider.validateRefreshToken(refreshToken)
+        || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
+      throw new InvalidOrExpiredException();
     }
 
-    private JwtInformation generateJwt (PlaylistUserDetails userDetails) throws JOSEException {
+    String email = jwtTokenProvider.getUsernameFromToken(refreshToken);
+    UserDetails userDetails;
+    try {
+      userDetails = userDetailsService.loadUserByUsername(email);
+    } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+      throw new InvalidOrExpiredException();
+    }
+    PlaylistUserDetails playlistUser = (PlaylistUserDetails) userDetails;
 
-      UserDto userDto = userDetails.getUserDto();
+    try {
 
       Instant accessIssuedAt = Instant.now();
-      String access = jwtTokenProvider.generateAccessToken(userDetails, accessIssuedAt);
-
       Instant refreshIssuedAt = Instant.now();
-      String refresh = jwtTokenProvider.generateRefreshToken(userDetails, refreshIssuedAt);
 
-      Instant accessExp = jwtTokenProvider.getExpiryFromToken(access);
-      Instant refreshExp = jwtTokenProvider.getExpiryFromToken(refresh);
+      String newAccess = jwtTokenProvider.generateAccessToken(playlistUser, accessIssuedAt);
+      String newRefresh = jwtTokenProvider.generateRefreshToken(playlistUser, refreshIssuedAt);
 
-      return new JwtInformation(
-          userDto,
-          access, accessExp, accessIssuedAt,
-          refresh, refreshExp, refreshIssuedAt
+      Instant accessExp = jwtTokenProvider.getExpiryFromToken(newAccess);
+      Instant refreshExp = jwtTokenProvider.getExpiryFromToken(newRefresh);
+
+      JwtInformation info = new JwtInformation(
+          playlistUser.getUserDto(),
+          newAccess, accessExp, accessIssuedAt,
+          newRefresh, refreshExp, refreshIssuedAt
       );
+
+      boolean rotated = jwtRegistry.rotateJwtInformation(refreshToken, info);
+      if (!rotated) {
+        throw new InvalidOrExpiredException();
+      }
+      log.info("[인증 관리] : Token 발급 완료 ");
+      return info;
+
+    } catch (JOSEException e) {
+      throw JwtInternalServerErrorException.jwtError(e);
     }
   }
+
+  @Override
+  public void logout(String refreshToken) {
+    log.debug("[인증 관리] : 로그아웃 시작");
+    if (refreshToken == null || refreshToken.isBlank()) {
+      return;
+    }
+
+    if (jwtTokenProvider.validateRefreshToken(refreshToken)) {
+      UUID userId = jwtTokenProvider.getUserId(refreshToken);
+      jwtRegistry.invalidateJwtInformationByUserId(userId);
+    }
+    jwtRegistry.revokeByToken(refreshToken);
+    log.info("[인증 관리] : 로그아웃 완료");
+  }
+
+  private JwtInformation generateJwt(PlaylistUserDetails userDetails) throws JOSEException {
+
+    UserDto userDto = userDetails.getUserDto();
+
+    Instant accessIssuedAt = Instant.now();
+    String access = jwtTokenProvider.generateAccessToken(userDetails, accessIssuedAt);
+
+    Instant refreshIssuedAt = Instant.now();
+    String refresh = jwtTokenProvider.generateRefreshToken(userDetails, refreshIssuedAt);
+
+    Instant accessExp = jwtTokenProvider.getExpiryFromToken(access);
+    Instant refreshExp = jwtTokenProvider.getExpiryFromToken(refresh);
+
+    return new JwtInformation(
+        userDto,
+        access, accessExp, accessIssuedAt,
+        refresh, refreshExp, refreshIssuedAt
+    );
+  }
+}
