@@ -41,11 +41,11 @@ jobs:
 
       - name: Replace placeholders in task-definition.json # task-definition.json에 ACCOUNT_ID, REDIS_PASSWORD 대입
         run: |
-          jq \ 
+          jq \
             --arg ACCOUNT_ID "${{ secrets.AWS_ACCOUNT_ID }}" \
             --arg REDIS_PASSWORD "${{ secrets.REDIS_PASSWORD }}" \
              '.executionRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)
-              | .taskRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID) 
+              | .taskRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)
               | .containerDefinitions[1].environment[0].value = $REDIS_PASSWORD' \
              task-definition.json > tmp.json && mv tmp.json task-definition.json
 
