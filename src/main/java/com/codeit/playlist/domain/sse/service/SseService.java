@@ -6,7 +6,10 @@ import com.codeit.playlist.domain.sse.exception.SseReconnectFailedException;
 import com.codeit.playlist.domain.sse.exception.SseSendFailedException;
 import com.codeit.playlist.domain.sse.repository.SseEmitterRepository;
 import com.codeit.playlist.domain.sse.repository.SseMessageRepository;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -37,8 +40,6 @@ public class SseService {
     sseEmitter.onTimeout(() -> sseEmitterRepository.delete(receiverId, sseEmitter));
     sseEmitter.onError(ex -> sseEmitterRepository.delete(receiverId, sseEmitter));
 
-    sseEmitterRepository.save(receiverId, sseEmitter);
-
     Optional.ofNullable(lastEventId)
         .ifPresentOrElse(
             id -> {
@@ -47,7 +48,7 @@ public class SseService {
                   sseEmitter.send(sseMessage.toEvent());
                 } catch (Exception e) {
                   log.error("SSE 재전송 실패 receiverId={}, eventId={}", receiverId, sseMessage.getEventId(), e);
-                  throw SseSendFailedException.withId(receiverId, sseMessage.getEventId());
+                  throw SseReconnectFailedException.withId(receiverId, sseMessage.getEventId());
                 }
               }
             },
@@ -58,6 +59,7 @@ public class SseService {
               }
             }
         );
+    sseEmitterRepository.save(receiverId, sseEmitter);
     return sseEmitter;
   }
 
@@ -72,14 +74,22 @@ public class SseService {
 
     SseMessage message = sseMessageRepository.save(SseMessage.create(receiverIds, eventName, data));
     Set<DataWithMediaType> event = message.toEvent();
-    sseEmitterRepository.findAllByReceiverIdsIn(receiverIds).forEach(sseEmitter -> {
+    List<UUID> failedReceivers = new ArrayList<>();
+
+    Map<UUID, SseEmitter> emitterMap = sseEmitterRepository.findAllByReceiverIdsIn(receiverIds);
+
+    emitterMap.forEach((id, sseEmitter) -> {
       try {
         sseEmitter.send(event);
       } catch (Exception e) {
-        log.error("SSE send 실패 receiverIds={}, eventName={}", receiverIds, eventName, e);
-        throw SseSendFailedException.withId(receiverIds.iterator().next(), message.getEventId());
+        log.error("SSE send 실패 receiverId={}, eventName={}, eventId={}", id, eventName, message.getEventId(), e);
+        failedReceivers.add(id);
       }
     });
+
+    if (!failedReceivers.isEmpty()) {
+      throw SseSendFailedException.withIds(failedReceivers, message.getEventId());
+    }
   }
 
   public void broadcast(String eventName, Object data) {
@@ -104,7 +114,11 @@ public class SseService {
     sseEmitterRepository.findAll().stream()
         .filter(sseEmitter -> !ping(sseEmitter))
         .forEach(sseEmitter -> {
-          throw SseSendFailedException.withId(null, null);
+          try {
+            sseEmitter.complete();
+          } catch (Exception e) {
+            log.warn("Failed to complete dead emitter during cleanup", e);
+          }
         });
   }
 

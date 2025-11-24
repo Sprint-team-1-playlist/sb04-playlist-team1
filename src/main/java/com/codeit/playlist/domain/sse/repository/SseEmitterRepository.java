@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -33,16 +34,20 @@ public class SseEmitterRepository {
     return Optional.ofNullable(data.get(receiverId));
   }
 
-  public List<SseEmitter> findAllByReceiverIdsIn(Collection<UUID> receiverIds) {
+  public Map<UUID, SseEmitter> findAllByReceiverIdsIn(Collection<UUID> receiverIds) {
     if (receiverIds == null || receiverIds.isEmpty()) {
-      return List.of();
+      return Map.of();
     }
     return data.entrySet().stream()
         .filter(entry -> receiverIds.contains(entry.getKey()))
-        .map(Map.Entry::getValue)
-        .flatMap(Collection::stream)
-        .toList();
+        .flatMap(entry -> entry.getValue().stream().map(emitter -> Map.entry(entry.getKey(), emitter)))
+        .collect(Collectors.toMap(
+            Map.Entry::getKey,
+            Map.Entry::getValue,
+            (existing, replacement) -> existing
+        ));
   }
+
 
   public List<SseEmitter> findAll(){
     return data.values().stream()
