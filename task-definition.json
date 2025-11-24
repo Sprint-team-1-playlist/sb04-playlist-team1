@@ -28,6 +28,32 @@
           "awslogs-stream-prefix": "ecs"
         }
       }
+    },
+    {
+      "name": "playlist-redis",
+      "image": "redis:7.2",
+      "essential": false,
+      "command": ["sh", "-c", "redis-server --requirepass \\$REDIS_PASSWORD"],
+      "portMappings": [
+        {
+          "containerPort": 6379,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "REDIS_PASSWORD",
+          "value": "REDIS_PASSWORD_PLACEHOLDER"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/playlist-task",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
     }
   ]
 }
