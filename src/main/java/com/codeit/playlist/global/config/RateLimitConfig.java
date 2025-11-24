@@ -9,25 +9,18 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RateLimitConfig {
-
-  @Value("${spring.data.redis.host:localhost}")
-  private String redisHost;
-
-  @Value("${spring.data.redis.port:6379}")
-  private int redisPort;
-
-  @Value("${spring.data.redis.password:}")
-  private String redisPassword;
-
-  @Bean
-  public RedissonClient redissonClient() {
-    Config config = new Config();
-    var serverConfig = config.useSingleServer()
-        .setAddress(String.format("redis://%s:%d", redisHost, redisPort));
-    if (!redisPassword.isEmpty()) {
-      serverConfig.setPassword(redisPassword);
+    @Bean
+    public RedissonClient redissonClient(
+            @Value("${spring.data.redis.host:localhost}") String host,
+            @Value("${spring.data.redis.port:6379}") int port,
+            @Value("${spring.data.redis.password:}") String password) {
+        Config config = new Config();
+        var serverConfig = config.useSingleServer()
+                .setAddress(String.format("redis://%s:%d", host, port));
+        if (!password.isEmpty()) {
+            serverConfig.setPassword(password);
+        }
+        return Redisson.create(config);
     }
-    return Redisson.create(config);
-  }
 
 }

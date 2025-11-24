@@ -24,9 +24,9 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
     LEFT JOIN FETCH c.user1 u1
     LEFT JOIN FETCH c.user2 u2
     WHERE (c.user1.id = :currentUserId OR c.user2.id = :currentUserId)
-      AND (:keyword IS NULL OR u1.name LIKE %:keyword% OR u2.name LIKE %:keyword%)
+      AND (:#{#keyword == null} = true OR u1.name LIKE CONCAT('%', :keyword, '%') OR u2.name LIKE CONCAT('%', :keyword, '%'))
       AND (
-            :cursor IS NULL
+            :#{#cursor == null} = true
             OR (c.createdAt < :cursor)
             OR (c.createdAt = :cursor AND c.id < :idAfter)
           )
@@ -46,9 +46,9 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
     LEFT JOIN FETCH c.user1 u1
     LEFT JOIN FETCH c.user2 u2
     WHERE (c.user1.id = :currentUserId OR c.user2.id = :currentUserId)
-      AND (:keyword IS NULL OR u1.name LIKE %:keyword% OR u2.name LIKE %:keyword%)
+      AND (:#{#keyword == null} = true OR u1.name LIKE CONCAT('%', :keyword, '%') OR u2.name LIKE CONCAT('%', :keyword, '%'))
       AND (
-            :cursor IS NULL
+            :#{#cursor == null} = true
             OR (c.createdAt > :cursor)
             OR (c.createdAt = :cursor AND c.id > :idAfter)
           )
@@ -66,7 +66,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
         SELECT COUNT(c)
         FROM Conversation c
         WHERE (c.user1.id = :currentUserId OR c.user2.id = :currentUserId)
-          AND (:keyword IS NULL OR c.user1.name LIKE %:keyword% OR c.user2.name LIKE %:keyword%)
+          AND (:#{#keyword == null} = true OR c.user1.name LIKE CONCAT('%', :keyword, '%') OR c.user2.name LIKE CONCAT('%', :keyword, '%'))
         """)
   long countAll(@Param("currentUserId") UUID currentUserId, @Param("keyword") String keyword);
 }

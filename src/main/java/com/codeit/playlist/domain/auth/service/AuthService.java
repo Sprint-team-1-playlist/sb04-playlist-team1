@@ -12,7 +12,7 @@ public interface AuthService {
 
   UserDto updateRoleInternal(UserRoleUpdateRequest request, UUID userId);
 
-  JwtInformation signIn(String username, String password) throws JOSEException;
+  JwtInformation signIn(String email, String password) throws JOSEException;
 
   JwtInformation refreshToken(String refreshToken);
 
