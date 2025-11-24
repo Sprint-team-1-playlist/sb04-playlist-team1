@@ -77,12 +77,12 @@ public class BasicAuthService implements AuthService {
   }
 
   @Override
-  public JwtInformation signIn(String email, String password) throws JOSEException {
+  public JwtInformation signIn(String username, String password) throws JOSEException {
     log.debug("[인증 관리] : 로그인 시작");
 
     // AuthenticationManager를 통해 인증 (계정 상태 검증 포함)
     Authentication auth = authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(email, password)
+        new UsernamePasswordAuthenticationToken(username, password)
     );
 
     SecurityContextHolder.getContext().setAuthentication(auth);
@@ -124,10 +124,10 @@ public class BasicAuthService implements AuthService {
       throw new InvalidOrExpiredException();
     }
 
-    String email = jwtTokenProvider.getUsernameFromToken(refreshToken);
+    String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
     UserDetails userDetails;
     try {
-      userDetails = userDetailsService.loadUserByUsername(email);
+      userDetails = userDetailsService.loadUserByUsername(username);
     } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
       throw new InvalidOrExpiredException();
     }
