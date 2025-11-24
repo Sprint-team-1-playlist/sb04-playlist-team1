@@ -76,7 +76,7 @@ public class ReviewController {
     ) {
 
         log.debug("[리뷰] 리뷰 목록 조회 요청: " +
-                        "contentId = {}, cursor = {}, idAfter = {}, limit = {},sortDirection = {}, sortBy = {}",
+                        "contentId = {}, cursor = {}, idAfter = {}, limit = {}, sortDirection = {}, sortBy = {}",
                 contentId, cursor, idAfter, limit, sortDirection, sortBy);
 
         CursorResponseReviewDto reviews = reviewService.findReviews(
