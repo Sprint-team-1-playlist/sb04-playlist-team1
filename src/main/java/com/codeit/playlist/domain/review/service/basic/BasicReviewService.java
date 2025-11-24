@@ -4,6 +4,7 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
+import com.codeit.playlist.domain.review.dto.ReviewSortBy;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
 import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
@@ -97,7 +98,7 @@ public class BasicReviewService implements ReviewService {
     @Override
     public CursorResponseReviewDto findReviews(UUID contentId, String cursor,
                                                UUID idAfter, int limit,
-                                               SortDirection sortDirection, String sortBy) {
+                                               SortDirection sortDirection, ReviewSortBy sortBy) {
         log.debug("[리뷰] 목록 조회 서비스 호출: " +
                         "contentId={}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
                 contentId, cursor, idAfter, limit, sortDirection, sortBy);
@@ -107,10 +108,7 @@ public class BasicReviewService implements ReviewService {
             limit = 10; //기본 페이지 크기(10개 가져옴)
         }
 
-        //sortBy 허용값(createdAt / rating)
-        if (!"createdAt".equals(sortBy) && !"rating".equals(sortBy)) {
-            sortBy = "createdAt";
-        }
+        String sortByValue = sortBy.getValue();  // "createdAt" 또는 "rating"
 
         //커서 해석 (cursor가 메인)
         UUID effectiveIdAfter = null;
@@ -131,7 +129,7 @@ public class BasicReviewService implements ReviewService {
         Slice<Review> reviews = reviewRepository.findReviews(
                 contentId, cursor,
                 effectiveIdAfter, limit,
-                sortDirection, sortBy
+                sortDirection, sortByValue
         );
 
         //Entity -> DTO
@@ -162,7 +160,7 @@ public class BasicReviewService implements ReviewService {
                 nextIdAfter,
                 reviews.hasNext(),
                 totalCount,
-                sortBy,
+                sortByValue,
                 sortDirection
         );
 

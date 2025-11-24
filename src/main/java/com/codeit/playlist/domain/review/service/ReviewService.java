@@ -1,6 +1,7 @@
 package com.codeit.playlist.domain.review.service;
 
 import com.codeit.playlist.domain.base.SortDirection;
+import com.codeit.playlist.domain.review.dto.ReviewSortBy;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
 import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
@@ -15,5 +16,5 @@ public interface ReviewService {
 
     CursorResponseReviewDto findReviews(UUID contentId, String cursor,
                                         UUID idAfter, int limit,
-                                        SortDirection sortDirection, String sortBy);
+                                        SortDirection sortDirection, ReviewSortBy sortBy);
 }
