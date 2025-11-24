@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -100,17 +100,17 @@ public class SseService {
 
     SseMessage message = sseMessageRepository.save(SseMessage.createBroadcast(eventName, data));
     Set<DataWithMediaType> event = message.toEvent();
-    AtomicBoolean hasFailure = new AtomicBoolean(false);
+    AtomicInteger failureCount = new AtomicInteger(0);
     sseEmitterRepository.findAll().forEach(sseEmitter -> {
       try {
         sseEmitter.send(event);
       } catch (Exception e) {
         log.error("SSE broadcast 실패 eventName={}, eventId={}", eventName, message.getEventId(), e);
-        hasFailure.set(true);
+        failureCount.incrementAndGet();
       }
     });
-    if (hasFailure.get()) {
-      throw SseSendFailedException.withId(null, message.getEventId());
+    if (failureCount.get() > 0) {
+      log.error("SSE broadcast 실패 개수={}, eventId={}", failureCount.get(), message.getEventId());
     }
   }
 
@@ -132,7 +132,7 @@ public class SseService {
       sseEmitter.send(SseEmitter.event().name("ping").build());
       return true;
     } catch (Exception e) {
-      log.error(e.getMessage(), e);
+      log.error("SSE ping 실패", e);
       return false;
     }
   }
