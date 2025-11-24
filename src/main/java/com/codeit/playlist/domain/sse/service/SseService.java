@@ -1,11 +1,10 @@
 package com.codeit.playlist.domain.sse.service;
 
+import com.codeit.playlist.domain.sse.entity.SseMessage;
 import com.codeit.playlist.domain.sse.exception.InvalidEventNameException;
-import com.codeit.playlist.domain.sse.exception.InvalidSseEmitterException;
 import com.codeit.playlist.domain.sse.exception.SseReconnectFailedException;
 import com.codeit.playlist.domain.sse.exception.SseSendFailedException;
 import com.codeit.playlist.domain.sse.repository.SseEmitterRepository;
-import com.codeit.playlist.domain.sse.entity.SseMessage;
 import com.codeit.playlist.domain.sse.repository.SseMessageRepository;
 import java.util.Collection;
 import java.util.Optional;
@@ -31,8 +30,6 @@ public class SseService {
 
   public SseEmitter connect(UUID receiverId, UUID lastEventId) {
     if (receiverId == null) throw SseReconnectFailedException.withId(null, null);
-
-    if (receiverId == null || lastEventId == null) throw InvalidSseEmitterException.withId(null, null);
 
     SseEmitter sseEmitter = new SseEmitter(timeout);
 
