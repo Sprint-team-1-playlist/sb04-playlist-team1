@@ -60,10 +60,3 @@ api:
   sportsdb:
     key: ${SPORTSDB_API_KEY}
     base-url: ${SPORTSDB_BASE_URL}
-
-# aws s3
-app:
-  file-upload:
-    bucket: playlist-team1-bucket-b1uffer
-    directory: ""
-    base-url: https://playlist-team1-bucket-b1uffer.s3.ap-northeast-2.amazonaws.com

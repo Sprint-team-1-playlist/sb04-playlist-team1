@@ -2,7 +2,6 @@ package com.codeit.playlist.domain.content.api.service;
 
 import com.codeit.playlist.domain.content.api.response.TheMovieListResponse;
 import com.codeit.playlist.domain.content.api.response.TheMovieResponse;
-import com.codeit.playlist.domain.content.repository.ContentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,8 +55,4 @@ public class TheMovieApiService {
     public Flux<TheMovieResponse> getApiMovie(String query) {
         return fluxingTheMovieApi(query, "/3/discover/movie");
     }
-
-    //    public Flux<TheMovieResponse> getApiTv(String query) {
-    //        return searchTheMovieApi(query, "Tv", "/3/search/tv");
-    //    }
 }

@@ -37,28 +37,3 @@ public class TheSportsApiService {
         }
     }
 }
-
-//    public void createTheSportsToContent(LocalDate date) { // response랑 content를 맵핑함
-//        List<TheSportsResponse> sportsResponseList = theSportsDateHandler.getSportsEvent(date);
-//        for(int i = 0; i < sportsResponseList.size(); i++) {
-//            TheSportsResponse response = sportsResponseList.get(i); // TheSportsResponse를 가져옴
-//            theSportsMapper.sportsResponseToContent(response, Type.SPORT); // Mapper를 통해 TheSportsResponse를 Content타입으로 바꿈
-//            saveContentsUsingContents(response);
-//        }
-//    }
-
-//    private final TheSportsDateHandler dateHandler;
-
-//    public List<TheSportsResponse> searchSports(int year, int month) {
-//
-//        YearMonth sportsMonth = YearMonth.of(year, month);
-//        LocalDate startDate = sportsMonth.atDay(1);
-//        LocalDate lastDate = sportsMonth.atEndOfMonth();
-//
-//        List<TheSportsResponse> sportsList = new ArrayList<>();
-//
-//        for(LocalDate date = startDate; !date.isAfter(lastDate); date = date.plusDays(1)) {
-//            sportsList.addAll(dateHandler.getSportsEvent(date));
-//        }
-//        return sportsList;
-//    }
