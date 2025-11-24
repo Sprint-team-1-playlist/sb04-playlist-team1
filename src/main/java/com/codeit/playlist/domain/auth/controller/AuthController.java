@@ -77,7 +77,7 @@ public class AuthController {
       value = "/sign-in",
       consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE}
   )
-  public ResponseEntity<JwtDto> signIn(SignInRequest signInRequest,
+  public ResponseEntity<JwtDto> signIn(@Valid SignInRequest signInRequest,
       HttpServletResponse response) throws JOSEException {
     log.debug("[인증 관리] : 로그인 요청 시작");
 

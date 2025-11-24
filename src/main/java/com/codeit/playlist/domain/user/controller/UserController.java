@@ -59,7 +59,7 @@ public class UserController {
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{userId}/role")
   public ResponseEntity<Void> updateRole(@PathVariable UUID userId,
-      @RequestBody UserRoleUpdateRequest updateRequest) {
+      @Valid @RequestBody UserRoleUpdateRequest updateRequest) {
     log.debug("[사용자 관리] 사용자 권한 변경 시작 : id = {}, newRole = {} ", userId, updateRequest.newRole());
     authService.updateRole(updateRequest, userId);
     log.info("[사용자 관리] 사용자 권한 변경 완료 : id = {}, newRole = {} ", userId, updateRequest.newRole());
