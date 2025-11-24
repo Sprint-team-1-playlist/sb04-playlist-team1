@@ -42,3 +42,6 @@ management:
 
 websocket:
   allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:8080}
+
+sse:
+  timeout: 300_000
