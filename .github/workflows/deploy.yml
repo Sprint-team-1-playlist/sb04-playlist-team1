@@ -63,6 +63,7 @@ jobs:
             --arg LOGS_BUCKET "${{ secrets.LOGS_BUCKET }}" \
             --arg PROFILE_BUCKET "${{ secrets.PROFILE_BUCKET }}" \
             --arg CONTENT_BUCKET "${{ secrets.CONTENT_BUCKET }}" \
+            --arg REDIS_PASSWORD "${{ secrets.REDIS_PASSWORD }}" \
             --arg SPRING_MAIL_HOST "${{ secrets.SPRING_MAIL_HOST }}" \
             --arg SPRING_MAIL_PASSWORD "${{ secrets.SPRING_MAIL_PASSWORD }}" \
             --arg SPRING_MAIL_PORT "${{ secrets.SPRING_MAIL_PORT }}" \
