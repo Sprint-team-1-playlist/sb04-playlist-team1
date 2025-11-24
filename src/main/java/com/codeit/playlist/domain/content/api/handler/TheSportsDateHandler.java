@@ -56,10 +56,12 @@ public class TheSportsDateHandler {
                 String strEvent = eventSize.path("strEvent").asText(null);
                 String strFileName = eventSize.path("strFilename").asText(null);
                 String dateEventLocal = eventSize.path("dateEventLocal").asText(null);
+                String strThumb = eventSize.path("strThumb").asText(null);
 
                 TheSportsResponse response = new TheSportsResponse(
-                        strEvent, strFileName, dateEventLocal
+                        strEvent, strFileName, dateEventLocal, strThumb
                 );
+                log.info("썸네일 : {}", response.strThumb());
                 sportsList.add(response);
             }
             log.info("Sports API 수집 완료, localDate = {}", localDate);

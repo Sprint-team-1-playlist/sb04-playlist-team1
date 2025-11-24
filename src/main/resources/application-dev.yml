@@ -6,14 +6,6 @@ spring:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
-  api:
-    tmdb:
-      base-url: ${TMDB_BASE_URL}
-      key: ${TMDB_API_KEY}
-      access-token: ${TMDB_API_ACCESS_TOKEN}
-    sportsdb:
-      key: ${SPORTSDB_API_KEY}
-      base-url: ${SPORTSDB_BASE_URL}
 
   jpa:
     hibernate:
@@ -59,3 +51,19 @@ management:
   info:
     env:
       enabled: true
+
+# api
+api:
+  tmdb:
+    base-url: ${TMDB_BASE_URL}
+    key: ${TMDB_API_KEY}
+  sportsdb:
+    key: ${SPORTSDB_API_KEY}
+    base-url: ${SPORTSDB_BASE_URL}
+
+# aws s3
+app:
+  file-upload:
+    bucket: playlist-team1-bucket-b1uffer
+    directory: ""
+    base-url: https://playlist-team1-bucket-b1uffer.s3.ap-northeast-2.amazonaws.com

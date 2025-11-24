@@ -37,7 +37,7 @@ public class Content extends BaseUpdatableEntity {
     /**
      * 컨텐츠 설명
      */
-    @Column(nullable = false)
+    @Column(nullable = false, length = 2000)
     private String description;
 
     /**
@@ -63,4 +63,17 @@ public class Content extends BaseUpdatableEntity {
      */
     @Column(nullable = false)
     private int watcherCount;
+
+    public void setSports(String title, String description, String thumbnailUrl) {
+        this.type = Type.SPORT;
+        this.title = title;
+        this.description = description;
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public static Content createContent(String title, String description, String thumbnailUrl) {
+        Content content = new Content();
+        content.setSports(title, description, thumbnailUrl);
+        return content;
+    }
 }

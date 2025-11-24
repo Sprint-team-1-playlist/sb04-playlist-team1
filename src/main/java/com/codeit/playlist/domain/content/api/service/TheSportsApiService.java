@@ -2,33 +2,63 @@ package com.codeit.playlist.domain.content.api.service;
 
 import com.codeit.playlist.domain.content.api.handler.TheSportsDateHandler;
 import com.codeit.playlist.domain.content.api.response.TheSportsResponse;
+import com.codeit.playlist.domain.content.entity.Content;
+import com.codeit.playlist.domain.content.repository.ContentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.YearMonth;
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TheSportsApiService {
+    private final TheSportsDateHandler theSportsDateHandler;
+    private final ContentRepository contentRepository;
 
-    private final TheSportsDateHandler dateHandler;
-
-    public List<TheSportsResponse> searchSports(int year, int month) {
-
-        YearMonth sportsMonth = YearMonth.of(year, month);
-        LocalDate startDate = sportsMonth.atDay(1);
-        LocalDate lastDate = sportsMonth.atEndOfMonth();
-
-        List<TheSportsResponse> sportsList = new ArrayList<>();
-
-        for(LocalDate date = startDate; !date.isAfter(lastDate); date = date.plusDays(1)) {
-            sportsList.addAll(dateHandler.getSportsEvent(date));
+    @Transactional
+    public void saveContentsUsingContents(LocalDate localDate) {
+        List<TheSportsResponse> theSportsResponseList = theSportsDateHandler.getSportsEvent(localDate);
+        for(int i = 0; i < theSportsResponseList.size(); i++) {
+            TheSportsResponse theSportsResponse = theSportsResponseList.get(i);
+            log.debug("TheSportsResponse 확인: event = {}, thumb = {}",
+                    theSportsResponse.strEvent(), theSportsResponse.strThumb());
+            Content content = Content.createContent(
+                    theSportsResponse.strEvent(),
+                    theSportsResponse.strFilename(),
+                    theSportsResponse.strThumb()
+            );
+            log.debug("매핑된 Content 확인: title = {}, thumbnailUrl = {}",
+                    content.getTitle(), content.getThumbnailUrl());
+            contentRepository.save(content); // 여기에서 저장함
         }
-        return sportsList;
     }
 }
+
+//    public void createTheSportsToContent(LocalDate date) { // response랑 content를 맵핑함
+//        List<TheSportsResponse> sportsResponseList = theSportsDateHandler.getSportsEvent(date);
+//        for(int i = 0; i < sportsResponseList.size(); i++) {
+//            TheSportsResponse response = sportsResponseList.get(i); // TheSportsResponse를 가져옴
+//            theSportsMapper.sportsResponseToContent(response, Type.SPORT); // Mapper를 통해 TheSportsResponse를 Content타입으로 바꿈
+//            saveContentsUsingContents(response);
+//        }
+//    }
+
+//    private final TheSportsDateHandler dateHandler;
+
+//    public List<TheSportsResponse> searchSports(int year, int month) {
+//
+//        YearMonth sportsMonth = YearMonth.of(year, month);
+//        LocalDate startDate = sportsMonth.atDay(1);
+//        LocalDate lastDate = sportsMonth.atEndOfMonth();
+//
+//        List<TheSportsResponse> sportsList = new ArrayList<>();
+//
+//        for(LocalDate date = startDate; !date.isAfter(lastDate); date = date.plusDays(1)) {
+//            sportsList.addAll(dateHandler.getSportsEvent(date));
+//        }
+//        return sportsList;
+//    }

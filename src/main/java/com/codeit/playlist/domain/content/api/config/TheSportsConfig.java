@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 @Configuration
 public class TheSportsConfig {
-    @Value("${spring.api.sportsdb.base-url}")
+    @Value("${api.sportsdb.base-url}")
     private String baseUrl;
 
     @Bean
