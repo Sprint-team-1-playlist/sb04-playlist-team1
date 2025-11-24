@@ -1,0 +1,67 @@
+package com.codeit.playlist.domain.sse.repository;
+
+import com.codeit.playlist.domain.sse.exception.InvalidSseEmitterException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Repository;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+@Repository
+public class SseEmitterRepository {
+
+  private final ConcurrentMap<UUID, List<SseEmitter>> data = new ConcurrentHashMap<>();
+
+  public SseEmitter save(UUID receiverId, SseEmitter sseEmitter) {
+    if (receiverId == null || sseEmitter == null) {
+      throw InvalidSseEmitterException.withId(receiverId, sseEmitter);
+    }
+    data.computeIfAbsent(receiverId, key -> new CopyOnWriteArrayList<>())
+        .add(sseEmitter);
+    return sseEmitter;
+  }
+
+  public Optional<List<SseEmitter>> findByReceiverId(UUID receiverId) {
+    if (receiverId == null) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(data.get(receiverId));
+  }
+
+  public Map<UUID, SseEmitter> findAllByReceiverIdsIn(Collection<UUID> receiverIds) {
+    if (receiverIds == null || receiverIds.isEmpty()) {
+      return Map.of();
+    }
+    return data.entrySet().stream()
+        .filter(entry -> receiverIds.contains(entry.getKey()))
+        .flatMap(entry -> entry.getValue().stream().map(emitter -> Map.entry(entry.getKey(), emitter)))
+        .collect(Collectors.toMap(
+            Map.Entry::getKey,
+            Map.Entry::getValue,
+            (existing, replacement) -> existing
+        ));
+  }
+
+
+  public List<SseEmitter> findAll(){
+    return data.values().stream()
+        .flatMap(Collection::stream)
+        .toList();
+  }
+
+  public void delete(UUID receiverId, SseEmitter sseEmitter) {
+    if (receiverId == null || sseEmitter == null) {
+      return;
+    }
+    data.computeIfPresent(receiverId, (key, emitters) -> {
+      emitters.remove(sseEmitter);
+      return emitters.isEmpty() ? null : emitters;
+    });
+  }
+}

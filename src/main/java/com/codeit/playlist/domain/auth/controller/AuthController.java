@@ -2,11 +2,11 @@ package com.codeit.playlist.domain.auth.controller;
 
 import com.codeit.playlist.domain.auth.passwordratelimit.RateLimitService;
 import com.codeit.playlist.domain.auth.service.AuthService;
-import com.codeit.playlist.domain.auth.service.EmailService;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
 import com.codeit.playlist.domain.user.dto.data.JwtDto;
 import com.codeit.playlist.domain.user.dto.request.ResetPasswordRequest;
+import com.codeit.playlist.domain.user.dto.request.SignInRequest;
 import com.codeit.playlist.domain.user.service.PasswordResetService;
 import com.nimbusds.jose.JOSEException;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -73,13 +73,15 @@ public class AuthController {
         .body(body);
   }
 
-  @PostMapping("/sign-in")
-  public ResponseEntity<JwtDto> signIn(@RequestParam String username,
-      @RequestParam String password,
+  @PostMapping(
+      value = "/sign-in",
+      consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE}
+  )
+  public ResponseEntity<JwtDto> signIn(@Valid SignInRequest signInRequest,
       HttpServletResponse response) throws JOSEException {
     log.debug("[인증 관리] : 로그인 요청 시작");
 
-    JwtInformation info = authService.signIn(username, password);
+    JwtInformation info = authService.signIn(signInRequest.username(), signInRequest.password());
 
     // refresh 쿠키 설정
     ResponseCookie cookie = jwtTokenProvider.generateRefreshTokenCookie(info.refreshToken());
@@ -104,7 +106,7 @@ public class AuthController {
     }
 
     ResponseCookie deleteCookie = jwtTokenProvider.generateRefreshTokenExpirationCookie();
-    response.addHeader("Set-Cookie", deleteCookie.toString());
+    response.addHeader("Set-cookie", deleteCookie.toString());
 
     log.info("[인증 관리] : 로그아웃 요청 완료");
     return ResponseEntity.noContent().build();
