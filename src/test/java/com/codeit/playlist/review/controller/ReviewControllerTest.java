@@ -1,9 +1,12 @@
 package com.codeit.playlist.review.controller;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.review.controller.ReviewController;
+import com.codeit.playlist.domain.review.dto.ReviewSortBy;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
 import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
+import com.codeit.playlist.domain.review.dto.response.CursorResponseReviewDto;
 import com.codeit.playlist.domain.review.exception.ReviewAccessDeniedException;
 import com.codeit.playlist.domain.review.service.ReviewService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
@@ -23,17 +26,26 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -301,5 +313,177 @@ public class ReviewControllerTest {
 
         then(reviewService).should()
                 .updateReview(eq(reviewId), any(ReviewUpdateRequest.class), eq(currentUserId));
+    }
+
+    @Test
+    @WithMockUser(username = "tester", roles = "USER")
+    @DisplayName("리뷰 목록 조회 성공 - 200 OK")
+    void getReviewListSuccess() throws Exception {
+        // given
+        UUID contentId = UUID.randomUUID();
+        int limit = 10;
+
+        CursorResponseReviewDto responseDto = new CursorResponseReviewDto(
+                Collections.emptyList(),
+                "NEXT_CURSOR",
+                null,
+                false,
+                0L,
+                ReviewSortBy.CREATED_AT.name(),
+                SortDirection.DESCENDING
+        );
+
+        given(reviewService.findReviews(
+                eq(contentId),
+                isNull(),
+                isNull(),
+                eq(limit),
+                eq(SortDirection.DESCENDING),
+                eq(ReviewSortBy.CREATED_AT)
+        )).willReturn(responseDto);
+
+        // when & then
+        mockMvc.perform(get("/api/reviews")
+                        .param("contentId", contentId.toString())
+                        .param("limit", String.valueOf(limit))
+                        .param("sortDirection", "DESCENDING")
+                        .param("sortBy", "CREATED_AT"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nextCursor").value("NEXT_CURSOR"))
+                .andExpect(jsonPath("$.sortBy").value("CREATED_AT"))
+                .andExpect(jsonPath("$.sortDirection").value("DESCENDING"));
+
+        then(reviewService).should().findReviews(
+                eq(contentId),
+                isNull(),
+                isNull(),
+                eq(limit),
+                eq(SortDirection.DESCENDING),
+                eq(ReviewSortBy.CREATED_AT)
+        );
+    }
+
+    @Test
+    @DisplayName("리뷰 목록 조회 실패 - 필수 파라미터(contentId) 누락 시 400 Bad Request")
+    @WithMockUser(username = "tester", roles = "USER")
+    void getReviewListFailBadRequest() throws Exception {
+        // given
+        int limit = 10;
+
+        // when & then
+        mockMvc.perform(get("/api/reviews")
+                        .param("limit", String.valueOf(limit)))
+                .andExpect(status().isBadRequest());
+
+        then(reviewService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("리뷰 목록 조회 실패 - 인증되지 않은 사용자는 401 (SecurityConfig에 따라 401/403 조정 필요)")
+    @WithAnonymousUser
+    void getReviewListFailUnauthorized() throws Exception {
+        // given
+        UUID contentId = UUID.randomUUID();
+
+        // when & then
+        mockMvc.perform(get("/api/reviews")
+                        .param("contentId", contentId.toString())
+                        .param("limit", "10"))
+                .andExpect(status().isUnauthorized());
+
+        then(reviewService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("리뷰 목록 조회 실패 - 서비스에서 예외 발생 시 500 Internal Server Error")
+    @WithMockUser(username = "tester", roles = "USER")
+    void getReviewListFailServerError() throws Exception {
+        // given
+        UUID contentId = UUID.randomUUID();
+        int limit = 10;
+
+        given(reviewService.findReviews(
+                any(UUID.class),
+                any(),
+                any(),
+                anyInt(),
+                any(SortDirection.class),
+                any(ReviewSortBy.class)
+        )).willThrow(new RuntimeException("테스트용 예외"));
+
+        // when & then
+        mockMvc.perform(get("/api/reviews")
+                        .param("contentId", contentId.toString())
+                        .param("limit", String.valueOf(limit)))
+                .andExpect(status().isInternalServerError());
+
+        then(reviewService).should().findReviews(
+                any(UUID.class),
+                any(),
+                any(),
+                anyInt(),
+                any(SortDirection.class),
+                any(ReviewSortBy.class)
+        );
+    }
+
+    @Test
+    @DisplayName("리뷰 삭제 성공 - 204 No Content")
+    void deleteReviewSuccess() throws Exception {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        Authentication authentication = createAuthentication(currentUserId);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        willDoNothing().given(reviewService).deleteReview(reviewId, currentUserId);
+
+        // when & then
+        mockMvc.perform(delete("/api/reviews/{reviewId}", reviewId)
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        then(reviewService).should().deleteReview(reviewId, currentUserId);
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("리뷰 삭제 실패 - 인증되지 않은 사용자는 401")
+    void deleteReviewFailUnauthorized() throws Exception {
+        // given
+        SecurityContextHolder.clearContext();
+        UUID reviewId = UUID.randomUUID();
+
+        // when & then
+        mockMvc.perform(delete("/api/reviews/{reviewId}", reviewId)
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized());
+
+        then(reviewService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("리뷰 삭제 실패 - 서비스 예외 발생 시 500 Internal Server Error")
+    void deleteReviewFailServerError() throws Exception {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        Authentication authentication = createAuthentication(currentUserId);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        willThrow(new RuntimeException("테스트 예외"))
+                .given(reviewService).deleteReview(reviewId, currentUserId);
+
+        // when & then
+        mockMvc.perform(delete("/api/reviews/{reviewId}", reviewId)
+                        .with(csrf()))
+                .andExpect(status().isInternalServerError());
+
+        then(reviewService).should().deleteReview(reviewId, currentUserId);
+
+        SecurityContextHolder.clearContext();
     }
 }

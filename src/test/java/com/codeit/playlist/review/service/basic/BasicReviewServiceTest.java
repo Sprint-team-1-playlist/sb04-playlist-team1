@@ -198,8 +198,12 @@ public class BasicReviewServiceTest {
         User reviewer = mock(User.class);
         given(reviewer.getId()).willReturn(currentUserId);
 
+        Content content = mock(Content.class);
+
         Review review = mock(Review.class);
         given(review.getUser()).willReturn(reviewer);
+        given(review.getContent()).willReturn(content);
+        given(review.getRating()).willReturn(3);
 
         Review savedReview = mock(Review.class);
 
@@ -223,6 +227,7 @@ public class BasicReviewServiceTest {
 
         then(reviewRepository).should().findById(reviewId);
         then(review).should().updateReview("수정된 내용", 4);
+        then(content).should().applyReviewUpdated(3, 4);
         then(reviewRepository).should().save(review);
         then(reviewMapper).should().toDto(savedReview);
     }
@@ -303,7 +308,11 @@ public class BasicReviewServiceTest {
         given(reviewer.getId()).willReturn(currentUserId);
 
         Review review = mock(Review.class);
+        Content content = mock(Content.class);
+
         given(review.getUser()).willReturn(reviewer);
+        given(review.getContent()).willReturn(content);
+        given(review.getRating()).willReturn(3);
 
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
         // save에서 갑자기 터지도록 설정
@@ -313,6 +322,12 @@ public class BasicReviewServiceTest {
         assertThatThrownBy(() -> basicReviewService.updateReview(reviewId, request, currentUserId))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("DB Failure");
+
+        then(reviewRepository).should().findById(reviewId);
+        then(review).should().updateReview("내용", 5);
+        then(content).should().applyReviewUpdated(3, 5);
+        then(reviewRepository).should().save(review);
+        then(reviewMapper).shouldHaveNoInteractions();
     }
 
     @Test
@@ -470,4 +485,76 @@ public class BasicReviewServiceTest {
         }
     }
 
+    @Test
+    @DisplayName("리뷰 삭제 성공 - 작성자가 자신의 리뷰를 삭제하면 콘텐츠 평점 반영 후 하드 딜리트된다")
+    void deleteReviewSuccess() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        Review review = mock(Review.class);
+        User author = mock(User.class);
+        Content content = mock(Content.class);
+
+        int rating = 5;
+
+        given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+        given(review.getUser()).willReturn(author);
+        given(author.getId()).willReturn(currentUserId);
+        given(review.getContent()).willReturn(content);
+        given(review.getRating()).willReturn(rating);
+
+        // when
+        basicReviewService.deleteReview(reviewId, currentUserId);
+
+        // then
+        then(reviewRepository).should().findById(reviewId);
+        then(review).should().getUser();
+        then(content).should().applyReviewDeleted(rating);  // 평점 반영
+        then(reviewRepository).should().delete(review);     // 하드 딜리트
+    }
+
+    @Test
+    @DisplayName("리뷰 삭제 실패 - 존재하지 않는 리뷰 ID면 ReviewNotFoundException 발생")
+    void deleteReviewFailWhenReviewNotFound() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        given(reviewRepository.findById(reviewId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> basicReviewService.deleteReview(reviewId, currentUserId))
+                .isInstanceOf(ReviewNotFoundException.class);
+
+        then(reviewRepository).should().findById(reviewId);
+        // 삭제는 호출되면 안 됨
+        then(reviewRepository).should(never()).delete(any(Review.class));
+    }
+
+    @Test
+    @DisplayName("리뷰 삭제 실패 - 현재 사용자가 작성자가 아니면 ReviewAccessDeniedException 발생")
+    void deleteReviewFailWhenAccessDenied() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();          // 요청 유저
+        UUID authorId = UUID.randomUUID();               // 다른 사람
+
+        Review review = mock(Review.class);
+        User author = mock(User.class);
+
+        given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+        given(review.getUser()).willReturn(author);
+        given(author.getId()).willReturn(authorId);
+
+        // when & then
+        assertThatThrownBy(() -> basicReviewService.deleteReview(reviewId, currentUserId))
+                .isInstanceOf(ReviewAccessDeniedException.class);
+
+        then(reviewRepository).should().findById(reviewId);
+        // 작성자 검증 이후 실패하므로, 콘텐츠/삭제 로직은 호출되면 안 됨
+        then(review).should(never()).getContent();
+        then(reviewRepository).should(never()).delete(any(Review.class));
+    }
 }
