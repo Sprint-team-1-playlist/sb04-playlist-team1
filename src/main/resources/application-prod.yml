@@ -53,3 +53,12 @@ management:
   endpoint:
     health:
       show-details: always
+
+# api
+api:
+  tmdb:
+    key: ${TMDB_API_KEY}
+    base-url: ${TMDB_BASE_URL}
+  sportsdb:
+    key: ${SPORTSDB_API_KEY}
+    base-url: ${SPORTSDB_BASE_URL}

@@ -50,6 +50,10 @@ services:
       PROFILE_BUCKET: ${PROFILE_BUCKET}
       LOGS_BUCKET: ${LOGS_BUCKET}
       S3_REGION: ${S3_REGION}
+      TMDB_API_KEY: ${TMDB_API_KEY}
+      TMDB_BASE_URL: ${TMDB_BASE_URL}
+      SPORTSDB_API_KEY: ${SPORTSDB_API_KEY}
+      SPORTSDB_BASE_URL: ${SPORTSDB_BASE_URL}
     ports:
       - "8080:8080"
     restart: always
