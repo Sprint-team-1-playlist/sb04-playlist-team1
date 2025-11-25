@@ -124,7 +124,7 @@ public class BasicPlaylistService implements PlaylistService {
                         "keywordLike={}, ownerIdEqual={}, subscriberIdEqual={}, cursor={}, idAfter={}, limit={}, sortBy={}, sortDirection={}",
                 keywordLike, ownerIdEqual, subscriberIdEqual, cursor, idAfter, limit, sortBy, sortDirection);
 
-        //1. 파라미터 보정
+        //파라미터 보정
         if(limit <= 0 || limit > 50) {
             limit = 10; //기본 페이지 크기(10개 가져옴)
         }
@@ -136,7 +136,7 @@ public class BasicPlaylistService implements PlaylistService {
 
         boolean asc = (sortDirection == SortDirection.ASCENDING);
 
-        // 3. 커서 해석 (cursor가 메인)
+        //커서 해석 (cursor가 메인)
         UUID effectiveIdAfter = null;
         if (cursor != null && !cursor.isBlank()) {
             try {

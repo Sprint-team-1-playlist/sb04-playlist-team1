@@ -39,8 +39,7 @@ public class BasicWatchingSessionService implements WatchingSessionService {
     private final TagRepository tagRepository;
 
     @Override
-    public void join(UUID contentId) {
-        UUID userId = getCurrentUserId();
+    public void join(UUID contentId, UUID userId) {
         log.debug("[실시간 같이 보기] join 시작: contentId={}, userId={}", contentId, userId);
 
         boolean added = redisWatchingSessionRepository.addWatcher(contentId, userId);
@@ -48,9 +47,9 @@ public class BasicWatchingSessionService implements WatchingSessionService {
             log.error("[실시간 같이 보기] Redis 저장 실패: contentId={}, userId={}", contentId, userId);
             throw new WatchingSessionUpdateException();
         }
-        long watcherCount = redisWatchingSessionRepository.countWatcher(contentId);
 
-        WatchingSessionDto watchingSessionDto = createWatchingSessionDto(contentId);
+        long watcherCount = count(contentId);
+        WatchingSessionDto watchingSessionDto = createWatchingSessionDto(contentId, userId);
         WatchingSessionChange event = new WatchingSessionChange(ChangeType.JOIN, watchingSessionDto, watcherCount);
 
         publisher.publish(contentId, event);
@@ -58,8 +57,7 @@ public class BasicWatchingSessionService implements WatchingSessionService {
     }
 
     @Override
-    public void leave(UUID contentId) {
-        UUID userId = getCurrentUserId();
+    public void leave(UUID contentId, UUID userId) {
         log.debug("[실시간 같이 보기] leave 시작: contentId={}, userId={}", contentId, userId);
 
         boolean isAdded = redisWatchingSessionRepository.removeWatcher(contentId, userId);
@@ -67,10 +65,10 @@ public class BasicWatchingSessionService implements WatchingSessionService {
             log.error("[실시간 같이 보기] Redis 삭제 실패: contentId={}, userId={}", contentId, userId);
             throw new WatchingSessionUpdateException();
         }
-        long watcherCount = redisWatchingSessionRepository.countWatcher(contentId);
 
+        long watcherCount = count(contentId);
         try {
-            WatchingSessionDto watchingSessionDto = createWatchingSessionDto(contentId);
+            WatchingSessionDto watchingSessionDto = createWatchingSessionDto(contentId, userId);
             WatchingSessionChange event = new WatchingSessionChange(ChangeType.LEAVE, watchingSessionDto, watcherCount);
 
             publisher.publish(contentId, event);
@@ -84,9 +82,14 @@ public class BasicWatchingSessionService implements WatchingSessionService {
         log.info("[실시간 같이 보기] leave 완료: watcherCount={}", watcherCount);
     }
 
-    private WatchingSessionDto createWatchingSessionDto(UUID contentId) {
-        User user = userRepository.findById(getCurrentUserId())
-                .orElseThrow(() -> UserNotFoundException.withId(getCurrentUserId()));
+    @Override
+    public long count(UUID contentId) {
+        return redisWatchingSessionRepository.countWatcher(contentId);
+    }
+
+    private WatchingSessionDto createWatchingSessionDto(UUID contentId, UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> UserNotFoundException.withId(userId));
         Content content = contentRepository.findById(contentId)
                 .orElseThrow(() -> ContentNotFoundException.withId(contentId));
         List<Tag> tags = tagRepository.findByContentId(contentId);
@@ -97,9 +100,5 @@ public class BasicWatchingSessionService implements WatchingSessionService {
                 userMapper.toDto(user),
                 contentMapper.toDto(content, tags)
         );
-    }
-
-    private UUID getCurrentUserId() {
-        return UUID.fromString("5a160ff2-5420-4329-b69b-65427396ebbe"); // TODO: security 구현되면 authentication 가져와서 대체하기
     }
 }
