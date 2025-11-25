@@ -33,13 +33,15 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
       builder.and(createCursorCondition(sortBy, direction, cursor, idAfter));
     }
 
+    boolean asc = direction == SortDirection.ASCENDING;
+
     // 정렬
     OrderSpecifier<?> order = createOrderBy(sortBy, direction);
 
     return queryFactory
         .selectFrom(user)
         .where(builder)
-        .orderBy(order, user.id.asc()) // tie breaker
+        .orderBy(order, asc ? user.id.asc() : user.id.desc())
         .limit(limit + 1)
         .fetch();
   }
@@ -89,11 +91,11 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 
       case "name" -> asc ?
           user.name.gt(cursor).or(user.name.eq(cursor).and(user.id.gt(idAfter))) :
-          user.name.lt(cursor).or(user.name.eq(cursor).and(user.id.gt(idAfter)));
+          user.name.lt(cursor).or(user.name.eq(cursor).and(user.id.lt(idAfter)));
 
       case "email" -> asc ?
           user.email.gt(cursor).or(user.email.eq(cursor).and(user.id.gt(idAfter))) :
-          user.email.lt(cursor).or(user.email.eq(cursor).and(user.id.gt(idAfter)));
+          user.email.lt(cursor).or(user.email.eq(cursor).and(user.id.lt(idAfter)));
 
       case "createdAt" -> {
         LocalDateTime t;
@@ -105,7 +107,7 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 
         yield asc ?
             user.createdAt.gt(t).or(user.createdAt.eq(t).and(user.id.gt(idAfter))) :
-            user.createdAt.lt(t).or(user.createdAt.eq(t).and(user.id.gt(idAfter)));
+            user.createdAt.lt(t).or(user.createdAt.eq(t).and(user.id.lt(idAfter)));
       }
 
       case "role" -> {
@@ -118,7 +120,7 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 
         yield asc ?
             user.role.gt(role).or(user.role.eq(role).and(user.id.gt(idAfter))) :
-            user.role.lt(role).or(user.role.eq(role).and(user.id.gt(idAfter)));
+            user.role.lt(role).or(user.role.eq(role).and(user.id.lt(idAfter)));
       }
 
       case "isLocked" -> {
@@ -129,7 +131,7 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 
         yield asc ?
             user.locked.gt(locked).or(user.locked.eq(locked).and(user.id.gt(idAfter))) :
-            user.locked.lt(locked).or(user.locked.eq(locked).and(user.id.gt(idAfter)));
+            user.locked.lt(locked).or(user.locked.eq(locked).and(user.id.lt(idAfter)));
       }
 
       default -> {
