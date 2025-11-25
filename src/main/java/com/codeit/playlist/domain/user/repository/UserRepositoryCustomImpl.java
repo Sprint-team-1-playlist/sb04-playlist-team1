@@ -1,10 +1,10 @@
 package com.codeit.playlist.domain.user.repository;
 
 import com.codeit.playlist.domain.base.SortDirection;
-import com.codeit.playlist.domain.conversation.exception.InvalidCursorException;
 import com.codeit.playlist.domain.user.entity.QUser;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
+import com.codeit.playlist.domain.user.exception.InvalidCursorException;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -135,10 +135,15 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
       }
 
       default -> {
-        LocalDateTime t = LocalDateTime.parse(cursor);
+           LocalDateTime t;
+           try {
+               t = LocalDateTime.parse(cursor);
+             } catch (DateTimeParseException e) {
+               throw InvalidCursorException.withCursor(cursor);
+             }
         yield asc ?
             user.createdAt.gt(t).or(user.createdAt.eq(t).and(user.id.gt(idAfter))) :
-            user.createdAt.lt(t).or(user.createdAt.eq(t).and(user.id.gt(idAfter)));
+            user.createdAt.lt(t).or(user.createdAt.eq(t).and(user.id.lt(idAfter)));
       }
     };
   }
