@@ -9,6 +9,12 @@
   "containerDefinitions": [
     {
       "name": "playlist-app",
+      "dependsOn": [
+        {
+          "containerName": "playlist-redis",
+          "condition": "START"
+        }
+      ],
       "image": "dummy",
       "essential": true,
       "portMappings": [
