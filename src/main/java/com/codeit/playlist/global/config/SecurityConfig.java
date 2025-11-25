@@ -67,7 +67,6 @@ public class SecurityConfig {
             .requestMatchers("/api/auth/refresh").permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
-            .requestMatchers("/api/sse", "/api/sse/**").permitAll()
             .requestMatchers("/api/auth/csrf-token").permitAll()
 
             //정적 리소스

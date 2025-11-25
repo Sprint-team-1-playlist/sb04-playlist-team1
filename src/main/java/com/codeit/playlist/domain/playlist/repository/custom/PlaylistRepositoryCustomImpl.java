@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
-public class PlaylistRepositoryImpl implements PlaylistRepositoryCustom {
+public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
 
     private final JPAQueryFactory query;
 
