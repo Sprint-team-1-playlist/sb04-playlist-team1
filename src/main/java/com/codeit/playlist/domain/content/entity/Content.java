@@ -10,13 +10,10 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 
 @Entity
 @Table(name = "contents")
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Content extends BaseUpdatableEntity {
@@ -63,6 +60,12 @@ public class Content extends BaseUpdatableEntity {
      */
     @Column(nullable = false)
     private int watcherCount;
+
+    public void updateContent(String title, String description, String thumbnailUrl) {
+        this.title = title;
+        this.description = description;
+        this.thumbnailUrl = thumbnailUrl;
+    }
 
     public void setSports(String title, String description, String thumbnailUrl) {
         this.type = Type.SPORT;

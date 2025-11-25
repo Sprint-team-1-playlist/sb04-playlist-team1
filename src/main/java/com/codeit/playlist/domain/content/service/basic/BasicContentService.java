@@ -84,16 +84,13 @@ public class BasicContentService implements ContentService {
     @Transactional
     @Override
     public ContentDto update(UUID contentId, ContentUpdateRequest request, String thumbnail) {
+        log.debug("컨텐츠 수정 시작 : id = {}", contentId);
         Content content = contentRepository.findById(contentId)
                 .orElseThrow(() -> ContentNotFoundException.withId(contentId));
 
-        log.debug("컨텐츠 수정 시작 : id = {}", contentId);
-
         thumbnail = "testThumbnail.jpg"; // 더미
 
-        content.setTitle(request.title());
-        content.setDescription(request.description());
-        content.setThumbnailUrl(thumbnail);
+        content.updateContent(request.title(), request.description(), thumbnail);
 
         List<Tag> oldtags = tagRepository.findByContentId(contentId);
         if(!oldtags.isEmpty()) { // 비어있지 않다면, 싹 다 밀어버림

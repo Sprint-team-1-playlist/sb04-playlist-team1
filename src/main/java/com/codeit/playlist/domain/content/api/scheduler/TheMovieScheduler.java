@@ -22,7 +22,7 @@ public class TheMovieScheduler {
     // 초, 분, 시, 일, 월, 요일
     // 요일 상관없이 매월 1일, 01시에 스케쥴링을 시작함
     // 테스트는 1분마다 실행함
-    @Scheduled(cron = "* * * 1 1 *", zone = "Asia/Seoul")
+    @Scheduled(cron = "*/30 * * * * *", zone = "Asia/Seoul")
     public void startTheMovieScheduler() {
         log.info("The Movie 스케쥴러 시작, API 데이터 수집");
         String query = "Japan";

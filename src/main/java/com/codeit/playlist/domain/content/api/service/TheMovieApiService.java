@@ -48,7 +48,12 @@ public class TheMovieApiService {
 
     private Flux<TheMovieResponse> fluxingTheMovieApi(String query, String path) {
             return callTheMovieApi(query, path)
-                    .flatMapMany(res -> Flux.fromIterable(res.results()));
+                    .flatMapMany(res -> {
+                       if(res.results() == null || res.results().isEmpty()) {
+                           return Flux.empty();
+                       }
+                       return Flux.fromIterable(res.results());
+                    });
     }
 
     @Transactional
