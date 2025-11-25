@@ -14,7 +14,7 @@ import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateReq
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationAlreadyExistsException;
-import com.codeit.playlist.domain.conversation.exception.InvalidCursorException;
+import com.codeit.playlist.global.error.InvalidCursorException;
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;

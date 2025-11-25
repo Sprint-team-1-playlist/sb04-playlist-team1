@@ -4,7 +4,7 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.user.entity.QUser;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
-import com.codeit.playlist.domain.user.exception.InvalidCursorException;
+import com.codeit.playlist.global.error.InvalidCursorException;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
