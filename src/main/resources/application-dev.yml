@@ -59,3 +59,12 @@ management:
   info:
     env:
       enabled: true
+
+# api
+api:
+  tmdb:
+    base-url: ${TMDB_BASE_URL}
+    key: ${TMDB_API_KEY}
+  sportsdb:
+    key: ${SPORTSDB_API_KEY}
+    base-url: ${SPORTSDB_BASE_URL}
