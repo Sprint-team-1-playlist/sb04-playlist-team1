@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -90,5 +91,20 @@ public class ReviewController {
                 contentId, reviews.data().size(), reviews.nextCursor(), reviews.hasNext());
 
         return ResponseEntity.ok(reviews);
+    }
+
+    //리뷰 삭제
+    @DeleteMapping("/{reviewId}")
+    public ResponseEntity<Void> delete(@PathVariable UUID reviewId,
+                                       @AuthenticationPrincipal PlaylistUserDetails userDetails) {
+        UUID currentUserId = userDetails.getUserDto().id();
+
+        log.debug("[리뷰] 삭제 요청: reviewId = {}, currentUserId = {}", reviewId, currentUserId);
+
+        reviewService.deleteReview(reviewId, currentUserId);
+
+        log.info("[리뷰] 삭제 성공 : reviewId = {}", reviewId);
+
+        return ResponseEntity.noContent().build();
     }
 }
