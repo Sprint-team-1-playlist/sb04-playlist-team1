@@ -1,11 +1,13 @@
 package com.codeit.playlist.domain.user.service.basic;
 
 import com.codeit.playlist.domain.auth.exception.AuthAccessDeniedException;
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
+import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
@@ -14,8 +16,10 @@ import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.codeit.playlist.domain.user.repository.UserRepositoryCustom;
 import com.codeit.playlist.domain.user.service.UserService;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BasicUserService implements UserService {
 
   private final UserRepository userRepository;
+  private final UserRepositoryCustom userRepositoryCustom;
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
   private final JwtRegistry jwtRegistry;
@@ -77,6 +82,65 @@ public class BasicUserService implements UserService {
 
     log.debug("[사용자 관리] 사용자 조회 완료 : userId = {}", userId);
     return userDto;
+  }
+
+  @Override
+  public CursorResponseUserDto findUserList(String emailLike,
+      String roleEqual,
+      Boolean isLocked,
+      String cursor,
+      UUID idAfter,
+      int limit,
+      String sortBy,
+      SortDirection sortDirection){
+    log.debug("[사용자 관리] 사용자 목록 조회 시작");
+
+    long totalCount = userRepositoryCustom.countUsers(emailLike, roleEqual, isLocked);
+
+    List<User> users = userRepositoryCustom.searchUsers(
+        emailLike,
+        roleEqual,
+        isLocked,
+        cursor,
+        idAfter,
+        limit,
+        sortBy,
+        sortDirection
+    );
+
+    boolean hasNext = users.size() > limit;
+    if (hasNext) users = users.subList(0, limit);
+
+    String nextCursor = null;
+    UUID nextIdAfter = null;
+
+    if (hasNext) {
+      User last = users.get(users.size() - 1);
+
+      // 정렬 기준별로 nextCursor 값 채움
+      switch (sortBy) {
+        case "name" -> nextCursor = last.getName();
+        case "email" -> nextCursor = last.getEmail();
+        case "createdAt" -> nextCursor = last.getCreatedAt().toString();
+        case "isLocked" -> nextCursor = String.valueOf(last.isLocked());
+        case "role" -> nextCursor = last.getRole().name();
+        default -> nextCursor = last.getCreatedAt().toString();
+      }
+
+      nextIdAfter = last.getId();
+    }
+
+    List<UserDto> dtos = users.stream().map(userMapper::toDto).toList();
+
+    return new CursorResponseUserDto(
+        dtos,
+        nextCursor,
+        nextIdAfter,
+        hasNext,
+        totalCount,
+        sortBy,
+        sortDirection
+    );
   }
 
   @Override

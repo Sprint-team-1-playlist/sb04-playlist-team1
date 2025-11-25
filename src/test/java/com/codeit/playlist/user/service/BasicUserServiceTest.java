@@ -1,11 +1,22 @@
 package com.codeit.playlist.user.service;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.codeit.playlist.domain.auth.exception.AuthAccessDeniedException;
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
+import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
@@ -14,8 +25,13 @@ import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.codeit.playlist.domain.user.repository.UserRepositoryCustom;
 import com.codeit.playlist.domain.user.service.basic.BasicUserService;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,23 +46,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 public class BasicUserServiceTest {
 
   @Mock
   private UserRepository userRepository;
+
+  @Mock
+  private UserRepositoryCustom userRepositoryCustom;
 
   @Mock
   private UserMapper userMapper;
@@ -323,4 +330,114 @@ public class BasicUserServiceTest {
     );
   }
 
+  @Test
+  @DisplayName("사용자 목록 조회 - 커서 페이징 성공")
+  void findUserListSuccess() {
+    // Given
+    String emailLike = null;
+    String roleEqual = null;
+    Boolean isLocked = null;
+    String cursor = null;
+    UUID idAfter = null;
+    int limit = 1;
+    String sortBy = "email";
+    SortDirection direction = SortDirection.ASCENDING;
+
+    UUID id1 = UUID.randomUUID();
+    UUID id2 = UUID.randomUUID();
+
+    User user1 = new User("a@test.com", "pw", "유저1", null, Role.USER);
+    User user2 = new User("b@test.com", "pw", "유저2", null, Role.USER);
+
+    setId(user1, id1);
+    setId(user2, id2);
+
+    List<User> repoResult = List.of(user1, user2);
+
+    when(userRepositoryCustom.countUsers(emailLike, roleEqual, isLocked))
+        .thenReturn(2L);
+
+    when(userRepositoryCustom.searchUsers(
+        emailLike,
+        roleEqual,
+        isLocked,
+        cursor,
+        idAfter,
+        limit,
+        sortBy,
+        direction
+    )).thenReturn(repoResult);
+
+    when(userMapper.toDto(any(User.class)))
+        .thenAnswer(invocation -> {
+          User u = invocation.getArgument(0);
+          return new UserDto(
+              u.getId(),
+              null,
+              u.getEmail(),
+              u.getName(),
+              u.getProfileImageUrl(),
+              u.getRole(),
+              u.isLocked()
+          );
+        });
+
+    // When
+    CursorResponseUserDto response = userService.findUserList(
+        emailLike,
+        roleEqual,
+        isLocked,
+        cursor,
+        idAfter,
+        limit,
+        sortBy,
+        direction
+    );
+
+    // Then
+    assertThat(response.data()).hasSize(1);
+    assertThat(response.data().get(0).email()).isEqualTo("a@test.com");
+
+    assertThat(response.hasNext()).isTrue();
+
+    assertThat(response.nextCursor()).isEqualTo("a@test.com");
+    assertThat(response.nextIdAfter()).isEqualTo(id1);
+
+    assertThat(response.totalCount()).isEqualTo(2L);
+
+    verify(userRepositoryCustom).countUsers(emailLike, roleEqual, isLocked);
+    verify(userRepositoryCustom).searchUsers(
+        emailLike,
+        roleEqual,
+        isLocked,
+        cursor,
+        idAfter,
+        limit,
+        sortBy,
+        direction
+    );
+  }
+
+
+  // 유틸: 테스트에서 ID 값을 강제로 세팅하는 메서드
+  private void setId(Object target, UUID id) {
+    Class<?> clazz = target.getClass();
+
+    while (clazz != null) {
+      for (var field : clazz.getDeclaredFields()) {
+        if (field.getType().equals(UUID.class)) {
+          field.setAccessible(true);
+          try {
+            field.set(target, id);
+            return;
+          } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }
+      clazz = clazz.getSuperclass();
+    }
+
+    throw new RuntimeException("UUID 타입의 PK 필드를 찾을 수 없습니다.");
+  }
 }

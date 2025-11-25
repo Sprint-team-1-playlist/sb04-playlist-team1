@@ -1,10 +1,12 @@
 package com.codeit.playlist.domain.user.controller;
 
 import com.codeit.playlist.domain.auth.service.AuthService;
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
+import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
 import com.codeit.playlist.domain.user.service.UserService;
 import jakarta.validation.Valid;
 import java.nio.file.AccessDeniedException;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -45,6 +48,32 @@ public class UserController {
     UserDto user = userService.find(userId);
     log.info("[사용자 관리] 사용자 상세 조회 완료 : id = {} ", userId);
     return ResponseEntity.ok(user);
+  }
+
+  @GetMapping
+  public ResponseEntity<CursorResponseUserDto> searchUsers(
+      @RequestParam(required = false) String emailLike,
+      @RequestParam(required = false) String roleEqual,
+      @RequestParam(required = false) Boolean isLocked,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(required = false) UUID idAfter,
+      @RequestParam(defaultValue = "10") int limit,
+      @RequestParam(defaultValue = "createdAt") String sortBy,
+      @RequestParam(defaultValue = "ASCENDING") SortDirection sortDirection
+  ) {
+
+    CursorResponseUserDto response = userService.findUserList(
+        emailLike,
+        roleEqual,
+        isLocked,
+        cursor,
+        idAfter,
+        limit,
+        sortBy,
+        sortDirection
+    );
+
+    return ResponseEntity.ok(response);
   }
 
   @PatchMapping("/{userId}/password")
