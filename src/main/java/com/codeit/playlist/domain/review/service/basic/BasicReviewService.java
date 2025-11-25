@@ -236,7 +236,6 @@ public class BasicReviewService implements ReviewService {
         log.debug("[리뷰] 콘텐츠 평점 갱신: contentId= {}, newReviewCount= {}, newAverageRating= {}",
                 content.getId(), content.getReviewCount(), content.getAverageRating());
 
-        //하드 딜리트 수행
         reviewRepository.delete(review);
 
         //최종 성공 로그
