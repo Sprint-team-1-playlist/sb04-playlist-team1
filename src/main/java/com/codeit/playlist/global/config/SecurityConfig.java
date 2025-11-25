@@ -44,7 +44,8 @@ public class SecurityConfig {
                 "/api/auth/reset-password",
                 "/api/auth/sign-out",
                 "/api/users/*/password",
-                "/api/users")
+                "/api/users",
+                "/api/users/*/role")
         )
 
         .formLogin(AbstractHttpConfigurer::disable)
