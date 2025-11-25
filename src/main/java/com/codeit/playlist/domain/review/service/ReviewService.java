@@ -17,4 +17,6 @@ public interface ReviewService {
     CursorResponseReviewDto findReviews(UUID contentId, String cursor,
                                         UUID idAfter, int limit,
                                         SortDirection sortDirection, ReviewSortBy sortBy);
+
+    void deleteReview(UUID reviewId, UUID currentUserId);
 }
