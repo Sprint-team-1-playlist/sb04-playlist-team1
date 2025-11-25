@@ -30,7 +30,7 @@ public class RedisWatchingSessionRepository {
     }
 
     public long countWatcher(UUID contentId) {
-        Long result = redisTemplate.opsForSet().size(key(contentId));
+        Long result = redisTemplate.opsForZSet().size(key(contentId));
         return result != null ? result : 0L;
     }
 }

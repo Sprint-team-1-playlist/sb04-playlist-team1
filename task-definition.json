@@ -9,6 +9,12 @@
   "containerDefinitions": [
     {
       "name": "playlist-app",
+      "dependsOn": [
+        {
+          "containerName": "playlist-redis",
+          "condition": "HEALTHY"
+        }
+      ],
       "image": "dummy",
       "essential": true,
       "portMappings": [
@@ -32,7 +38,7 @@
     {
       "name": "playlist-redis",
       "image": "redis:7.2",
-      "essential": false,
+      "essential": true,
       "command": ["sh", "-c", "redis-server --requirepass \\$REDIS_PASSWORD"],
       "portMappings": [
         {
@@ -53,6 +59,13 @@
           "awslogs-region": "ap-northeast-2",
           "awslogs-stream-prefix": "ecs"
         }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "redis-cli -a \"$REDIS_PASSWORD\" ping"],
+        "interval": 5,
+        "timeout": 3,
+        "retries": 5,
+        "startPeriod": 10
       }
     }
   ]

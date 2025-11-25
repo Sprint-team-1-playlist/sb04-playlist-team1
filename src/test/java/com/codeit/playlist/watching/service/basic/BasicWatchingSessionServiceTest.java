@@ -59,6 +59,7 @@ class BasicWatchingSessionServiceTest {
     private ArgumentCaptor<WatchingSessionChange> eventCaptor;
 
     private final UUID contentId = WatchingSessionFixtures.FIXED_ID;
+    private final UUID userId = WatchingSessionFixtures.FIXED_ID;
     private final WatchingSessionDto watchingSessionDto = WatchingSessionFixtures.watchingSessionDto();
 
     @BeforeEach
@@ -84,7 +85,7 @@ class BasicWatchingSessionServiceTest {
         when(redisWatchingSessionRepository.countWatcher(any())).thenReturn(3L);
 
         // when
-        watchingSessionService.join(contentId);
+        watchingSessionService.join(contentId, userId);
 
         // then
         verify(redisWatchingSessionRepository, times(1))
@@ -117,7 +118,7 @@ class BasicWatchingSessionServiceTest {
         when(redisWatchingSessionRepository.countWatcher(any())).thenReturn(3L);
 
         // when
-        watchingSessionService.leave(contentId);
+        watchingSessionService.leave(contentId, userId);
 
         // then
         verify(redisWatchingSessionRepository, times(1))

@@ -1,11 +1,14 @@
 package com.codeit.playlist.review.service.basic;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
+import com.codeit.playlist.domain.review.dto.ReviewSortBy;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
 import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
+import com.codeit.playlist.domain.review.dto.response.CursorResponseReviewDto;
 import com.codeit.playlist.domain.review.entity.Review;
 import com.codeit.playlist.domain.review.exception.ReviewAccessDeniedException;
 import com.codeit.playlist.domain.review.exception.ReviewNotFoundException;
@@ -21,13 +24,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.lang.reflect.Constructor;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -187,8 +198,12 @@ public class BasicReviewServiceTest {
         User reviewer = mock(User.class);
         given(reviewer.getId()).willReturn(currentUserId);
 
+        Content content = mock(Content.class);
+
         Review review = mock(Review.class);
         given(review.getUser()).willReturn(reviewer);
+        given(review.getContent()).willReturn(content);
+        given(review.getRating()).willReturn(3);
 
         Review savedReview = mock(Review.class);
 
@@ -212,6 +227,7 @@ public class BasicReviewServiceTest {
 
         then(reviewRepository).should().findById(reviewId);
         then(review).should().updateReview("수정된 내용", 4);
+        then(content).should().applyReviewUpdated(3, 4);
         then(reviewRepository).should().save(review);
         then(reviewMapper).should().toDto(savedReview);
     }
@@ -292,7 +308,11 @@ public class BasicReviewServiceTest {
         given(reviewer.getId()).willReturn(currentUserId);
 
         Review review = mock(Review.class);
+        Content content = mock(Content.class);
+
         given(review.getUser()).willReturn(reviewer);
+        given(review.getContent()).willReturn(content);
+        given(review.getRating()).willReturn(3);
 
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
         // save에서 갑자기 터지도록 설정
@@ -302,5 +322,239 @@ public class BasicReviewServiceTest {
         assertThatThrownBy(() -> basicReviewService.updateReview(reviewId, request, currentUserId))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("DB Failure");
+
+        then(reviewRepository).should().findById(reviewId);
+        then(review).should().updateReview("내용", 5);
+        then(content).should().applyReviewUpdated(3, 5);
+        then(reviewRepository).should().save(review);
+        then(reviewMapper).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("리뷰 목록 조회 성공 - 커서 기반 페이징과 totalCount, nextCursor가 올바르게 계산된다")
+    void findReviewsSuccess() {
+        // given
+        UUID contentId = UUID.randomUUID();
+
+        UUID previousCursor = UUID.randomUUID();
+        String cursor = previousCursor.toString();
+        UUID idAfter = null;
+
+        int limit = 2;
+        SortDirection sortDirection = SortDirection.DESCENDING;
+        ReviewSortBy sortBy = ReviewSortBy.CREATED_AT;
+
+        // 리뷰에 들어갈 user / content
+        User user = mock(User.class);
+        Content content = mock(Content.class);
+
+        Review r1 = createReview(user, content, 4, "리뷰1");
+        Review r2 = createReview(user, content, 5, "리뷰2");
+
+        UUID review1Id = r1.getId();
+        UUID review2Id = r2.getId();
+
+        Slice<Review> slice = new SliceImpl<>(
+                List.of(r1, r2),
+                PageRequest.of(0, limit),
+                true   // hasNext = true → nextCursor 계산 대상
+        );
+
+        given(reviewRepository.findReviews(
+                eq(contentId),
+                eq(cursor),
+                any(),
+                eq(limit),
+                eq(sortDirection),
+                eq("createdAt")
+        )).willReturn(slice);
+
+        ReviewDto dto1 = mock(ReviewDto.class);
+        ReviewDto dto2 = mock(ReviewDto.class);
+        given(reviewMapper.toDto(r1)).willReturn(dto1);
+        given(reviewMapper.toDto(r2)).willReturn(dto2);
+
+        given(reviewRepository.countByContent_Id(contentId))
+                .willReturn(50L);
+
+        // when
+        CursorResponseReviewDto response = basicReviewService.findReviews(
+                contentId, cursor,
+                idAfter, limit,
+                sortDirection, sortBy
+        );
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.data()).containsExactly(dto1, dto2);
+        assertThat(response.hasNext()).isTrue();
+        assertThat(response.totalCount()).isEqualTo(50L);
+        assertThat(response.sortBy()).isEqualTo("createdAt");
+        assertThat(response.sortDirection()).isEqualTo(SortDirection.DESCENDING);
+
+        assertThat(response.nextIdAfter()).isEqualTo(review2Id);
+        assertThat(response.nextCursor()).isEqualTo(review2Id.toString());
+
+        then(reviewRepository).should().findReviews(
+                eq(contentId),
+                eq(cursor),
+                any(),
+                eq(limit),
+                eq(sortDirection),
+                eq("createdAt")
+        );
+        then(reviewRepository).should().countByContent_Id(contentId);
+    }
+
+    @Test
+    @DisplayName("findReviews 실패 - 잘못된 cursor 문자열이 넘어와도 예외 없이 첫 페이지로 처리한다")
+    void findReviewsInvalidCursorDoesNotThrow() {
+        // given
+        UUID contentId = UUID.randomUUID();
+        String invalidCursor = "not-a-uuid";
+        UUID idAfter = null;
+        int limit = 3;
+
+        Slice<Review> emptySlice = new SliceImpl<>(
+                List.of(),
+                PageRequest.of(0, limit),
+                false
+        );
+
+        given(reviewRepository.findReviews(
+                eq(contentId),
+                eq(invalidCursor),
+                any(),
+                eq(limit),
+                eq(SortDirection.ASCENDING),
+                eq("createdAt")
+        )).willReturn(emptySlice);
+
+        given(reviewRepository.countByContent_Id(contentId))
+                .willReturn(0L);
+
+        // when
+        CursorResponseReviewDto response = basicReviewService.findReviews(
+                contentId,
+                invalidCursor,
+                idAfter,
+                limit,
+                SortDirection.ASCENDING,
+                ReviewSortBy.CREATED_AT
+        );
+
+        // then
+        assertThat(response.data()).isEmpty();
+        assertThat(response.hasNext()).isFalse();
+        assertThat(response.nextCursor()).isNull();
+        assertThat(response.nextIdAfter()).isNull();
+        assertThat(response.totalCount()).isEqualTo(0L);
+
+        then(reviewRepository).should().findReviews(
+                eq(contentId),
+                eq(invalidCursor),
+                any(),
+                eq(limit),
+                eq(SortDirection.ASCENDING),
+                eq("createdAt")
+        );
+        then(reviewRepository).should().countByContent_Id(contentId);
+    }
+
+    private Review createReview(User user, Content content, int rating, String text) {
+        try {
+            //protected 생성자 열기
+            Constructor<Review> constructor = Review.class.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            Review review = constructor.newInstance();
+
+            // 2) Review 필드 세팅
+            ReflectionTestUtils.setField(review, "user", user);
+            ReflectionTestUtils.setField(review, "content", content);
+            ReflectionTestUtils.setField(review, "rating", rating);
+            ReflectionTestUtils.setField(review, "text", text);
+
+            //BaseEntity / BaseUpdatableEntity 필드 세팅
+            ReflectionTestUtils.setField(review, "id", UUID.randomUUID());
+            ReflectionTestUtils.setField(review, "createdAt", LocalDateTime.now());
+            ReflectionTestUtils.setField(review, "updatedAt", LocalDateTime.now());
+
+            return review;
+        } catch (Exception e) {
+            throw new RuntimeException("리뷰 테스트 객체 생성 실패", e);
+        }
+    }
+
+    @Test
+    @DisplayName("리뷰 삭제 성공 - 작성자가 자신의 리뷰를 삭제하면 콘텐츠 평점 반영 후 하드 딜리트된다")
+    void deleteReviewSuccess() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        Review review = mock(Review.class);
+        User author = mock(User.class);
+        Content content = mock(Content.class);
+
+        int rating = 5;
+
+        given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+        given(review.getUser()).willReturn(author);
+        given(author.getId()).willReturn(currentUserId);
+        given(review.getContent()).willReturn(content);
+        given(review.getRating()).willReturn(rating);
+
+        // when
+        basicReviewService.deleteReview(reviewId, currentUserId);
+
+        // then
+        then(reviewRepository).should().findById(reviewId);
+        then(review).should().getUser();
+        then(content).should().applyReviewDeleted(rating);  // 평점 반영
+        then(reviewRepository).should().delete(review);     // 하드 딜리트
+    }
+
+    @Test
+    @DisplayName("리뷰 삭제 실패 - 존재하지 않는 리뷰 ID면 ReviewNotFoundException 발생")
+    void deleteReviewFailWhenReviewNotFound() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        given(reviewRepository.findById(reviewId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> basicReviewService.deleteReview(reviewId, currentUserId))
+                .isInstanceOf(ReviewNotFoundException.class);
+
+        then(reviewRepository).should().findById(reviewId);
+        // 삭제는 호출되면 안 됨
+        then(reviewRepository).should(never()).delete(any(Review.class));
+    }
+
+    @Test
+    @DisplayName("리뷰 삭제 실패 - 현재 사용자가 작성자가 아니면 ReviewAccessDeniedException 발생")
+    void deleteReviewFailWhenAccessDenied() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();          // 요청 유저
+        UUID authorId = UUID.randomUUID();               // 다른 사람
+
+        Review review = mock(Review.class);
+        User author = mock(User.class);
+
+        given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+        given(review.getUser()).willReturn(author);
+        given(author.getId()).willReturn(authorId);
+
+        // when & then
+        assertThatThrownBy(() -> basicReviewService.deleteReview(reviewId, currentUserId))
+                .isInstanceOf(ReviewAccessDeniedException.class);
+
+        then(reviewRepository).should().findById(reviewId);
+        // 작성자 검증 이후 실패하므로, 콘텐츠/삭제 로직은 호출되면 안 됨
+        then(review).should(never()).getContent();
+        then(reviewRepository).should(never()).delete(any(Review.class));
     }
 }
