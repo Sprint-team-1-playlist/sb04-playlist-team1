@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.content.api.config;
+package com.codeit.playlist.global.config;
 
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;

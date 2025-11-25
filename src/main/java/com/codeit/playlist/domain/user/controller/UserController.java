@@ -50,6 +50,7 @@ public class UserController {
     return ResponseEntity.ok(user);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping
   public ResponseEntity<CursorResponseUserDto> searchUsers(
       @RequestParam(required = false) String emailLike,
