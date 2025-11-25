@@ -90,9 +90,9 @@ public class UserController {
   @PatchMapping("/{userId}/role")
   public ResponseEntity<Void> updateRole(@PathVariable UUID userId,
       @Valid @RequestBody UserRoleUpdateRequest updateRequest) {
-    log.debug("[사용자 관리] 사용자 권한 변경 시작 : id = {}, newRole = {} ", userId, updateRequest.newRole());
+    log.debug("[사용자 관리] 사용자 권한 변경 시작 : id = {}, newRole(변경 후) = {} ", userId, updateRequest.role());
     authService.updateRole(updateRequest, userId);
-    log.info("[사용자 관리] 사용자 권한 변경 완료 : id = {}, newRole = {} ", userId, updateRequest.newRole());
+    log.info("[사용자 관리] 사용자 권한 변경 완료 : id = {}, newRole(변경 후) = {} ", userId, updateRequest.role());
     return ResponseEntity.ok().build();
   }
 }

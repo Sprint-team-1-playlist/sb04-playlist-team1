@@ -1,7 +1,7 @@
 package com.codeit.playlist.domain.message.controller;
 
-import com.codeit.playlist.domain.conversation.exception.InvalidSortByException;
-import com.codeit.playlist.domain.conversation.exception.InvalidSortDirectionException;
+import com.codeit.playlist.global.error.InvalidSortByException;
+import com.codeit.playlist.global.error.InvalidSortDirectionException;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.service.MessageService;
 import jakarta.validation.constraints.Max;
