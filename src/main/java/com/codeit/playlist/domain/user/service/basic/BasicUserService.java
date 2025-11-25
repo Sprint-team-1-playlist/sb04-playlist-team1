@@ -123,10 +123,13 @@ public class BasicUserService implements UserService {
       switch (sortBy) {
         case "name" -> nextCursor = last.getName();
         case "email" -> nextCursor = last.getEmail();
-        case "createdAt" -> nextCursor = last.getCreatedAt().toString();
+        case "createdAt" -> nextCursor = last.getCreatedAt() != null
+            ? last.getCreatedAt().toString() : null;
         case "isLocked" -> nextCursor = String.valueOf(last.isLocked());
-        case "role" -> nextCursor = last.getRole().name();
-        default -> nextCursor = last.getCreatedAt().toString();
+        case "role" -> nextCursor = last.getRole() != null
+            ? last.getRole().name() : null;
+            default -> nextCursor = last.getCreatedAt() != null
+            ? last.getCreatedAt().toString() : null;
       }
 
       nextIdAfter = last.getId();

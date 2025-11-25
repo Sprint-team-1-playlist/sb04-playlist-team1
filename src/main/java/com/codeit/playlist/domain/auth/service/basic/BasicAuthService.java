@@ -61,7 +61,7 @@ public class BasicAuthService implements AuthService {
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
     Role oldRole = user.getRole();
-    Role newRole = request.newRole();
+    Role newRole = request.role();
 
     if (!oldRole.equals(newRole)) {
       user.updateRole(newRole);
