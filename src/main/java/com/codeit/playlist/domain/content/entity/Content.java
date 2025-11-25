@@ -10,13 +10,10 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 
 @Entity
 @Table(name = "contents")
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Content extends BaseUpdatableEntity {
@@ -37,7 +34,7 @@ public class Content extends BaseUpdatableEntity {
     /**
      * 컨텐츠 설명
      */
-    @Column(nullable = false)
+    @Column(nullable = false, length = 2000)
     private String description;
 
     /**
@@ -63,4 +60,77 @@ public class Content extends BaseUpdatableEntity {
      */
     @Column(nullable = false)
     private int watcherCount;
+
+    public void updateContent(String title, String description, String thumbnailUrl) {
+        this.title = title;
+        this.description = description;
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public static Content createSportsContent(String title, String description, String thumbnailUrl) {
+        Content content = new Content();
+        content.type = Type.SPORT;
+        content.title = title;
+        content.description = description;
+        content.thumbnailUrl = thumbnailUrl;
+        content.averageRating = 0.0;
+        content.reviewCount = 0;
+        content.watcherCount = 0;
+        return content;
+    }
+
+    /**
+     * 컨텐츠 편의 메서드(리뷰용)
+     */
+
+    // 리뷰 생성 시 호출
+    public void applyReviewCreated(int newRating) {
+        int beforeCount = this.reviewCount;
+        double beforeAvg = this.averageRating;
+
+        int afterCount = beforeCount + 1;
+        double afterAvg = ((beforeAvg * beforeCount) + newRating) / afterCount;
+
+        this.reviewCount = afterCount;
+        this.averageRating = afterAvg;
+    }
+
+    // 리뷰 수정 시 호출 (기존 평점 -> 새로운 평점)
+    public void applyReviewUpdated(int oldRating, int newRating) {
+        if (this.reviewCount <= 0) {
+            this.reviewCount = 1;
+            this.averageRating = newRating;
+            return;
+        }
+
+        double sum = this.averageRating * this.reviewCount;
+        double newSum = sum - oldRating + newRating;
+        double afterAvg = newSum / this.reviewCount;
+
+        this.averageRating = afterAvg;
+    }
+
+    public void applyReviewDeleted(int deletedRating) {
+        int beforeCount = this.reviewCount;
+
+        if (beforeCount <= 0) {
+            this.reviewCount = 0;
+            this.averageRating = 0;
+            return;
+        }
+
+        int afterCount = beforeCount - 1;
+
+        if (afterCount == 0) {
+            this.reviewCount = 0;
+            this.averageRating = 0.0;
+        } else {
+            double afterAvg =
+                    ((this.averageRating * beforeCount) - deletedRating)
+                            / afterCount;
+
+            this.reviewCount = afterCount;
+            this.averageRating = afterAvg;
+        }
+    }
 }

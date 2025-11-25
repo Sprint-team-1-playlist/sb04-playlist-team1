@@ -3,6 +3,8 @@ package com.codeit.playlist.content.service.basic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.BDDMockito.given;
@@ -52,16 +54,26 @@ public class BasicContentServiceTest {
                 List.of("순정만화", "러브코미디")
         );
 
-        ContentDto content = new ContentDto(
+        ContentDto contentDto = new ContentDto(
                 UUID.randomUUID(),
                 Type.MOVIE.toString(),
                 "미소된장국으로 건배",
                 "재밌는만화",
-                "exampleUrl",
+                "testThumbnail.jpg",
                 List.of("순정만화","러브코미디"),
                 2.0,
                 3,
                 4);
+
+        Content content2 = new Content(
+                Type.MOVIE,
+                "오가미 츠미키와 기일상",
+                "매우 재밌는 만화",
+                "exampleUrl",
+                3.0,
+                2,
+                3
+        );
 
         String thumbnail = "testThumbnail.jpg";
 
@@ -71,13 +83,17 @@ public class BasicContentServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         when(contentMapper.toDto(any(Content.class), anyList()))
-                .thenReturn(content);
+                .thenReturn(contentDto);
 
         // when
         ContentDto result = contentService.create(request, thumbnail);
 
         // then
-        assertThat(result).isEqualTo(content);
+        assertThat(result).isEqualTo(contentDto);
+
+        verify(contentRepository, times(1)).save(any(Content.class));
+        verify(tagRepository, times(1)).saveAll(anyList());
+        verify(contentMapper, times(1)).toDto(any(Content.class), anyList());
     }
 
     @Test

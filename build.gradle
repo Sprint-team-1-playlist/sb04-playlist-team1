@@ -74,6 +74,11 @@ dependencies {
 
     //이메일로 임시 비밀번호 전송을 위한 의존성
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // AWS S3
+    implementation 'software.amazon.awssdk:s3:2.25.64'
+    // test용 h2
+    testImplementation 'com.h2database:h2'
 }
 
 tasks.named('test') {
