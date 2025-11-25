@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.scheduler;
+package com.codeit.playlist.domain.playlist.scheduler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
