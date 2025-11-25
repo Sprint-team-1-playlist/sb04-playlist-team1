@@ -26,7 +26,7 @@ public class TheSportsApiService {
             TheSportsResponse theSportsResponse = theSportsResponseList.get(i);
             log.debug("TheSportsResponse 확인: event = {}, thumb = {}",
                     theSportsResponse.strEvent(), theSportsResponse.strThumb());
-            Content content = Content.createContent(
+            Content content = Content.createSportsContent(
                     theSportsResponse.strEvent(),
                     theSportsResponse.strFilename(),
                     theSportsResponse.strThumb()
