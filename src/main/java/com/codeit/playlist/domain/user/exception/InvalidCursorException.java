@@ -1,8 +1,7 @@
 package com.codeit.playlist.domain.user.exception;
 
-import com.codeit.playlist.domain.conversation.exception.ConversationException;
 
-public class InvalidCursorException extends ConversationException {
+public class InvalidCursorException extends UserException {
 
   public InvalidCursorException() {
     super(UserErrorCode.INVALID_CURSOR);
