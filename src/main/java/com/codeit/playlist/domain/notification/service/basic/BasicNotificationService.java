@@ -126,7 +126,7 @@ public class BasicNotificationService implements NotificationService {
     //알림 읽음 처리(하드 딜리트)
     @Transactional
     @Override
-    public void markAsRead(UUID notificationId, UUID currentUserId) {
+    public void markAsReadAndDeleteNotification(UUID notificationId, UUID currentUserId) {
 
         log.debug("[알림] 알림 읽음 처리 시작 : notificationId= {}, currentUserId= {}", notificationId, currentUserId);
 

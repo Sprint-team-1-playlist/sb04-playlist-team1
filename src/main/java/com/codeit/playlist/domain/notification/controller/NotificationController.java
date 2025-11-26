@@ -56,7 +56,7 @@ public class NotificationController {
 
         UUID currentUserId = userDetails.getUserDto().id();
 
-        notificationService.markAsRead(notificationId, currentUserId);
+        notificationService.markAsReadAndDeleteNotification(notificationId, currentUserId);
 
         log.info("[알림] 알림 읽음 처리 성공 : notificationId= {}", notificationId);
 
