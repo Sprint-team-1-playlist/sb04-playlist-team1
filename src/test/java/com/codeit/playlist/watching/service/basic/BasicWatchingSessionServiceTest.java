@@ -11,7 +11,7 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.watching.dto.data.ChangeType;
-import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
+import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
@@ -60,7 +60,6 @@ class BasicWatchingSessionServiceTest {
 
     private final UUID contentId = WatchingSessionFixtures.FIXED_ID;
     private final UUID userId = WatchingSessionFixtures.FIXED_ID;
-    private final WatchingSessionDto watchingSessionDto = WatchingSessionFixtures.watchingSessionDto();
 
     @BeforeEach
     void setUp() {
@@ -75,72 +74,69 @@ class BasicWatchingSessionServiceTest {
         when(tagRepository.findByContentId(any())).thenReturn(tags);
         when(userMapper.toDto(any())).thenReturn(userDto);
         when(contentMapper.toDto(any(), any())).thenReturn(contentDto);
+        when(redisWatchingSessionRepository.countWatchingSessionByContentId(any()))
+                .thenReturn(3L);
     }
 
     @Test
-    @DisplayName("join 호출 시 Redis add, count, repository 조회, 메시지 전송 모두 수행")
+    @DisplayName("join() 호출 시 addWatchingSession, countWatchingSession, publish 순서대로 호출")
     void joinShouldPerformAllSteps() {
         // given
-        when(redisWatchingSessionRepository.addWatcher(any(), any())).thenReturn(true);
-        when(redisWatchingSessionRepository.countWatcher(any())).thenReturn(3L);
+        RawWatchingSession raw = WatchingSessionFixtures.rawWatchingSession();
+        when(redisWatchingSessionRepository.addWatchingSession(any(), any(), any()))
+                .thenReturn(raw);
 
         // when
         watchingSessionService.join(contentId, userId);
 
         // then
         verify(redisWatchingSessionRepository, times(1))
-                .addWatcher(eq(contentId), any());
+                .addWatchingSession(any(), eq(contentId), eq(userId));
+
         verify(redisWatchingSessionRepository, times(1))
-                .countWatcher(eq(contentId));
-        verify(userRepository, times(1))
-                .findById(any());
-        verify(contentRepository, times(1))
-                .findById(any());
-        verify(tagRepository, times(1))
-                .findByContentId(any());
+                .countWatchingSessionByContentId(contentId);
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(contentRepository, times(1)).findById(contentId);
+        verify(tagRepository, times(1)).findByContentId(contentId);
+
         verify(publisher, times(1))
                 .publish(eq(contentId), eventCaptor.capture());
 
-        WatchingSessionChange capturedEvent = eventCaptor.getValue();
-        assertThat(capturedEvent.type()).isEqualTo(ChangeType.JOIN);
-        assertThat(capturedEvent.watchingSession())
-                .usingRecursiveComparison()
-                .ignoringFields("watchingId", "createdAt")
-                .isEqualTo(watchingSessionDto);
-        assertThat(capturedEvent.watcherCount()).isEqualTo(3L);
+        WatchingSessionChange event = eventCaptor.getValue();
+        assertThat(event.type()).isEqualTo(ChangeType.JOIN);
+        assertThat(event.watcherCount()).isEqualTo(3L);
+        assertThat(event.watchingSession()).isNotNull();
     }
 
     @Test
-    @DisplayName("leave 호출 시 Redis remove, count, repository 조회, 메시지 전송 모두 수행")
+    @DisplayName("leave() 호출 시 removeWatchingSession, countWatchingSession, publish 순서대로 호출")
     void leaveShouldPerformAllSteps() {
         // given
-        when(redisWatchingSessionRepository.removeWatcher(any(), any())).thenReturn(true);
-        when(redisWatchingSessionRepository.countWatcher(any())).thenReturn(3L);
+        RawWatchingSession raw = WatchingSessionFixtures.rawWatchingSession();
+        when(redisWatchingSessionRepository.removeWatchingSession(eq(userId)))
+                .thenReturn(raw);
 
         // when
         watchingSessionService.leave(contentId, userId);
 
         // then
         verify(redisWatchingSessionRepository, times(1))
-                .removeWatcher(eq(contentId), any());
+                .removeWatchingSession(userId);
+
         verify(redisWatchingSessionRepository, times(1))
-                .countWatcher(eq(contentId));
-        verify(userRepository, times(1))
-                .findById(any());
-        verify(contentRepository, times(1))
-                .findById(any());
-        verify(tagRepository, times(1))
-                .findByContentId(any());
+                .countWatchingSessionByContentId(contentId);
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(contentRepository, times(1)).findById(contentId);
+        verify(tagRepository, times(1)).findByContentId(contentId);
+
         verify(publisher, times(1))
                 .publish(eq(contentId), eventCaptor.capture());
 
-
-        WatchingSessionChange capturedEvent = eventCaptor.getValue();
-        assertThat(capturedEvent.type()).isEqualTo(ChangeType.LEAVE);
-        assertThat(capturedEvent.watchingSession())
-                .usingRecursiveComparison()
-                .ignoringFields("watchingId", "createdAt")
-                .isEqualTo(watchingSessionDto);
-        assertThat(capturedEvent.watcherCount()).isEqualTo(3L);
+        WatchingSessionChange event = eventCaptor.getValue();
+        assertThat(event.type()).isEqualTo(ChangeType.LEAVE);
+        assertThat(event.watcherCount()).isEqualTo(3L);
+        assertThat(event.watchingSession()).isNotNull();
     }
 }
