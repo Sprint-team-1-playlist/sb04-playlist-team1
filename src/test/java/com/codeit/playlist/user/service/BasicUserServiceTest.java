@@ -428,6 +428,7 @@ public class BasicUserServiceTest {
   @DisplayName("사용자 잠금상태 변경 성공  repository update + jwt invalidate 호출됨")
   void updateUserLockedSuccess() {
     // given
+    user.setLocked(false);  // 초기 상태 명시
     when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
     UserLockUpdateRequest request = new UserLockUpdateRequest(true);
 
