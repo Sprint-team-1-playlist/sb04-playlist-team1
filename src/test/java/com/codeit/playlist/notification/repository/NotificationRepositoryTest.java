@@ -6,7 +6,6 @@ import com.codeit.playlist.domain.notification.repository.NotificationRepository
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.global.config.QuerydslConfig;
-import com.codeit.playlist.global.error.InvalidCursorException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @Import(QuerydslConfig.class)
@@ -76,11 +74,14 @@ public class NotificationRepositoryTest {
 
         // when
         Slice<Notification> firstSlice =
-                notificationRepository.findByReceiverIdWithCursorPaging(receiver.getId(), null, pageable);
+                notificationRepository.findByReceiverIdWithCursorPaging(receiver.getId(), null, null, pageable);
 
+        Notification lastOfFirst = firstSlice.getContent().get(2);
+        LocalDateTime cursorCreatedAt = lastOfFirst.getCreatedAt();
         UUID cursorId = firstSlice.getContent().get(2).getId();
+
         Slice<Notification> secondSlice =
-                notificationRepository.findByReceiverIdWithCursorPaging(receiver.getId(), cursorId, pageable);
+                notificationRepository.findByReceiverIdWithCursorPaging(receiver.getId(), cursorCreatedAt, cursorId, pageable);
 
         // then
         assertThat(firstSlice.getContent()).hasSize(3);
@@ -101,36 +102,47 @@ public class NotificationRepositoryTest {
     }
 
     @Test
-    @DisplayName("알림 커서 조회 실패 - 존재하지 않는 cursorId로 조회 시 InvalidCursorException 발생")
-    void findByReceiverIdWithCursorPagingFailWithInvalidCursor() {
+    @DisplayName("알림 커서 조회 실패 - 커서가 범위를 벗어나면 빈 결과와 hasNext=false 반환")
+    void findByReceiverIdWithCursorPagingFailWithOutOfRangeCursor() {
         // given
         User receiver = createTestUser("receiver@test.com");
         em.persist(receiver);
 
-        LocalDateTime now = LocalDateTime.now().withNano(0);
-        Notification n = createTestNotification(receiver, "알림-1", now);
-        em.persist(n);
+        LocalDateTime base = LocalDateTime.now().withNano(0);
+
+        for (int i = 0; i < 3; i++) {
+            Notification n = createTestNotification(
+                    receiver,
+                    "알림-" + i,
+                    base.minusMinutes(i)
+            );
+            em.persist(n);
+        }
 
         em.flush();
         em.clear();
 
-        UUID invalidCursorId = UUID.randomUUID();
         Pageable pageable = PageRequest.of(
                 0,
                 3,
                 Sort.by(Sort.Direction.DESC, "createdAt")
+                        .and(Sort.by(Sort.Direction.DESC, "id"))
         );
 
-        // when & then
-        assertThatThrownBy(() ->
+        LocalDateTime outOfRangeCursorCreatedAt = base.minusDays(1);
+
+        // when
+        Slice<Notification> slice =
                 notificationRepository.findByReceiverIdWithCursorPaging(
                         receiver.getId(),
-                        invalidCursorId,
+                        outOfRangeCursorCreatedAt,
+                        null,
                         pageable
-                )
-        )
-                .isInstanceOf(InvalidCursorException.class)
-                .hasMessageContaining("cursor는 'yyyy-MM-ddTHH:mm:ss' 형식이어야 합니다.");
+                );
+
+        // then
+        assertThat(slice.getContent()).isEmpty();
+        assertThat(slice.hasNext()).isFalse();
     }
 
     @Test
@@ -150,7 +162,7 @@ public class NotificationRepositoryTest {
 
         // when
         Slice<Notification> slice =
-                notificationRepository.findByReceiverIdWithCursorPaging(receiver.getId(), null, pageable);
+                notificationRepository.findByReceiverIdWithCursorPaging(receiver.getId(), null, null, pageable);
         long count = notificationRepository.countByReceiver_Id(receiver.getId());
 
         // then

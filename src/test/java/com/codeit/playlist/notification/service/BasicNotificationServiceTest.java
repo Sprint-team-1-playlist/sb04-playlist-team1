@@ -23,6 +23,9 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.domain.Sort;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,7 +39,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
-public class BasiceNotificationServiceTest {
+public class BasicNotificationServiceTest {
 
     @Mock
     private NotificationRepository notificationRepository;
@@ -65,8 +68,10 @@ public class BasiceNotificationServiceTest {
         Notification notification2 = Mockito.mock(Notification.class);
 
         UUID id2 = UUID.randomUUID();
+        LocalDateTime createdAt2 = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
         given(notification2.getId()).willReturn(id2);
+        given(notification2.getCreatedAt()).willReturn(createdAt2);
 
         List<Notification> entities = List.of(notification1, notification2);
 
@@ -80,7 +85,8 @@ public class BasiceNotificationServiceTest {
 
         given(notificationRepository.findByReceiverIdWithCursorPaging(
                 eq(receiverId),
-                isNull(),
+                isNull(LocalDateTime.class),
+                isNull(UUID.class),
                 any(Pageable.class)
         )).willReturn(slice);
 
@@ -92,6 +98,8 @@ public class BasiceNotificationServiceTest {
 
         given(notificationMapper.toDto(notification1)).willReturn(dto1);
         given(notificationMapper.toDto(notification2)).willReturn(dto2);
+
+        String expectedNextCursor = createdAt2.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 
         // when
         CursorResponseNotificationDto response = notificationService.getAllNotifications(
@@ -111,12 +119,13 @@ public class BasiceNotificationServiceTest {
         assertThat(response.totalCount()).isEqualTo(2L);
         assertThat(response.sortBy()).isEqualTo("createdAt");
         assertThat(response.sortDirection()).isEqualTo(SortDirection.DESCENDING);
-        assertThat(response.nextCursor()).isEqualTo(id2.toString());
+        assertThat(response.nextCursor()).isEqualTo(expectedNextCursor);
         assertThat(response.nextIdAfter()).isEqualTo(id2);
 
         then(notificationRepository).should().findByReceiverIdWithCursorPaging(
                 eq(receiverId),
-                isNull(),
+                isNull(LocalDateTime.class),
+                isNull(UUID.class),
                 any(Pageable.class)
         );
         then(notificationRepository).should().countByReceiver_Id(receiverId);
@@ -157,7 +166,7 @@ public class BasiceNotificationServiceTest {
     void getAllNotificationsFailWithInvalidCursorFormat() {
         // given
         UUID receiverId = UUID.randomUUID();
-        String cursor = "not-a-uuid";
+        String cursor = "not-a-datetime";
         UUID idAfter = null;
         int limit = 10;
         SortDirection sortDirection = SortDirection.DESCENDING;
@@ -194,7 +203,8 @@ public class BasiceNotificationServiceTest {
 
         given(notificationRepository.findByReceiverIdWithCursorPaging(
                 eq(receiverId),
-                isNull(),
+                isNull(LocalDateTime.class),
+                isNull(UUID.class),
                 any(Pageable.class)
         )).willThrow(new RuntimeException("DB error"));
 
@@ -214,7 +224,8 @@ public class BasiceNotificationServiceTest {
 
         then(notificationRepository).should().findByReceiverIdWithCursorPaging(
                 eq(receiverId),
-                isNull(),
+                isNull(LocalDateTime.class),
+                isNull(UUID.class),
                 any(Pageable.class)
         );
 
