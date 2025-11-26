@@ -14,6 +14,7 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.exception.NewPasswordRequired;
 import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
+import com.codeit.playlist.domain.user.exception.UserLockStateUnchangedException;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
@@ -187,10 +188,11 @@ public class BasicUserService implements UserService {
   public void updateUserLocked(UUID userId, UserLockUpdateRequest request) {
     log.debug("[사용자 관리] 잠금상태 변경 시작 : userId = {}", userId);
 
-    User user = userRepository.findById(userId).orElseThrow(() -> UserNotFoundException.withId(userId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
 
     if(request.locked() == user.isLocked()) {
-      throw new IllegalArgumentException("잠금 상태가 이전과 같습니다.");
+      throw UserLockStateUnchangedException.withId(userId);
     }
 
     userRepository.updateUserLocked(userId, request.locked());

@@ -27,6 +27,7 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.exception.NewPasswordRequired;
 import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
+import com.codeit.playlist.domain.user.exception.UserLockStateUnchangedException;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
@@ -439,7 +440,7 @@ public class BasicUserServiceTest {
   }
 
   @Test
-  @DisplayName("사용자 잠금상태 변경 - 변경 상태가 기존과 동일하면 IllegalArgumentException 발생")
+  @DisplayName("사용자 잠금상태 변경 - 변경 상태가 기존과 동일하면 UserLockStateUnchangedException 발생")
   void updateUserLockedSameStateThrowsException() {
     // given
     user.setLocked(true);
@@ -449,7 +450,7 @@ public class BasicUserServiceTest {
 
     // expect
     assertThatThrownBy(() -> userService.updateUserLocked(FIXED_ID, request))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(UserLockStateUnchangedException.class);
 
     verify(userRepository, never()).updateUserLocked(any(), anyBoolean());
     verify(jwtRegistry, never()).invalidateJwtInformationByUserId(any());
