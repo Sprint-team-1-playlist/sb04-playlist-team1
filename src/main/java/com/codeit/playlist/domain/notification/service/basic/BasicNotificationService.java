@@ -100,7 +100,10 @@ public class BasicNotificationService implements NotificationService {
             nextIdAfter = last.getId();
         }
 
-        long totalCount = notificationRepository.countByReceiver_Id(receiverId);
+        Long totalCount = null;
+        if (cursorId == null) {
+            totalCount = notificationRepository.countByReceiver_Id(receiverId);
+        }
 
         CursorResponseNotificationDto response = new CursorResponseNotificationDto(
                 content,
