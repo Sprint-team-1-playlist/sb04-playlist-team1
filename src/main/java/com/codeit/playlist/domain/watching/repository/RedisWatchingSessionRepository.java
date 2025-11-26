@@ -45,6 +45,13 @@ public class RedisWatchingSessionRepository {
 
     // 입장
     public RawWatchingSession addWatchingSession(UUID watchingId, UUID contentId, UUID userId) {
+        // 기존 세션이 있으면 먼저 제거
+        String existingWatchingId = redisTemplate.opsForValue()
+                .get(userKey(userId));
+        if (existingWatchingId != null) {
+            removeWatchingSession(userId);
+        }
+
         long now = System.currentTimeMillis();
         redisTemplate.opsForValue()
                 .set(userKey(userId), watchingId.toString());
