@@ -27,7 +27,7 @@ import java.util.UUID;
 public class BasicNotificationService implements NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private  final NotificationMapper notificationMapper;
+    private final NotificationMapper notificationMapper;
 
     //알림 목록 조회
     @Transactional(readOnly = true)
@@ -74,7 +74,7 @@ public class BasicNotificationService implements NotificationService {
                 : Sort.by(Sort.Order.desc(safeSortBy), Sort.Order.desc("id"));
 
         //Pageable 설정
-        Pageable pageable = PageRequest.of(0, limit, sort);;
+        Pageable pageable = PageRequest.of(0, limit, sort);
 
         //Repository 호출 (limit+1 조회)
         Slice<Notification> slice =
