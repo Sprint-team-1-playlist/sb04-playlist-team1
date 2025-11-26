@@ -107,4 +107,8 @@ public class User extends BaseUpdatableEntity {
       this.role = newRole;
     }
   }
+
+  public void setLocked(boolean locked) {
+    this.locked = locked;
+  }
 }
