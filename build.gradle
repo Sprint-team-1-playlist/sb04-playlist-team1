@@ -84,3 +84,8 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// 모든 의존성에서 slf4j-simple을 제외
+configurations.all {
+    exclude group: 'org.slf4j', module: 'slf4j-simple'
+}

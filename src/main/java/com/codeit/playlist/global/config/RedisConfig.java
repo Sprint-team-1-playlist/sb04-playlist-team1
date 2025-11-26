@@ -24,7 +24,9 @@ public class RedisConfig {
             config.setPassword(password);
         }
 
-        return new LettuceConnectionFactory(config);
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(config);
+        factory.setValidateConnection(true); // 연결 유효성 체크
+        return factory;
     }
 
     @Bean
