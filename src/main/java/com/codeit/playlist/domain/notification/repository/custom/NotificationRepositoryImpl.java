@@ -2,7 +2,6 @@ package com.codeit.playlist.domain.notification.repository.custom;
 
 import com.codeit.playlist.domain.notification.entity.Notification;
 import com.codeit.playlist.domain.notification.entity.QNotification;
-import com.codeit.playlist.global.error.InvalidCursorException;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -23,22 +22,15 @@ public class NotificationRepositoryImpl implements NotificationRepositoryCustom 
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public Slice<Notification> findByReceiverIdWithCursorPaging(UUID receiverId, UUID cursorId, Pageable pageable) {
+    public Slice<Notification> findByReceiverIdWithCursorPaging(UUID receiverId, LocalDateTime cursorCreatedAt,
+                                                                UUID cursorId, Pageable pageable) {
+
         QNotification notification = QNotification.notification;
 
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(notification.receiver.id.eq(receiverId));
 
-        if (cursorId != null) {
-            LocalDateTime cursorData = jpaQueryFactory
-                    .select(notification.createdAt)
-                    .from(notification)
-                    .where(notification.id.eq(cursorId))
-                    .fetchOne();
-
-            if (cursorData == null) {
-                throw InvalidCursorException.withCursor(cursorId.toString());
-            }
+        if (cursorCreatedAt != null) {
 
             Sort.Order createdAtOrder = pageable.getSort().stream()
                     .filter(o -> o.getProperty().equals("createdAt"))
@@ -48,17 +40,27 @@ public class NotificationRepositoryImpl implements NotificationRepositoryCustom 
             boolean ascending = createdAtOrder.getDirection().isAscending();
 
             if (ascending) {
-                builder.and(
-                        notification.createdAt.gt(cursorData)
-                                .or(notification.createdAt.eq(cursorData)
-                                        .and(notification.id.gt(cursorId)))
-                );
+                // createdAt 오름차순
+                if (cursorId != null) {
+                    builder.and(
+                            notification.createdAt.gt(cursorCreatedAt)
+                                    .or(notification.createdAt.eq(cursorCreatedAt)
+                                            .and(notification.id.gt(cursorId)))
+                    );
+                } else {
+                    builder.and(notification.createdAt.gt(cursorCreatedAt));
+                }
             } else {
-                builder.and(
-                        notification.createdAt.lt(cursorData)
-                                .or(notification.createdAt.eq(cursorData)
-                                        .and(notification.id.lt(cursorId)))
-                );
+                // createdAt 내림차순
+                if (cursorId != null) {
+                    builder.and(
+                            notification.createdAt.lt(cursorCreatedAt)
+                                    .or(notification.createdAt.eq(cursorCreatedAt)
+                                            .and(notification.id.lt(cursorId)))
+                    );
+                } else {
+                    builder.and(notification.createdAt.lt(cursorCreatedAt));
+                }
             }
         }
 

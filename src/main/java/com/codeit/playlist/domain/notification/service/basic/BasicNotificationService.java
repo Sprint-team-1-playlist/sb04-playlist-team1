@@ -20,6 +20,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,19 +60,17 @@ public class BasicNotificationService implements NotificationService {
         }
 
         //cursor 파싱
-        UUID cursorId = null;
+        LocalDateTime cursorDateTime = null;
 
         if (cursor != null && !cursor.isBlank()) {
             try {
-                cursorId = UUID.fromString(cursor);
-            } catch (IllegalArgumentException e) {
+                cursorDateTime = LocalDateTime.parse(cursor, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            } catch (DateTimeParseException e) {
                 throw InvalidCursorException.withCursor(cursor);
             }
         }
 
-        if (cursorId == null && idAfter != null) {
-            cursorId = idAfter;
-        }
+        UUID cursorId = idAfter;
 
         //정렬 정보 설정 (createdAt + id 보조 정렬)
         Sort sort = (safeSortDirection == SortDirection.ASCENDING)
@@ -82,6 +84,7 @@ public class BasicNotificationService implements NotificationService {
         Slice<Notification> slice =
                 notificationRepository.findByReceiverIdWithCursorPaging(
                         receiverId,
+                        cursorDateTime,
                         cursorId,
                         pageable
                 );
@@ -98,12 +101,14 @@ public class BasicNotificationService implements NotificationService {
 
         if (slice.hasNext() && !notifications.isEmpty()) {
             Notification last = notifications.get(notifications.size() - 1);
-            nextCursor = last.getId().toString();   // id를 커서로 사용
+            LocalDateTime lastCreatedAt = last.getCreatedAt();
+            nextCursor = lastCreatedAt.truncatedTo(ChronoUnit.SECONDS)
+                    .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
             nextIdAfter = last.getId();
         }
 
         Long totalCount = null;
-        if (cursorId == null) {
+        if (cursorDateTime == null && cursorId == null) {
             totalCount = notificationRepository.countByReceiver_Id(receiverId);
         }
 
