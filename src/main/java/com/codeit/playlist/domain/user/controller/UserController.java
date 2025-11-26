@@ -102,7 +102,7 @@ public class UserController {
   public ResponseEntity<Void> updatedUserLocked(@PathVariable UUID userId, @RequestBody
       UserLockUpdateRequest userLockUpdateRequest) {
     log.debug("[사용자 관리] 사용자 잠금 상태 변경 시작 : id = {}, locked(변경 후) = {} ", userId, userLockUpdateRequest.locked());
-    userService.updatedUserLocked(userId, userLockUpdateRequest);
+    userService.updateUserLocked(userId, userLockUpdateRequest);
     log.info("[사용자 관리] 사용자 잠금 상태 변경 완료 : id = {}, locked(변경 후) = {} ", userId, userLockUpdateRequest.locked());
     return ResponseEntity.ok().build();
   }

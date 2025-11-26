@@ -18,5 +18,5 @@ public interface UserService {
 
   void changePassword(UUID userId, ChangePasswordRequest request);
 
-  void updatedUserLocked(UUID userId, UserLockUpdateRequest request);
+  void updateUserLocked(UUID userId, UserLockUpdateRequest request);
 }

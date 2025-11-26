@@ -184,7 +184,7 @@ public class BasicUserService implements UserService {
   }
 
   @Override
-  public void updatedUserLocked(UUID userId, UserLockUpdateRequest request) {
+  public void updateUserLocked(UUID userId, UserLockUpdateRequest request) {
     log.debug("[사용자 관리] 잠금상태 변경 시작 : userId = {}", userId);
 
     User user = userRepository.findById(userId).orElseThrow(() -> UserNotFoundException.withId(userId));
@@ -193,7 +193,7 @@ public class BasicUserService implements UserService {
       throw new IllegalArgumentException("잠금 상태가 이전과 같습니다.");
     }
 
-    userRepository.updatedUserLocked(userId, request.locked());
+    userRepository.updateUserLocked(userId, request.locked());
 
     jwtRegistry.invalidateJwtInformationByUserId(userId);
 

@@ -434,7 +434,7 @@ public class BasicUserServiceTest {
     userService.updatedUserLocked(FIXED_ID, request);
 
     // then
-    verify(userRepository, times(1)).updatedUserLocked(FIXED_ID, true);
+    verify(userRepository, times(1)).updateUserLocked(FIXED_ID, true);
     verify(jwtRegistry, times(1)).invalidateJwtInformationByUserId(FIXED_ID);
   }
 
@@ -451,7 +451,7 @@ public class BasicUserServiceTest {
     assertThatThrownBy(() -> userService.updatedUserLocked(FIXED_ID, request))
         .isInstanceOf(IllegalArgumentException.class);
 
-    verify(userRepository, never()).updatedUserLocked(any(), anyBoolean());
+    verify(userRepository, never()).updateUserLocked(any(), anyBoolean());
     verify(jwtRegistry, never()).invalidateJwtInformationByUserId(any());
   }
 
@@ -466,7 +466,7 @@ public class BasicUserServiceTest {
     assertThatThrownBy(() -> userService.updatedUserLocked(FIXED_ID, request))
         .isInstanceOf(UserNotFoundException.class);
 
-    verify(userRepository, never()).updatedUserLocked(any(), anyBoolean());
+    verify(userRepository, never()).updateUserLocked(any(), anyBoolean());
     verify(jwtRegistry, never()).invalidateJwtInformationByUserId(any());
   }
 
