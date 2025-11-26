@@ -1,9 +1,9 @@
-package com.codeit.playlist.domain.conversation.exception;
+package com.codeit.playlist.global.error;
 
-public class InvalidSortDirectionException extends ConversationException{
+public class InvalidSortDirectionException extends BusinessException {
 
   public InvalidSortDirectionException() {
-    super(ConversationErrorCode.INVALID_SORT_DIRECTION);
+    super(BaseErrorCode.INVALID_SORT_DIRECTION);
   }
 
   public static InvalidSortDirectionException withSortDirection(String sortDirection) {
