@@ -6,6 +6,7 @@ import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -25,6 +26,10 @@ public class PlaylistUserDetailsService implements UserDetailsService {
     User user = userRepository.findByEmail(username)
         .orElseThrow(() -> new UsernameNotFoundException("유저를 찾을 수 없습니다."));
     UserDto userDto = userMapper.toDto(user);
+
+    if(user.isLocked()){
+      throw new LockedException("[인증 관리] : 계정이 잠금 상태입니다.");
+    }
 
     log.debug("[인증 관리] : 유저를 불러오는 데 성공했습니다."); // 모든 인증된 요청마다 호출되므로 과도한 로그 볼륨을 생성시킬 수 있음. 그래서 debug 로 레벨 격하
     return new PlaylistUserDetails(

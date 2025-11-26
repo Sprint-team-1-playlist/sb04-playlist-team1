@@ -1,11 +1,15 @@
 package com.codeit.playlist.user.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,6 +20,7 @@ import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
+import com.codeit.playlist.domain.user.dto.request.UserLockUpdateRequest;
 import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
@@ -418,6 +423,52 @@ public class BasicUserServiceTest {
     );
   }
 
+  @Test
+  @DisplayName("사용자 잠금상태 변경 성공  repository update + jwt invalidate 호출됨")
+  void updateUserLockedSuccess() {
+    // given
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+    UserLockUpdateRequest request = new UserLockUpdateRequest(true);
+
+    // when
+    userService.updatedUserLocked(FIXED_ID, request);
+
+    // then
+    verify(userRepository, times(1)).updatedUserLocked(FIXED_ID, true);
+    verify(jwtRegistry, times(1)).invalidateJwtInformationByUserId(FIXED_ID);
+  }
+
+  @Test
+  @DisplayName("사용자 잠금상태 변경 - 변경 상태가 기존과 동일하면 IllegalArgumentException 발생")
+  void updateUserLockedSameStateThrowsException() {
+    // given
+    user.setLocked(true);
+    // 현재 locked=true
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+    UserLockUpdateRequest request = new UserLockUpdateRequest(true);
+
+    // expect
+    assertThatThrownBy(() -> userService.updatedUserLocked(FIXED_ID, request))
+        .isInstanceOf(IllegalArgumentException.class);
+
+    verify(userRepository, never()).updatedUserLocked(any(), anyBoolean());
+    verify(jwtRegistry, never()).invalidateJwtInformationByUserId(any());
+  }
+
+  @Test
+  @DisplayName("사용자 잠금상태 변경 - 존재하지 않는 사용자 → UserNotFoundException 발생")
+  void updateUserLockedNotFoundThrowsException() {
+    // given
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.empty());
+    UserLockUpdateRequest request = new UserLockUpdateRequest(true);
+
+    // expect
+    assertThatThrownBy(() -> userService.updatedUserLocked(FIXED_ID, request))
+        .isInstanceOf(UserNotFoundException.class);
+
+    verify(userRepository, never()).updatedUserLocked(any(), anyBoolean());
+    verify(jwtRegistry, never()).invalidateJwtInformationByUserId(any());
+  }
 
   // 유틸: 테스트에서 ID 값을 강제로 세팅하는 메서드
   private void setId(Object target, UUID id) {

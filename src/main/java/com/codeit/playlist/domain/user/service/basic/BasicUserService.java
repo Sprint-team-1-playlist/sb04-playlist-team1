@@ -7,6 +7,7 @@ import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
+import com.codeit.playlist.domain.user.dto.request.UserLockUpdateRequest;
 import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
@@ -181,4 +182,23 @@ public class BasicUserService implements UserService {
 
     log.info("[사용자 관리] 패스워드 변경 완료 : userId = {}", userId);
   }
+
+  @Override
+  public void updatedUserLocked(UUID userId, UserLockUpdateRequest request) {
+    log.debug("[사용자 관리] 잠금상태 변경 시작 : userId = {}", userId);
+
+    User user = userRepository.findById(userId).orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    if(request.locked() == user.isLocked()) {
+      throw new IllegalArgumentException("잠금 상태가 이전과 같습니다.");
+    }
+
+    userRepository.updatedUserLocked(userId, request.locked());
+
+    jwtRegistry.invalidateJwtInformationByUserId(userId);
+
+    log.info("[사용자 관리] 잠금상태 변경 완료 : userId = {}", userId);
+
+  }
+
 }
