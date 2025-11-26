@@ -15,6 +15,7 @@ import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
+import com.codeit.playlist.domain.watching.exception.WatchingSessionMismatch;
 import com.codeit.playlist.domain.watching.exception.WatchingSessionUpdateException;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.domain.watching.service.WatchingSessionService;
@@ -63,6 +64,10 @@ public class BasicWatchingSessionService implements WatchingSessionService {
         if (raw == null) {
             log.error("[실시간 같이 보기] Redis 오류: contentId={}, userId={}", contentId, userId);
             throw new WatchingSessionUpdateException();
+        }
+        if (!contentId.equals(raw.contentId())) {
+            log.error("[실시간 같이 보기] 세션 정보 불일치");
+            throw WatchingSessionMismatch.withId(raw.watchingId());
         }
 
         broadcastEvent(raw, ChangeType.LEAVE);
