@@ -4,6 +4,8 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
 import com.codeit.playlist.domain.notification.entity.Notification;
+import com.codeit.playlist.domain.notification.exception.NotificationNotFoundException;
+import com.codeit.playlist.domain.notification.exception.NotificationReadDeniedException;
 import com.codeit.playlist.domain.notification.mapper.NotificationMapper;
 import com.codeit.playlist.domain.notification.repository.NotificationRepository;
 import com.codeit.playlist.domain.notification.service.NotificationService;
@@ -119,6 +121,34 @@ public class BasicNotificationService implements NotificationService {
                 receiverId, content.size(), slice.hasNext());
 
         return response;
+    }
+
+    //알림 읽음 처리(하드 딜리트)
+    @Transactional
+    @Override
+    public void markAsRead(UUID notificationId, UUID currentUserId) {
+
+        log.debug("[알림] 알림 읽음 처리 시작 : notificationId= {}, currentUserId= {}", notificationId, currentUserId);
+
+        //알림 조회
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> {
+                    log.error("알림이 존재하지 않습니다. : notificationId= {}", notificationId);
+                    return NotificationNotFoundException.withId(notificationId);
+                });
+
+        //권한 검증
+        if (!notification.getReceiver().getId().equals(currentUserId)) {
+            log.error("본인의 알림이 아닙니다. : notificationId= {}, currentUserId= {}", notificationId, currentUserId);
+            throw NotificationReadDeniedException.withId(notificationId);
+        }
+
+        log.info("[알림] 읽음(삭제) 진행: notificationId= {}, currentUserId= {}, title= {}, content= {}",
+                notificationId, currentUserId, notification.getTitle(), notification.getContent());
+
+        notificationRepository.delete(notification);
+
+        log.info("[알림] 알림 읽음 처리 성공 : notificationId= {}, currentUserId= {}", notificationId, currentUserId);
     }
 
 }
