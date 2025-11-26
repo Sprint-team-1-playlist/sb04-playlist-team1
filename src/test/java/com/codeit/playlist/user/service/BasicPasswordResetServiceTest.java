@@ -69,8 +69,6 @@ public class BasicPasswordResetServiceTest {
     when(userRepository.findByEmail("test@test.com"))
         .thenReturn(Optional.of(user));
 
-    when(passwordEncoder.encode(anyString()))
-        .thenReturn("ENCODED_VALUE");
 
     request = new ResetPasswordRequest("test@test.com");
 

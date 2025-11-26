@@ -99,8 +99,8 @@ public class UserController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{userId}/locked")
-  public ResponseEntity<Void> updatedUserLocked(@PathVariable UUID userId, @RequestBody
-      UserLockUpdateRequest userLockUpdateRequest) {
+  public ResponseEntity<Void> updatedUserLocked(@PathVariable UUID userId,
+      @Valid @RequestBody UserLockUpdateRequest userLockUpdateRequest) {
     log.debug("[사용자 관리] 사용자 잠금 상태 변경 시작 : id = {}, locked(변경 후) = {} ", userId, userLockUpdateRequest.locked());
     userService.updateUserLocked(userId, userLockUpdateRequest);
     log.info("[사용자 관리] 사용자 잠금 상태 변경 완료 : id = {}, locked(변경 후) = {} ", userId, userLockUpdateRequest.locked());

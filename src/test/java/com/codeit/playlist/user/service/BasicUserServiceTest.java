@@ -431,7 +431,7 @@ public class BasicUserServiceTest {
     UserLockUpdateRequest request = new UserLockUpdateRequest(true);
 
     // when
-    userService.updatedUserLocked(FIXED_ID, request);
+    userService.updateUserLocked(FIXED_ID, request);
 
     // then
     verify(userRepository, times(1)).updateUserLocked(FIXED_ID, true);
@@ -448,7 +448,7 @@ public class BasicUserServiceTest {
     UserLockUpdateRequest request = new UserLockUpdateRequest(true);
 
     // expect
-    assertThatThrownBy(() -> userService.updatedUserLocked(FIXED_ID, request))
+    assertThatThrownBy(() -> userService.updateUserLocked(FIXED_ID, request))
         .isInstanceOf(IllegalArgumentException.class);
 
     verify(userRepository, never()).updateUserLocked(any(), anyBoolean());
@@ -463,7 +463,7 @@ public class BasicUserServiceTest {
     UserLockUpdateRequest request = new UserLockUpdateRequest(true);
 
     // expect
-    assertThatThrownBy(() -> userService.updatedUserLocked(FIXED_ID, request))
+    assertThatThrownBy(() -> userService.updateUserLocked(FIXED_ID, request))
         .isInstanceOf(UserNotFoundException.class);
 
     verify(userRepository, never()).updateUserLocked(any(), anyBoolean());
