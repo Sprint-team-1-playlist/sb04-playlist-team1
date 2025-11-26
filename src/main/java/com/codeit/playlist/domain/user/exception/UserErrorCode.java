@@ -17,7 +17,6 @@ public enum UserErrorCode implements ErrorCode {
   REQUEST_INVALID_UUID_FORMAT(HttpStatus.BAD_REQUEST.value(), "유효하지 않은 UUID 형식입니다."),
   NEW_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST.value(), "새 비밀번호는 필수입니다."),
   PASSWORD_MUST_8_CHARACTERS(HttpStatus.BAD_REQUEST.value(), "비밀번호는 최소 8자리 이상이여야합니다.");
-
   private final int status;
   private final String message;
 

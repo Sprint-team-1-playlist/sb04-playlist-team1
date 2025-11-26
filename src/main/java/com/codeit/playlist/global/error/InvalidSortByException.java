@@ -1,9 +1,9 @@
-package com.codeit.playlist.domain.conversation.exception;
+package com.codeit.playlist.global.error;
 
-public class InvalidSortByException extends ConversationException{
+public class InvalidSortByException extends BusinessException {
 
   public InvalidSortByException() {
-    super(ConversationErrorCode.INVALID_SORT_BY);
+    super(BaseErrorCode.INVALID_SORT_BY);
   }
 
   public static InvalidSortByException withSortBy(String sortBy) {

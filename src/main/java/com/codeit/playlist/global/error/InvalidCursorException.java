@@ -1,9 +1,9 @@
-package com.codeit.playlist.domain.conversation.exception;
+package com.codeit.playlist.global.error;
 
-public class InvalidCursorException extends ConversationException{
+public class InvalidCursorException extends BusinessException {
 
   public InvalidCursorException() {
-    super(ConversationErrorCode.INVALID_CURSOR);
+    super(BaseErrorCode.INVALID_CURSOR);
   }
 
   public static InvalidCursorException withCursor(String cursor) {
