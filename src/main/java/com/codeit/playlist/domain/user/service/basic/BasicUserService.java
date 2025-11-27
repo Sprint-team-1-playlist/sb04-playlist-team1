@@ -2,12 +2,14 @@ package com.codeit.playlist.domain.user.service.basic;
 
 import com.codeit.playlist.domain.auth.exception.AuthAccessDeniedException;
 import com.codeit.playlist.domain.base.SortDirection;
+import com.codeit.playlist.domain.file.S3Uploader;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.dto.request.UserLockUpdateRequest;
+import com.codeit.playlist.domain.user.dto.request.UserUpdateRequest;
 import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
@@ -15,11 +17,13 @@ import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.exception.NewPasswordRequired;
 import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
 import com.codeit.playlist.domain.user.exception.UserLockStateUnchangedException;
+import com.codeit.playlist.domain.user.exception.UserNameRequiredException;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.repository.UserRepositoryCustom;
 import com.codeit.playlist.domain.user.service.UserService;
+import com.codeit.playlist.global.config.S3Properties;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
 import java.util.List;
 import java.util.UUID;
@@ -31,6 +35,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +49,8 @@ public class BasicUserService implements UserService {
   private final UserMapper userMapper;
   private final JwtRegistry jwtRegistry;
   private final TemporaryPasswordStore temporaryPasswordStore;
+  private final S3Uploader s3Uploader;
+  private final S3Properties s3Properties;
 
   @Value("${ADMIN_EMAIL}")
   private String adminEmail;
@@ -203,4 +210,26 @@ public class BasicUserService implements UserService {
 
   }
 
+  @Override
+  public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile image) {
+    log.debug("[프로필 관리] 프로필 변경 시작 : userId = {}", userId);
+
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    if (request.name() == null || request.name().isBlank()) {
+      throw UserNameRequiredException.withUserName(request.name());
+    }
+    user.changeUsername(request.name());
+
+    if (image != null && !image.isEmpty()) {
+      String key = "profiles/" + userId + "_" + image.getOriginalFilename();
+      String imageUrl = s3Uploader.upload(s3Properties.getProfileBucket(), key, image);
+      user.changeProfileImageUrl(imageUrl);
+    }
+
+    UserDto userDto = userMapper.toDto(user);
+    log.info("[프로필 관리] 프로필 변경 완료 : userId = {}", userId);
+    return userDto;
+  }
 }
