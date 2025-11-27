@@ -16,7 +16,7 @@ import java.time.LocalDate;
 public class TheSportsScheduler {
     private final TheSportsApiService theSportsApiService;
 
-    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "/30 * * * * *", zone = "Asia/Seoul")
     public void startTheSportsScheduler() {
         log.info("The Sports 스케쥴러 시작, API 데이터 수집");
         LocalDate localDate = LocalDate.now().minusDays(1);

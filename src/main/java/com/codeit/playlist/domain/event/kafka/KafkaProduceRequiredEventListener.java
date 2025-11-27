@@ -34,7 +34,12 @@ public class KafkaProduceRequiredEventListener {
   private <T> void sendToKafka(String topic, T event) {
     try {
       String payload = objectMapper.writeValueAsString(event);
-      kafkaTemplate.send(topic, payload);
+      kafkaTemplate.send(topic, payload)
+          .whenComplete((result, ex) -> {
+            if (ex != null) {
+          log.error("[Kafka] 메시지 전송 실패: topic={}", topic, ex);
+        }
+          });
     } catch (JsonProcessingException e) {
       log.error("[Kafka] DTO 직렬화 실패", e);
       throw new RuntimeException(e);
