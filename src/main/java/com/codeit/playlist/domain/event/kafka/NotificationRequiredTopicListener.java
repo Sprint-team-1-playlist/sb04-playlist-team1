@@ -1,6 +1,7 @@
 package com.codeit.playlist.domain.event.kafka;
 
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.codeit.playlist.domain.sse.entity.SseMessage;
 import com.codeit.playlist.domain.sse.service.SseService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -42,7 +43,32 @@ public class NotificationRequiredTopicListener {
           event.conversationId());
 
     } catch (JsonProcessingException e) {
-      log.error("[Notification] Kafka 메시지에서 DirectMessageSentEvent 변환 실패", e);
+      log.error("[Notification] Kafka 메시지에서 DirectMessageDto 변환 실패", e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  @KafkaListener(topics = "playlist.NotificationDto")
+  public void onNotificationEvent(String kafkaEvent) {
+    try {
+      NotificationDto event = objectMapper.readValue(kafkaEvent, NotificationDto.class);
+
+      UUID receiverId = event.receiverId();
+
+      // notification 저장 로직
+
+      SseMessage sseMessage = SseMessage.create(
+          Set.of(receiverId),
+          "notifications",
+          event
+      );
+
+      sseService.send(sseMessage.getReceiverIds(), sseMessage.getEventName(), sseMessage.getEventData());
+
+      log.info("[Notification] 알림 SSE 전송 완료: receiverId={}", receiverId);
+
+    } catch (JsonProcessingException e) {
+      log.error("[Notification] Kafka 메시지에서 NotificationDto 변환 실패", e);
       throw new RuntimeException(e);
     }
   }
