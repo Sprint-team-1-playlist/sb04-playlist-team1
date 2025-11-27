@@ -1,6 +1,5 @@
 package com.codeit.playlist.playlist.repository;
 
-import com.codeit.playlist.global.config.QuerydslConfig;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
@@ -12,6 +11,8 @@ import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.codeit.playlist.global.config.JpaConfig;
+import com.codeit.playlist.global.config.QuerydslConfig;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,6 @@ import org.springframework.data.domain.Slice;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,7 +33,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(QuerydslConfig.class)
+@Import({QuerydslConfig.class, JpaConfig.class})
 public class PlaylistRepositoryTest {
 
     @Autowired
@@ -164,7 +164,7 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("test@email.com");
         entityManager.persist(owner);
 
-        Playlist playlist = new Playlist(owner, "제목", "설명", 0L, new java.util.ArrayList<>());
+        Playlist playlist = new Playlist(owner, "제목", "설명");
         entityManager.persist(playlist);
         entityManager.flush();
         entityManager.clear();
@@ -188,7 +188,7 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("testmail@test.com");
         entityManager.persist(owner);
 
-        Playlist playlist = new Playlist(owner, "제목", "설명", 0L, new java.util.ArrayList<>());
+        Playlist playlist = new Playlist(owner, "제목", "설명");
         playlist.setDeletedAt(LocalDateTime.now());
         entityManager.persist(playlist);
         entityManager.flush();
@@ -212,13 +212,13 @@ public class PlaylistRepositoryTest {
 
         LocalDateTime now = LocalDateTime.now();
 
-        Playlist oldDeleted = new Playlist(owner, "old", "old desc", 0L, new java.util.ArrayList<>());
+        Playlist oldDeleted = new Playlist(owner, "old", "old desc");
         oldDeleted.setDeletedAt(now.minusDays(8)); // 7일보다 더 이전
 
-        Playlist recentDeleted = new Playlist(owner, "recent", "desc", 0L, new java.util.ArrayList<>());
+        Playlist recentDeleted = new Playlist(owner, "recent", "desc");
         recentDeleted.setDeletedAt(now.minusDays(3)); // 7일 이전이 아님
 
-        Playlist notDeleted = new Playlist(owner, "notDeleted", "desc", 0L, new java.util.ArrayList<>());
+        Playlist notDeleted = new Playlist(owner, "notDeleted", "desc");
 
         entityManager.persist(oldDeleted);
         entityManager.persist(recentDeleted);
@@ -244,7 +244,7 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("test@mail.com");
         entityManager.persist(owner);
 
-        Playlist playlist = new Playlist(owner, "normal", "desc", 0L, new java.util.ArrayList<>());
+        Playlist playlist = new Playlist(owner, "normal", "desc");
         entityManager.persist(playlist);
 
         entityManager.flush();
@@ -266,7 +266,7 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("email@test.com");
         entityManager.persist(owner);
 
-        Playlist playlist = new Playlist(owner, "recent", "desc", 0L, new java.util.ArrayList<>());
+        Playlist playlist = new Playlist(owner, "recent", "desc");
         entityManager.persist(playlist);
 
         // deletedAt 강제 세팅 (ReflectionTestUtils 사용)
@@ -292,7 +292,7 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("test@mail.com");
         userRepository.save(owner);
 
-        Playlist playlist = new Playlist(owner, "테스트 플리", "테스트용 설명", 0L, new java.util.ArrayList<>());
+        Playlist playlist = new Playlist(owner, "테스트 플리", "테스트용 설명");
         playlistRepository.save(playlist);
 
         Content content1 = createTestContent("콘텐츠1");
@@ -345,7 +345,7 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("test@mail.com");
         userRepository.save(owner);
 
-        Playlist playlist = new Playlist(owner, "플리", "설명", 0L, new ArrayList<>());
+        Playlist playlist = new Playlist(owner, "플리", "설명");
         playlistRepository.save(playlist);
 
         // 실제로 저장되지 않은 랜덤 ID
@@ -365,7 +365,7 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("delete@test.com");
         userRepository.save(owner);
 
-        Playlist playlist = new Playlist(owner, "삭제될 플리", "설명", 0L, new ArrayList<>());
+        Playlist playlist = new Playlist(owner, "삭제될 플리", "설명");
         playlistRepository.save(playlist);
 
         // 논리 삭제
@@ -464,7 +464,7 @@ public class PlaylistRepositoryTest {
     }
 
     private Playlist createPlaylist(User owner, String title) {
-        Playlist playlist = new Playlist(owner, title, "설명입니다", 0L, null);
+        Playlist playlist = new Playlist(owner, title, "설명입니다");
         return playlist;
     }
 
