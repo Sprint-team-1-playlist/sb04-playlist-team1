@@ -33,25 +33,23 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 public class BasicPasswordResetServiceTest {
 
-  @Mock
-  private UserRepository userRepository;
+   @Mock
+   private UserRepository userRepository;
 
-  @Mock
-  private EmailService emailService;
+   @Mock
+   private EmailService emailService;
 
-  @Mock
-  private TemporaryPasswordStore tempStore;
+   @Mock
+   private TemporaryPasswordStore tempStore;
 
-  @Mock
-  private PasswordEncoder passwordEncoder;
+   @Mock
+   private PasswordEncoder passwordEncoder;
 
-  @InjectMocks
-  private BasicPasswordResetService service;
+   @Mock
+   private ApplicationEventPublisher publisher;
 
-  @Mock
-  ApplicationEventPublisher publisher; // 추가
-
-  @InjectMocks BasicPasswordResetService basicPasswordResetService;
+   @InjectMocks
+   private BasicPasswordResetService service;
 
   private User user;
   private UUID FIXED_ID;

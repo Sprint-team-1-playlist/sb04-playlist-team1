@@ -1,6 +1,5 @@
 package com.codeit.playlist.domain.user.service.basic;
 
-import com.codeit.playlist.domain.auth.service.EmailService;
 import com.codeit.playlist.domain.user.dto.data.TempPasswordIssuedEvent;
 import com.codeit.playlist.domain.user.dto.request.ResetPasswordRequest;
 import com.codeit.playlist.domain.user.entity.User;
@@ -22,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class BasicPasswordResetService implements PasswordResetService {
 
   private final UserRepository userRepository;
-  private final EmailService emailService;
   private final TemporaryPasswordStore tempStore;
   private final PasswordEncoder passwordEncoder;
   private final ApplicationEventPublisher applicationEventPublisher;
