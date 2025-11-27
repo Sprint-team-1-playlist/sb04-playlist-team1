@@ -3,13 +3,16 @@ package com.codeit.playlist.notification.service;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
+import com.codeit.playlist.domain.notification.entity.Level;
 import com.codeit.playlist.domain.notification.entity.Notification;
 import com.codeit.playlist.domain.notification.exception.NotificationNotFoundException;
 import com.codeit.playlist.domain.notification.exception.NotificationReadDeniedException;
 import com.codeit.playlist.domain.notification.mapper.NotificationMapper;
 import com.codeit.playlist.domain.notification.repository.NotificationRepository;
 import com.codeit.playlist.domain.notification.service.basic.BasicNotificationService;
+import com.codeit.playlist.domain.sse.service.SseService;
 import com.codeit.playlist.domain.user.entity.User;
+import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.global.error.InvalidCursorException;
 import com.codeit.playlist.global.error.InvalidSortByException;
@@ -54,8 +57,124 @@ public class BasicNotificationServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private SseService sseService;
+
     @InjectMocks
     private BasicNotificationService notificationService;
+
+    @Test
+    @DisplayName("알림 생성 성공 - 유저 조회, 알림 저장, DTO 변환, SSE 전송까지 정상 수행")
+    void createNotificationSuccess() {
+        //given
+        UUID receiverId = UUID.randomUUID();
+        String title = "새 구독";
+        String content = "누가 내 플레이리스트를 구독했습니다.";
+        Level level = Level.INFO;
+
+        User receiver = Mockito.mock(User.class);
+        Notification notification = Mockito.mock(Notification.class);
+        Notification savedNotification = Mockito.mock(Notification.class);
+
+        NotificationDto dto = new NotificationDto(UUID.randomUUID(), LocalDateTime.now(), receiverId,
+                                                    title, content, level);
+
+        given(userRepository.findById(receiverId)).willReturn(Optional.of(receiver));
+        given(notificationRepository.save(any(Notification.class))).willReturn(savedNotification);
+        given(notificationMapper.toDto(savedNotification)).willReturn(dto);
+
+        //when
+        NotificationDto result = notificationService.createNotification(receiverId, title, content, level);
+
+        //then
+        assertThat(result).isEqualTo(dto);
+
+        then(userRepository).should().findById(receiverId);
+        then(notificationRepository).should().save(any(Notification.class));
+        then(notificationMapper).should().toDto(savedNotification);
+        then(sseService).should().send(eq(List.of(receiverId)), eq("알림"), eq(dto));
+    }
+
+    @Test
+    @DisplayName("알림 생성 실패 - 수신자 조회 실패 시 UserNotFoundException 발생")
+    void createNotificationFailWithUserNotFound() {
+        // given
+        UUID receiverId = UUID.randomUUID();
+        String title = "새 구독";
+        String content = "내용";
+        Level level = Level.INFO;
+
+        given(userRepository.findById(receiverId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() ->
+                notificationService.createNotification(receiverId, title, content, level)
+        )
+                .isInstanceOf(UserNotFoundException.class);
+
+        then(userRepository).should().findById(receiverId);
+        then(notificationRepository).shouldHaveNoInteractions();
+        then(notificationMapper).shouldHaveNoInteractions();
+        then(sseService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("알림 생성 실패 - 알림 저장 중 예외 발생 시 그대로 전파")
+    void createNotificationFailWithSaveError() {
+        // given
+        UUID receiverId = UUID.randomUUID();
+        String title = "새 구독";
+        String content = "내용";
+        Level level = Level.INFO;
+
+        User receiver = Mockito.mock(User.class);
+
+        given(userRepository.findById(receiverId)).willReturn(Optional.of(receiver));
+        given(notificationRepository.save(any(Notification.class)))
+                .willThrow(new RuntimeException("DB error"));
+
+        // when & then
+        assertThatThrownBy(() ->
+                notificationService.createNotification(receiverId, title, content, level)
+        )
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("DB error");
+
+        then(userRepository).should().findById(receiverId);
+        then(notificationRepository).should().save(any(Notification.class));
+        then(notificationMapper).shouldHaveNoInteractions();
+        then(sseService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("알림 생성 실패 - DTO 변환 중 예외 발생 시 그대로 전파되고 SSE는 호출되지 않음")
+    void createNotificationFailWithMappingError() {
+        // given
+        UUID receiverId = UUID.randomUUID();
+        String title = "새 구독";
+        String content = "내용";
+        Level level = Level.INFO;
+
+        User receiver = Mockito.mock(User.class);
+        Notification saved = Mockito.mock(Notification.class);
+
+        given(userRepository.findById(receiverId)).willReturn(Optional.of(receiver));
+        given(notificationRepository.save(any(Notification.class))).willReturn(saved);
+        given(notificationMapper.toDto(saved))
+                .willThrow(new RuntimeException("Mapping error"));
+
+        // when & then
+        assertThatThrownBy(() ->
+                notificationService.createNotification(receiverId, title, content, level)
+        )
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Mapping error");
+
+        then(userRepository).should().findById(receiverId);
+        then(notificationRepository).should().save(any(Notification.class));
+        then(notificationMapper).should().toDto(saved);
+        then(sseService).shouldHaveNoInteractions();
+    }
 
     @Test
     @DisplayName("알림 목록 조회 성공 - 커서 페이지네이션과 totalCount, nextCursor, nextIdAfter 정상 반환")
