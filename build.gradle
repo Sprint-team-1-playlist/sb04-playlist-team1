@@ -79,6 +79,9 @@ dependencies {
     implementation 'software.amazon.awssdk:s3:2.25.64'
     // test용 h2
     testImplementation 'com.h2database:h2'
+
+    // Kafka
+    implementation 'org.springframework.kafka:spring-kafka'
 }
 
 tasks.named('test') {
