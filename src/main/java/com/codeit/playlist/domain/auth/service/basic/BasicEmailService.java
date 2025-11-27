@@ -2,12 +2,14 @@ package com.codeit.playlist.domain.auth.service.basic;
 
 import com.codeit.playlist.domain.auth.service.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BasicEmailService implements EmailService {
 
   private final JavaMailSender mailSender;

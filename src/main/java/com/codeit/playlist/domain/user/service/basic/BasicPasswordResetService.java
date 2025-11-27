@@ -1,6 +1,7 @@
 package com.codeit.playlist.domain.user.service.basic;
 
 import com.codeit.playlist.domain.auth.service.EmailService;
+import com.codeit.playlist.domain.user.dto.data.TempPasswordIssuedEvent;
 import com.codeit.playlist.domain.user.dto.request.ResetPasswordRequest;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
@@ -10,8 +11,10 @@ import com.codeit.playlist.global.redis.TemporaryPasswordStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +25,7 @@ public class BasicPasswordResetService implements PasswordResetService {
   private final EmailService emailService;
   private final TemporaryPasswordStore tempStore;
   private final PasswordEncoder passwordEncoder;
+  private final ApplicationEventPublisher applicationEventPublisher;
   private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
   private static final int PASSWORD_LENGTH = 12;
   private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
@@ -32,6 +36,7 @@ public class BasicPasswordResetService implements PasswordResetService {
   private String activeProfile;
 
   @Override
+  @Transactional
   public void sendTemporaryPassword(ResetPasswordRequest request) {
     log.debug("[사용자 관리] : 임시 비밀번호 발급");
 
@@ -50,8 +55,7 @@ public class BasicPasswordResetService implements PasswordResetService {
 
     userRepository.changePassword(user.getId(), hashedPassword);
 
-    //평문 임시 비밀번호를 이메일로 전송
-    emailService.sendTemporaryPassword(request.email(), tempPassword);
+    applicationEventPublisher.publishEvent(new TempPasswordIssuedEvent(request.email(), tempPassword));
 
     log.info("[사용자 관리] : 임시 비밀번호 발급 완료");
   }
