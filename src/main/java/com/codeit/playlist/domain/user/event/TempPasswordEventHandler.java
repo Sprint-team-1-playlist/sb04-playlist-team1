@@ -30,11 +30,6 @@ public class TempPasswordEventHandler {
       phase = TransactionPhase.AFTER_COMMIT
   )
   public void handle(TempPasswordIssuedEvent event) {
-    try {
-      emailService.sendTemporaryPassword(event.email(), event.tempPassword());
-    } catch (Exception e) {
-      log.error("[메일] : 임시 비밀번호 전송 실패", e);
-    }
     emailService.sendTemporaryPassword(event.email(), event.tempPassword());
   }
 }
