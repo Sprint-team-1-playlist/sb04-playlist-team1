@@ -1,6 +1,9 @@
 package com.codeit.playlist.domain.watching.repository;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
+import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
+import com.codeit.playlist.domain.watching.dto.request.WatchingSessionRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -52,10 +55,10 @@ public class RedisWatchingSessionRepository {
             removeWatchingSession(userId);
         }
 
-        long now = System.currentTimeMillis();
         redisTemplate.opsForValue()
                 .set(userKey(userId), watchingId.toString());
 
+        long now = System.currentTimeMillis();
         redisTemplate.opsForZSet()
                 .add(contentKey(contentId), watchingId.toString(), now);
 
@@ -97,8 +100,8 @@ public class RedisWatchingSessionRepository {
         return new RawWatchingSession(watchingId, contentId, uid, createdAtEpoch);
     }
 
-    // 콘텐츠별 사용자 목록 조회
-    public List<RawWatchingSession> getWatchingSessionsByContentId(UUID contentId) {
+    // 콘텐츠별 사용자 목록 전체 조회
+    public List<RawWatchingSession> getAllWatchingSessionsByContentId(UUID contentId) {
         Set<String> watchingIds = redisTemplate.opsForZSet()
                 .range(contentKey(contentId), 0, -1);
         if (watchingIds == null) {
@@ -122,10 +125,69 @@ public class RedisWatchingSessionRepository {
         return result;
     }
 
+    // 콘텐츠별 사용자 목록 조회(커서페이지네이션)
+    public RawWatchingSessionPage getWatchingSessions(UUID contentId, WatchingSessionRequest request) {
+        Set<String> watchingIds;
+        if (request.cursor() == null) {
+            watchingIds = getFirstPage(contentId, request);
+        } else {
+            watchingIds = getNextPage(contentId, request);
+        }
+
+        List<RawWatchingSession> raws = getPageDetails(contentId, watchingIds);
+
+        boolean hasNext = (raws.size() == request.limit());
+
+        return new RawWatchingSessionPage(
+                raws,
+                hasNext
+        );
+    }
+
     // 콘텐츠별 사용자 수 조회
     public long countWatchingSessionByContentId(UUID contentId) {
         Long count = redisTemplate.opsForZSet()
                 .size(contentKey(contentId));
         return count != null ? count : 0L;
+    }
+
+    private Set<String> getFirstPage(UUID contentId, WatchingSessionRequest request) {
+        if (request.sortDirection().equals(SortDirection.ASCENDING)) {
+            return redisTemplate.opsForZSet()
+                    .range(contentKey(contentId), 0, request.limit() - 1);
+        }
+
+        return redisTemplate.opsForZSet()
+                .reverseRange(contentKey(contentId), 0, request.limit() - 1);
+    }
+
+    private Set<String> getNextPage(UUID contentId, WatchingSessionRequest request) {
+        long cursor = Long.parseLong(request.cursor());
+
+        if (request.sortDirection().equals(SortDirection.ASCENDING)) {
+            return redisTemplate.opsForZSet()
+                    .rangeByScore(contentKey(contentId), cursor + 1, Long.MAX_VALUE, 0, request.limit());
+        }
+
+        return redisTemplate.opsForZSet()
+                .reverseRangeByScore(contentKey(contentId), cursor + 1, Long.MAX_VALUE, 0, request.limit());
+    }
+
+    private List<RawWatchingSession> getPageDetails(UUID contentId, Set<String> watchingIds) {
+        List<RawWatchingSession> raws = new ArrayList<>();
+        for (String id : watchingIds) {
+            UUID watchingId = UUID.fromString(id);
+
+            Map<Object, Object> map = redisTemplate.opsForHash()
+                    .entries(watchingKey(watchingId));
+            if (map.isEmpty()) continue;
+
+            UUID userId = UUID.fromString(map.get("userId").toString());
+            long createdAtEpoch = Long.parseLong(map.get("createdAt").toString());
+
+            raws.add(new RawWatchingSession(watchingId, contentId, userId, createdAtEpoch));
+        }
+
+        return raws;
     }
 }
