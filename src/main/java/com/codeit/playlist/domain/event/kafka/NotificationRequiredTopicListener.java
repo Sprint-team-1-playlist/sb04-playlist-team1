@@ -44,7 +44,6 @@ public class NotificationRequiredTopicListener {
 
     } catch (JsonProcessingException e) {
       log.error("[Notification] Kafka 메시지에서 DirectMessageDto 변환 실패", e);
-      throw new RuntimeException(e);
     }
   }
 
@@ -69,7 +68,6 @@ public class NotificationRequiredTopicListener {
 
     } catch (JsonProcessingException e) {
       log.error("[Notification] Kafka 메시지에서 NotificationDto 변환 실패", e);
-      throw new RuntimeException(e);
     }
   }
 }

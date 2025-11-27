@@ -1,6 +1,6 @@
 package com.codeit.playlist.domain.event.kafka;
 
-import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.event.message.DirectMessageSentEvent;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,8 +21,8 @@ public class KafkaProduceRequiredEventListener {
 
   @Async("eventTaskExecutor")
   @TransactionalEventListener
-  public void onDirectMessageEvent(DirectMessageDto dm) {
-    sendToKafka("playlist.DirectMessageDto", dm);
+  public void onDirectMessageEvent(DirectMessageSentEvent event) {
+    sendToKafka("playlist.DirectMessageDto", event.message());
   }
 
   @Async("eventTaskExecutor")
