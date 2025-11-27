@@ -1,6 +1,7 @@
 package com.codeit.playlist.domain.event.kafka;
 
-import com.codeit.playlist.domain.event.message.DirectMessageSentEvent;
+import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -18,18 +19,24 @@ public class KafkaProduceRequiredEventListener {
   private final KafkaTemplate<String, String> kafkaTemplate;
   private final ObjectMapper objectMapper;
 
-  @Async("eventTaskExcutor")
+  @Async("eventTaskExecutor")
   @TransactionalEventListener
-  public void on(DirectMessageSentEvent event) {
-    sendToKafka(event);
+  public void onDirectMessageEvent(DirectMessageDto dm) {
+    sendToKafka("playlist.DirectMessageDto", dm);
   }
 
-  private <T> void sendToKafka(T event) {
+  @Async("eventTaskExecutor")
+  @TransactionalEventListener
+  public void onNotificationEvent(NotificationDto notification) {
+    sendToKafka("playlist.NotificationDto", notification);
+  }
+
+  private <T> void sendToKafka(String topic, T event) {
     try {
       String payload = objectMapper.writeValueAsString(event);
-      kafkaTemplate.send("discodeit.".concat(event.getClass().getSimpleName()), payload);
+      kafkaTemplate.send(topic, payload);
     } catch (JsonProcessingException e) {
-      log.error("Failed to send event to Kafka", e);
+      log.error("[Kafka] DTO 직렬화 실패", e);
       throw new RuntimeException(e);
     }
   }

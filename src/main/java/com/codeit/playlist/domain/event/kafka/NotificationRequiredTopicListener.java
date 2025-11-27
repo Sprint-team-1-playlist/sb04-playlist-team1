@@ -1,9 +1,11 @@
 package com.codeit.playlist.domain.event.kafka;
 
-import com.codeit.playlist.domain.event.message.DirectMessageSentEvent;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.sse.entity.SseMessage;
+import com.codeit.playlist.domain.sse.service.SseService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,22 +18,31 @@ import org.springframework.stereotype.Component;
 public class NotificationRequiredTopicListener {
 
   private final ObjectMapper objectMapper;
+  private final SseService sseService;
 
-  @KafkaListener(topics = "playlist.DirectMessageSentEvent")
-  public void onDirectMessageSentEvent(String kafkaEvent) {
+  @KafkaListener(topics = "playlist.DirectMessageDto")
+  public void onDirectMessageEvent(String kafkaEvent) {
     try {
-      DirectMessageSentEvent event = objectMapper.readValue(kafkaEvent, DirectMessageSentEvent.class);
-      DirectMessageDto directMessageDto = event.message();
+      DirectMessageDto event = objectMapper.readValue(kafkaEvent, DirectMessageDto.class);
 
-      UUID receiverId = directMessageDto.receiver().userId();
-      String title = directMessageDto.sender().name();
-      String content = directMessageDto.content();
-
-      String eventName = "direct-messages";
+      UUID receiverId = event.receiver().userId();
 
       // notification 저장 로직
 
+      SseMessage sseMessage = SseMessage.create(
+          Set.of(receiverId),
+          "direct-messages",
+          event
+      );
+
+      sseService.send(sseMessage.getReceiverIds(), sseMessage.getEventName(), sseMessage.getEventData());
+
+      log.info("[Notification] DM SSE 전송 완료: receiverId={}, conversationId={}",
+          receiverId,
+          event.conversationId());
+
     } catch (JsonProcessingException e) {
+      log.error("[Notification] Kafka 메시지에서 DirectMessageSentEvent 변환 실패", e);
       throw new RuntimeException(e);
     }
   }
