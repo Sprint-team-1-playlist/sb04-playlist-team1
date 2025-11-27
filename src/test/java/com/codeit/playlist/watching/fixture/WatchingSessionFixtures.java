@@ -1,14 +1,14 @@
 package com.codeit.playlist.watching.fixture;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
-import com.codeit.playlist.domain.watching.dto.data.ChangeType;
-import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
-import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
+import com.codeit.playlist.domain.watching.dto.data.*;
+import com.codeit.playlist.domain.watching.dto.request.WatchingSessionRequest;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 
 import java.time.LocalDateTime;
@@ -87,6 +87,24 @@ public class WatchingSessionFixtures {
                 FIXED_ID,
                 FIXED_ID,
                 FIXED_LONG_TIME
+        );
+    }
+
+    public static WatchingSessionRequest watchingSessionRequest() {
+        return new WatchingSessionRequest(
+                userDto().name(),
+                "cursor",
+                FIXED_ID,
+                10,
+                SortDirection.ASCENDING,
+                SortBy.createdAt
+        );
+    }
+
+    public static RawWatchingSessionPage rawWatchingSessionPage() {
+        return new RawWatchingSessionPage(
+                List.of(rawWatchingSession()),
+                true
         );
     }
 }

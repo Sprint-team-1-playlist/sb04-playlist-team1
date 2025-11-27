@@ -1,12 +1,12 @@
 package com.codeit.playlist.watching.repository;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
+import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
+import com.codeit.playlist.domain.watching.dto.data.SortBy;
+import com.codeit.playlist.domain.watching.dto.request.WatchingSessionRequest;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.redis.DataRedisTest;
 import org.springframework.context.annotation.Import;
@@ -86,11 +86,11 @@ class RedisWatchingSessionRepositoryTest {
     }
 
     @Test
-    @DisplayName("getWatchingSessionsByContentId 정상 조회")
-    void testGetWatchingSessionsByContentId() {
+    @DisplayName("getAllWatchingSessionsByContentId 정상 조회")
+    void testGetAllWatchingSessionsByContentId() {
         repository.addWatchingSession(watchingId, contentId, userId);
 
-        List<RawWatchingSession> result = repository.getWatchingSessionsByContentId(contentId);
+        List<RawWatchingSession> result = repository.getAllWatchingSessionsByContentId(contentId);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).userId()).isEqualTo(userId);
@@ -104,5 +104,115 @@ class RedisWatchingSessionRepositoryTest {
         long count = repository.countWatchingSessionByContentId(contentId);
 
         assertThat(count).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("getWatchingSessions: 첫 페이지 ASC 정상 조회")
+    void testGetWatchingSessionsFirstPageASC() {
+        // given
+        UUID u1 = UUID.randomUUID();
+        UUID u2 = UUID.randomUUID();
+        UUID w1 = UUID.randomUUID();
+        UUID w2 = UUID.randomUUID();
+
+        RawWatchingSession s1 = repository.addWatchingSession(w1, contentId, u1);
+        RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
+
+        WatchingSessionRequest request = new WatchingSessionRequest(
+                "test",
+                null,
+                null,
+                10,
+                SortDirection.ASCENDING,
+                SortBy.createdAt
+        );
+
+        // when
+        RawWatchingSessionPage page = repository.getWatchingSessions(contentId, request);
+
+        // then
+        assertThat(page.raws()).hasSize(2);
+        assertThat(page.raws().get(0).createdAtEpoch())
+                .isLessThan(page.raws().get(1).createdAtEpoch());
+        assertThat(page.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("getWatchingSessions: 첫 페이지 DESC 정상 조회")
+    void testGetWatchingSessionsFirstPageDESC() {
+        // given
+        UUID u1 = UUID.randomUUID();
+        UUID u2 = UUID.randomUUID();
+        UUID w1 = UUID.randomUUID();
+        UUID w2 = UUID.randomUUID();
+
+        RawWatchingSession s1 = repository.addWatchingSession(w1, contentId, u1);
+        RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
+
+        WatchingSessionRequest request = new WatchingSessionRequest(
+                "test",
+                null,
+                null,
+                10,
+                SortDirection.DESCENDING,
+                SortBy.createdAt
+        );
+
+        // when
+        RawWatchingSessionPage page = repository.getWatchingSessions(contentId, request);
+
+        // then
+        assertThat(page.raws()).hasSize(2);
+        assertThat(page.raws().get(0).createdAtEpoch())
+                .isGreaterThan(page.raws().get(1).createdAtEpoch());
+        assertThat(page.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("getWatchingSessions - 다음 페이지 ASC 조회")
+    void testGetWatchingSessionsNextPageASC() {
+        // given
+        UUID u1 = UUID.randomUUID();
+        UUID u2 = UUID.randomUUID();
+        UUID u3 = UUID.randomUUID();
+
+        UUID w1 = UUID.randomUUID();
+        UUID w2 = UUID.randomUUID();
+        UUID w3 = UUID.randomUUID();
+
+        RawWatchingSession s1 = repository.addWatchingSession(w1, contentId, u1);
+        RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
+        RawWatchingSession s3 = repository.addWatchingSession(w3, contentId, u3);
+
+        // 첫 페이지 limit=1
+        WatchingSessionRequest firstPageReq = new WatchingSessionRequest(
+                "test",
+                null,
+                null,
+                1,
+                SortDirection.ASCENDING,
+                SortBy.createdAt
+        );
+
+        RawWatchingSessionPage firstPage = repository.getWatchingSessions(contentId, firstPageReq);
+
+        assertThat(firstPage.raws()).hasSize(1);
+        long cursor = firstPage.raws().get(0).createdAtEpoch();
+
+        // when - 두 번째 페이지
+        WatchingSessionRequest nextPageReq = new WatchingSessionRequest(
+                "test",
+                String.valueOf(cursor),
+                null,
+                2,
+                SortDirection.ASCENDING,
+                SortBy.createdAt
+        );
+
+        RawWatchingSessionPage nextPage = repository.getWatchingSessions(contentId, nextPageReq);
+
+        // then
+        assertThat(nextPage.raws()).hasSize(2);
+        assertThat(nextPage.hasNext()).isTrue();
     }
 }
