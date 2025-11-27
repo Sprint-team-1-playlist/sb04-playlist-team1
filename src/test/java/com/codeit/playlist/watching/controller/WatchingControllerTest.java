@@ -140,7 +140,7 @@ class WatchingControllerTest {
 
         assertThat(violations).anyMatch(v ->
                 v.getPropertyPath().toString().equals("sortBy")
-                        && v.getMessage().equals("졍렬 기준 필수")
+                        && v.getMessage().equals("정렬 기준 필수")
         );
     }
 

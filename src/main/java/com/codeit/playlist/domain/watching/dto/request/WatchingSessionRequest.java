@@ -22,7 +22,7 @@ public record WatchingSessionRequest(
         @NotNull(message = "정렬 방향 필수")
         SortDirection sortDirection,
 
-        @NotNull(message = "졍렬 기준 필수")
+        @NotNull(message = "정렬 기준 필수")
         SortBy sortBy
 ) {
 }
