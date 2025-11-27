@@ -5,6 +5,7 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
+import com.codeit.playlist.domain.user.dto.request.UserLockUpdateRequest;
 import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
 import com.codeit.playlist.domain.user.service.UserService;
@@ -93,6 +94,16 @@ public class UserController {
     log.debug("[사용자 관리] 사용자 권한 변경 시작 : id = {}, newRole(변경 후) = {} ", userId, updateRequest.role());
     authService.updateRole(updateRequest, userId);
     log.info("[사용자 관리] 사용자 권한 변경 완료 : id = {}, newRole(변경 후) = {} ", userId, updateRequest.role());
+    return ResponseEntity.ok().build();
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @PatchMapping("/{userId}/locked")
+  public ResponseEntity<Void> updatedUserLocked(@PathVariable UUID userId,
+      @Valid @RequestBody UserLockUpdateRequest userLockUpdateRequest) {
+    log.debug("[사용자 관리] 사용자 잠금 상태 변경 시작 : id = {}, locked(변경 후) = {} ", userId, userLockUpdateRequest.locked());
+    userService.updateUserLocked(userId, userLockUpdateRequest);
+    log.info("[사용자 관리] 사용자 잠금 상태 변경 완료 : id = {}, locked(변경 후) = {} ", userId, userLockUpdateRequest.locked());
     return ResponseEntity.ok().build();
   }
 }
