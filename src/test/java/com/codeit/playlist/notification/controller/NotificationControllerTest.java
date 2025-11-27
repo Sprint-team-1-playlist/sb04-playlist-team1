@@ -34,7 +34,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -203,5 +206,78 @@ public class NotificationControllerTest {
                 any(),
                 anyString()
         );
+    }
+
+    @Test
+    @DisplayName("알림 읽음 처리 성공 - 본인 요청, 204 No Content")
+    void deleteNotificationSuccess() throws Exception {
+        // given
+        UUID notificationId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        Authentication authentication = createAuthentication(userId);
+
+        // when & then
+        mockMvc.perform(delete("/api/notifications/{notificationId}", notificationId)
+                        .with(authentication(authentication))
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        // 서비스가 올바른 파라미터로 호출되었는지 검증
+        then(notificationService).should()
+                .markAsReadAndDeleteNotification(eq(notificationId), eq(userId));
+    }
+
+    @Test
+    @DisplayName("알림 읽음 처리 실패 - 잘못된 PathVariable(UUID 아님)로 400 Bad Request")
+    void deleteNotificationFailWithBadRequest() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+        Authentication authentication = createAuthentication(userId);
+
+        // when & then
+        mockMvc.perform(delete("/api/notifications/{notificationId}", "not-a-uuid")
+                        .with(authentication(authentication))
+                        .with(csrf()))
+                .andExpect(status().isBadRequest());
+
+        // 서비스는 호출되면 안 됨
+        then(notificationService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("알림 읽음 처리 실패 - 인증 정보 없으면 401 Unauthorized")
+    void deleteNotificationFailWithUnauthorized() throws Exception {
+        // given
+        UUID notificationId = UUID.randomUUID();
+
+        // when & then
+        mockMvc.perform(delete("/api/notifications/{notificationId}", notificationId)
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized());
+
+        // 서비스는 호출되면 안 됨
+        then(notificationService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("알림 읽음 처리 실패 - 서비스 내부 예외 발생 시 500 Internal Server Error")
+    void deleteNotificationFailWithInternalServerError() throws Exception {
+        // given
+        UUID notificationId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        Authentication authentication = createAuthentication(userId);
+
+        willThrow(new RuntimeException("DB error"))
+                .given(notificationService)
+                .markAsReadAndDeleteNotification(eq(notificationId), eq(userId));
+
+        // when & then
+        mockMvc.perform(delete("/api/notifications/{notificationId}", notificationId)
+                        .with(authentication(authentication))
+                        .with(csrf()))
+                .andExpect(status().isInternalServerError());
+
+        then(notificationService).should()
+                .markAsReadAndDeleteNotification(eq(notificationId), eq(userId));
     }
 }

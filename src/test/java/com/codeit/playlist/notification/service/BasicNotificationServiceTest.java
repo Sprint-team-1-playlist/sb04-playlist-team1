@@ -4,9 +4,12 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
 import com.codeit.playlist.domain.notification.entity.Notification;
+import com.codeit.playlist.domain.notification.exception.NotificationNotFoundException;
+import com.codeit.playlist.domain.notification.exception.NotificationReadDeniedException;
 import com.codeit.playlist.domain.notification.mapper.NotificationMapper;
 import com.codeit.playlist.domain.notification.repository.NotificationRepository;
 import com.codeit.playlist.domain.notification.service.basic.BasicNotificationService;
+import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.global.error.InvalidCursorException;
 import com.codeit.playlist.global.error.InvalidSortByException;
@@ -27,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -231,5 +235,83 @@ public class BasicNotificationServiceTest {
 
         then(notificationRepository).should(never()).countByReceiver_Id(any());
         then(notificationMapper).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("알림 읽음 처리 성공 - 본인 알림 삭제 성공")
+    void markAsReadAndDeleteNotificationSuccess() {
+        //given
+        UUID notificationId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        User receiver = Mockito.mock(User.class);
+        Notification notification = Mockito.mock(Notification.class);
+
+        given(notification.getReceiver()).willReturn(receiver);
+        given(receiver.getId()).willReturn(currentUserId);
+
+        given(notificationRepository.findById(notificationId))
+                .willReturn(Optional.of(notification));
+
+        //when
+        notificationService.markAsReadAndDeleteNotification(notificationId, currentUserId);
+
+        //then
+        then(notificationRepository).should()
+                .findById(notificationId);
+
+        then(notificationRepository).should()
+                .delete(notification);
+
+        then(notificationRepository).shouldHaveNoMoreInteractions();
+    }
+
+    @Test
+    @DisplayName("알림 읽음 처리 실패 - 존재하지 않는 알림이면 NotificationNotFoundException 발생")
+    void markAsReadAndDeleteNotificationFailWithNotFound() {
+        // given
+        UUID notificationId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        given(notificationRepository.findById(notificationId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() ->
+                notificationService.markAsReadAndDeleteNotification(notificationId, currentUserId)
+        )
+                .isInstanceOf(NotificationNotFoundException.class)
+                .hasMessage("알림을 찾을 수 없습니다.");
+
+        then(notificationRepository).should().findById(notificationId);
+        then(notificationRepository).shouldHaveNoMoreInteractions();
+    }
+
+    @Test
+    @DisplayName("알림 읽음 처리 실패 - 본인의 알림이 아니면 NotificationReadDeniedException 발생")
+    void markAsReadAndDeleteNotificationFail_NoPermission() {
+        // given
+        UUID notificationId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID(); // 다른 사람 ID
+
+        User receiver = Mockito.mock(User.class);
+        Notification notification = Mockito.mock(Notification.class);
+
+        given(notification.getReceiver()).willReturn(receiver);
+        given(receiver.getId()).willReturn(otherUserId);
+
+        given(notificationRepository.findById(notificationId))
+                .willReturn(Optional.of(notification));
+
+        // when & then
+        assertThatThrownBy(() ->
+                notificationService.markAsReadAndDeleteNotification(notificationId, currentUserId)
+        )
+                .isInstanceOf(NotificationReadDeniedException.class)
+                .hasMessage("본인의 알림만 읽을 수 있습니다.");
+
+        then(notificationRepository).should().findById(notificationId);
+        then(notificationRepository).shouldHaveNoMoreInteractions();
     }
 }
