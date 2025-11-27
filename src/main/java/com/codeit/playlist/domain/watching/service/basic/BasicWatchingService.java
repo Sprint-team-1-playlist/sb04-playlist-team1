@@ -42,8 +42,18 @@ public class BasicWatchingService implements WatchingService {
     @Override
     public CursorResponseWatchingSessionDto getWatchingSessions(UUID contentId, WatchingSessionRequest request) {
         log.debug("[실시간 같이 보기] 실시간 시청자 조회 시작: contentId = {}, request = {}", contentId, request);
+        WatchingSessionRequest safeRequest = request.limit() <= 0 ?
+                new WatchingSessionRequest(
+                        request.watcherNameLike(),
+                        request.cursor(),
+                        request.idAfter(),
+                        10, // 기본값 10 TODO: 나중에 브라우저에서 보고 기본값 수정
+                        request.sortDirection(),
+                        request.sortBy()
+                )
+                : request;
 
-        RawWatchingSessionPage page = redisWatchingSessionRepository.getWatchingSessions(contentId, request);
+        RawWatchingSessionPage page = redisWatchingSessionRepository.getWatchingSessions(contentId, safeRequest);
         List<WatchingSessionDto> dtos = page.raws().stream()
                 .map(this::createWatchingSessionDto)
                 .toList();
