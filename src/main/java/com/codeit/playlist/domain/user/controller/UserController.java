@@ -56,7 +56,7 @@ public class UserController {
   }
 
   @PatchMapping(
-      value = "/api/users/{userId}",
+      value = "/{userId}",
       consumes = MediaType.MULTIPART_FORM_DATA_VALUE
   )
   public ResponseEntity<UserDto> updateUser(

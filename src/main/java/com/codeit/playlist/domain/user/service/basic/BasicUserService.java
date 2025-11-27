@@ -220,12 +220,12 @@ public class BasicUserService implements UserService {
     if (request.name() == null || request.name().isBlank()) {
       throw UserNameRequiredException.withUserName(request.name());
     }
-    user.changeUsername(request.name());
+    user.updateUsername(request.name());
 
     if (image != null && !image.isEmpty()) {
       String key = "profiles/" + userId + "_" + image.getOriginalFilename();
       String imageUrl = s3Uploader.upload(s3Properties.getProfileBucket(), key, image);
-      user.changeProfileImageUrl(imageUrl);
+      user.updateProfileImageUrl(imageUrl);
     }
 
     UserDto userDto = userMapper.toDto(user);

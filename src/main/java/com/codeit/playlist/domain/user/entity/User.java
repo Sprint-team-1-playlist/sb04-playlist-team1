@@ -63,11 +63,11 @@ public class User extends BaseUpdatableEntity {
     }
   }
 
-  public void changeUsername(String name) {
+  public void updateUsername(String name) {
     this.name = name;
   }
 
-  public void changeProfileImageUrl(String profileImageUrl) {
+  public void updateProfileImageUrl(String profileImageUrl) {
     this.profileImageUrl = profileImageUrl;
   }
 
