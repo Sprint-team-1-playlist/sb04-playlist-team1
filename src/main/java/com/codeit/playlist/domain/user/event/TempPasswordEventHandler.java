@@ -22,7 +22,7 @@ public class TempPasswordEventHandler {
   )
   public void handle(TempPasswordIssuedEvent event) {
     log.info("📩 임시 비밀번호 핸들러 실행 → {}", event.email());
-    tempPasswordMailSender.sendEmailWithRetry(event);   // ⬅ 여기서는 프록시를 통해 호출됨
+    tempPasswordMailSender.sendEmailWithRetry(event);
   }
 }
 
