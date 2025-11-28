@@ -173,7 +173,7 @@ public class RedisWatchingSessionRepository {
         try {
             cursorLong = Long.parseLong(cursor);
         } catch (NumberFormatException e) {
-            log.error("[실시간 같이 보기] ");
+            log.error("[실시간 같이 보기] 유효하지 않은 커서");
             throw InvalidCursorException.withCursor(cursor);
         }
 
