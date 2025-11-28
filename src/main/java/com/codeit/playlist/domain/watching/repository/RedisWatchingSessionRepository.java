@@ -4,6 +4,7 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
 import com.codeit.playlist.domain.watching.dto.data.SortBy;
+import com.codeit.playlist.global.error.InvalidCursorException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -197,7 +198,13 @@ public class RedisWatchingSessionRepository {
                                     int limit,
                                     SortDirection sortDirection,
                                     SortBy sortBy) {
-        long cursorLong = Long.parseLong(cursor);
+        long cursorLong;
+        try {
+            cursorLong = Long.parseLong(cursor);
+        } catch (NumberFormatException e) {
+            log.error("[실시간 같이 보기] ");
+            throw InvalidCursorException.withCursor(cursor);
+        }
 
         if (sortDirection.equals(SortDirection.ASCENDING)) {
             return redisTemplate.opsForZSet()
