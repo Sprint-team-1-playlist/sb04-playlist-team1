@@ -2,6 +2,7 @@ package com.codeit.playlist.domain.watching.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.SortBy;
+import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.dto.response.CursorResponseWatchingSessionDto;
 import com.codeit.playlist.domain.watching.service.WatchingService;
 import lombok.RequiredArgsConstructor;
@@ -20,19 +21,19 @@ public class WatchingController {
     private final WatchingService watchingService;
 
     @GetMapping("/contents/{contentId}/watching-sessions")
-    public ResponseEntity<CursorResponseWatchingSessionDto> getWatchingSessions(@PathVariable("contentId") UUID contentId,
-                                                                                @RequestParam String watcherNameLike,
-                                                                                @RequestParam(required = false) String cursor,
-                                                                                @RequestParam(required = false) UUID idAfter,
-                                                                                @RequestParam(required = false) int limit,
-                                                                                @RequestParam(defaultValue = "ASCENDING") SortDirection sortDirection,
-                                                                                @RequestParam(defaultValue = "createdAt") SortBy sortBy) {
+    public ResponseEntity<CursorResponseWatchingSessionDto> getWatchingSessionsByContent(@PathVariable("contentId") UUID contentId,
+                                                                                         @RequestParam String watcherNameLike,
+                                                                                         @RequestParam(required = false) String cursor,
+                                                                                         @RequestParam(required = false) UUID idAfter,
+                                                                                         @RequestParam(required = false) int limit,
+                                                                                         @RequestParam(defaultValue = "ASCENDING") SortDirection sortDirection,
+                                                                                         @RequestParam(defaultValue = "createdAt") SortBy sortBy) {
         log.debug("[실시간 같이 보기] 특정 콘텐츠의 시청 세션 목록 조회(커서 페이지네이션) 시작: " +
                         "contentId = {}, watcherNameLike = {}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
                 contentId, watcherNameLike, cursor, idAfter, limit, sortDirection, sortBy);
 
         CursorResponseWatchingSessionDto response =
-                watchingService.getWatchingSessions(
+                watchingService.getWatchingSessionsByContent(
                         contentId,
                         watcherNameLike,
                         cursor,
@@ -46,6 +47,24 @@ public class WatchingController {
                         "contentId = {}, watcherNameLike = {}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
                 contentId, watcherNameLike, cursor, idAfter, limit, sortDirection, sortBy);
 
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+    @GetMapping("/users/{watcherId}/watching-sessions")
+    public ResponseEntity<WatchingSessionDto> getWatchingSessionByUser(@PathVariable("watcherId") UUID userId) {
+        log.debug("[실시간 같이 보기] 특정 사용자의 시청 세션 조회(nullable) 시작: watcherId={}", userId);
+
+        WatchingSessionDto response = watchingService.getWatchingSessionByUser(userId);
+
+        log.info("[실시간 같이 보기] 특정 사용자의 시청 세션 조회(nullable) 완료: response={}", response);
+
+        if (response == null) {
+            return ResponseEntity
+                    .status(HttpStatus.NO_CONTENT)
+                    .build();
+        }
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);
