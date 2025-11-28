@@ -75,6 +75,7 @@ public class BasicFollowService implements FollowService {
 
     try{
       String payload = objectMapper.writeValueAsString(notificationDto);
+      kafkaTemplate.send("playlist.NotificationDto", payload);
       log.info("[Follow] 팔로우 알림 이벤트 발행 완료 : receiverId= {}, followerId= {}",
               followee.getId(), followerId);
     } catch (JsonProcessingException e) {

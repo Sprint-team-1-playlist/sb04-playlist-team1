@@ -92,12 +92,12 @@ public class BasicNotificationService implements NotificationService {
                     "알림",
                     dto                 //data payload
             );
-            log.info("[알림] SSE 전송 완료: notificationId= {}", dto.id());
+            log.info("[알림] SSE 전송 성공: notificationId= {}, receiverId= {}, title= {}",
+                    dto.id(), dto.receiverId(), dto.title());
         } catch (Exception e) {
-            log.error("[알림] SSE 전송 실패 : notificationId= {}", dto.id(), e);
+            log.error("[알림] SSE 전송 실패 : notificationId= {}, receiverId= {}, title= {}",
+                    dto.id(), dto.receiverId(), dto.title(), e);
         }
-
-        log.info("[알림] 알림 SSE 전송 성공 : receiverId= {}, title= {}", dto.receiverId(), dto.title());
     }
 
     //알림 목록 조회
