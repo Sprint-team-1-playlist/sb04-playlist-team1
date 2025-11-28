@@ -2,7 +2,7 @@ package com.codeit.playlist.domain.file.exception;
 
 public class InvalidImageContentException extends FileException {
   public InvalidImageContentException() {
-    super(FileErrorCode.FAIL_UPLOAD_TO_S3);
+    super(FileErrorCode.INVALID_IMAGE_CONTENT);
   }
 
   public static InvalidImageContentException defaultError() {

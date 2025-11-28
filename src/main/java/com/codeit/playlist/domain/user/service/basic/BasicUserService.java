@@ -60,7 +60,7 @@ public class BasicUserService implements UserService {
   private final S3Uploader s3Uploader;
   private final S3Properties s3Properties;
 
-  private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png", "image/gif");
+  private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png");
   private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
 
   @Value("${ADMIN_EMAIL}")
@@ -244,13 +244,11 @@ public class BasicUserService implements UserService {
 
     if (image != null && !image.isEmpty()) {
       String contentType = image.getContentType();
-      List<String> allowed = List.of("image/jpeg", "image/png");
-      if (!allowed.contains(contentType)) {
+      if (!ALLOWED_IMAGE_TYPES.contains(contentType)) {
         throw InvalidImageTypeException.withType(contentType);
       }
 
-      long maxSize = 5 * 1024 * 1024;
-      if (image.getSize() > maxSize) {
+      if (image.getSize() > MAX_FILE_SIZE) {
         throw FileTooLargeException.withSize(image.getSize());
       }
 
@@ -286,17 +284,5 @@ public class BasicUserService implements UserService {
     log.info("[프로필 관리] 프로필 변경 완료 : userId = {}", userId);
 
     return userDto;
-  }
-
-  private String sanitizeFilename(String filename) {
-    if (filename == null) return "profile";
-    // Remove path separators and keep only the filename
-    String sanitized = filename.replaceAll("[/\\\\]", "");
-    // Get extension safely
-    int dotIndex = sanitized.lastIndexOf('.');
-    if (dotIndex > 0) {
-      return sanitized.substring(dotIndex);
-    }
-    return ".jpg"; // default extension
   }
 }

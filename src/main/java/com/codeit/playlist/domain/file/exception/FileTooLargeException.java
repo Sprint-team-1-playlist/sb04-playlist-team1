@@ -2,7 +2,7 @@ package com.codeit.playlist.domain.file.exception;
 
 public class FileTooLargeException extends FileException {
   public FileTooLargeException() {
-    super(FileErrorCode.FAIL_UPLOAD_TO_S3);
+    super(FileErrorCode.FILE_TOO_LARGE);
   }
 
   public static FileTooLargeException withSize(long size) {
