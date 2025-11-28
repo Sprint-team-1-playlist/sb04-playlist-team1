@@ -160,8 +160,7 @@ public class RedisWatchingSessionRepository {
         String watchingIdStr = redisTemplate.opsForValue()
                 .get(userKey(userId));
         if (watchingIdStr == null) {
-            log.debug("[실시간 같이 보기] watchingId가 없음: watchingId={}", watchingIdStr);
-            removeWatchingSession(userId);
+            log.debug("[실시간 같이 보기] userId({})에 대한 watchingId가 없음", userId);
             return null;
         }
 
@@ -169,11 +168,11 @@ public class RedisWatchingSessionRepository {
         Map<Object, Object> map = redisTemplate.opsForHash()
                 .entries(watchingKey(watchingId));
         if (map.isEmpty()) {
-            log.error("[실시간 같이 보기] 세선 졍보 없음: watchingId={}", watchingId);
+            log.error("[실시간 같이 보기] 세선 정보 없음: watchingId={}", watchingId);
             throw WatchingNotFoundException.withId(watchingId);
         }
         if (!convertObjectToUuid(map, "userId").equals(userId)) {
-            log.error("[실시간 같이 보기] 사용자 정보가 일치하지 않음:  watchingId={}, userId={}", watchingId, userId);
+            log.error("[실시간 같이 보기] 사용자 정보가 일치하지 않음: watchingId={}, userId={}", watchingId, userId);
             throw WatchingSessionMismatch.withWatchingIdAndUserId(watchingId, userId);
         }
 
