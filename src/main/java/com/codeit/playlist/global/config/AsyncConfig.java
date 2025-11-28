@@ -12,7 +12,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableRetry
 public class AsyncConfig {
 
-  // 메일 비동기 처리 구현시 사용, 현재 동기처리로 사용하지 않음. 추후 사용 예정
   @Bean(name = "mailExecutor")
   public Executor asyncExecutor() {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
