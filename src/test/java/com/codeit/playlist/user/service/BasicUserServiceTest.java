@@ -7,7 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -22,6 +24,7 @@ import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
 import com.codeit.playlist.domain.user.dto.request.UserLockUpdateRequest;
+import com.codeit.playlist.domain.user.dto.request.UserUpdateRequest;
 import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
@@ -29,6 +32,7 @@ import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.exception.NewPasswordRequired;
 import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
 import com.codeit.playlist.domain.user.exception.UserLockStateUnchangedException;
+import com.codeit.playlist.domain.user.exception.UserNameRequiredException;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
@@ -36,6 +40,7 @@ import com.codeit.playlist.domain.user.repository.UserRepositoryCustom;
 import com.codeit.playlist.domain.user.service.basic.BasicUserService;
 import com.codeit.playlist.global.config.S3Properties;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +58,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicUserServiceTest {
@@ -480,88 +486,118 @@ public class BasicUserServiceTest {
     verify(jwtRegistry, never()).invalidateJwtInformationByUserId(any());
   }
 
-//  @Test
-//  @DisplayName("사용자 프로필 변경 - 이름만 변경")
-//  void updateUserNameOnlySuccess() {
-//    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
-//    when(userMapper.toDto(user)).thenReturn(new UserDto(
-//        FIXED_ID,
-//        null,
-//        user.getEmail(),
-//        "NewName",
-//        user.getProfileImageUrl(),
-//        user.getRole(),
-//        user.isLocked()
-//    ));
-//
-//    UserUpdateRequest request = new UserUpdateRequest("NewName");
-//
-//    UserDto result = userService.updateUser(FIXED_ID, request, null);
-//
-//    assertEquals("NewName", result.name());
-//    assertEquals(user.getProfileImageUrl(), result.profileImageUrl());
-//    verify(s3Uploader, never()).upload(any(), any(), any());
-//  }
-//
-//  @Test
-//  @DisplayName("사용자 프로필 변경 - 이름 + 프로필 이미지 변경")
-//  void updateUserNameAndImageSuccess() throws Exception {
-//    MultipartFile mockFile = mock(MultipartFile.class);
-//    when(mockFile.isEmpty()).thenReturn(false);
-//    when(mockFile.getOriginalFilename()).thenReturn("profile.png");
-//
-//    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
-//    when(s3Properties.getProfileBucket()).thenReturn("profile-bucket");
-//    when(s3Uploader.upload(eq("profile-bucket"), anyString(), eq(mockFile)))
-//        .thenReturn("https://s3.example.com/profiles/profile.png");
-//    when(userMapper.toDto(user)).thenReturn(new UserDto(
-//        FIXED_ID,
-//        null,
-//        user.getEmail(),
-//        "NewName",
-//        "https://s3.example.com/profiles/profile.png",
-//        user.getRole(),
-//        user.isLocked()
-//    ));
-//
-//    UserUpdateRequest request = new UserUpdateRequest("NewName");
-//
-//    UserDto result = userService.updateUser(FIXED_ID, request, mockFile);
-//
-//    assertEquals("NewName", result.name());
-//    assertEquals("https://s3.example.com/profiles/profile.png", result.profileImageUrl());
-//
-//    verify(s3Uploader, times(1)).upload(eq("profile-bucket"), anyString(), eq(mockFile));
-//  }
-//
-//  @Test
-//  @DisplayName("사용자 프로필 변경 실패 - 이름 null 또는 공백")
-//  void updateUserFailureBlankName() {
-//    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
-//
-//    UserUpdateRequest requestBlank = new UserUpdateRequest(" ");
-//    UserUpdateRequest requestNull = new UserUpdateRequest(null);
-//
-//    assertThatThrownBy(() -> userService.updateUser(FIXED_ID, requestBlank, null))
-//        .isInstanceOf(UserNameRequiredException.class);
-//
-//    assertThatThrownBy(() -> userService.updateUser(FIXED_ID, requestNull, null))
-//        .isInstanceOf(UserNameRequiredException.class);
-//
-//    verify(s3Uploader, never()).upload(any(), any(), any());
-//  }
-//
-//  @Test
-//  @DisplayName("사용자 프로필 변경 실패 - 사용자 없음")
-//  void updateUserFailureUserNotFound() {
-//    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.empty());
-//    UserUpdateRequest request = new UserUpdateRequest("NewName");
-//
-//    assertThatThrownBy(() -> userService.updateUser(FIXED_ID, request, null))
-//        .isInstanceOf(UserNotFoundException.class);
-//
-//    verify(s3Uploader, never()).upload(any(), any(), any());
-//  }
+  @Test
+  @DisplayName("사용자 프로필 변경 - 이름만 변경 성공")
+  void updateUserNameOnlySuccess() {
+    // given
+    setId(user, FIXED_ID);
+
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    when(userMapper.toDto(user)).thenReturn(new UserDto(
+        FIXED_ID,
+        null,
+        user.getEmail(),
+        "NewName",
+        user.getProfileImageUrl(),
+        user.getRole(),
+        user.isLocked()
+    ));
+
+    UserUpdateRequest request = new UserUpdateRequest("NewName");
+
+    // when
+    UserDto result = userService.updateUser(FIXED_ID, request, null, authentication);
+
+    // then
+    assertEquals("NewName", result.name());
+    verify(s3Uploader, never()).upload(any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("사용자 프로필 변경 - 이름 + 프로필 이미지 변경")
+  void updateUserNameAndImageSuccess() throws Exception {
+    // given
+    setId(user, FIXED_ID);
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+
+    MultipartFile mockFile = mock(MultipartFile.class);
+
+    when(mockFile.isEmpty()).thenReturn(false);
+    when(mockFile.getContentType()).thenReturn("image/png");
+    when(mockFile.getSize()).thenReturn(1024L);
+    when(mockFile.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[]{
+        (byte) 0x89, (byte) 0x50, 0x00, 0x00
+    }));
+
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+    when(s3Properties.getProfileBucket()).thenReturn("profile-bucket");
+    when(s3Uploader.upload(eq("profile-bucket"), anyString(), eq(mockFile)))
+        .thenReturn("https://s3.example.com/profile/random.png");
+
+    when(userMapper.toDto(user)).thenReturn(new UserDto(
+        FIXED_ID,
+        null,
+        user.getEmail(),
+        "NewName",
+        "https://s3.example.com/profile/random.png",
+        user.getRole(),
+        user.isLocked()
+    ));
+
+    UserUpdateRequest request = new UserUpdateRequest("NewName");
+
+    // when
+    UserDto result = userService.updateUser(FIXED_ID, request, mockFile, authentication);
+
+    // then
+    assertEquals("NewName", result.name());
+    assertEquals("https://s3.example.com/profile/random.png", result.profileImageUrl());
+    verify(s3Uploader, times(1)).upload(eq("profile-bucket"), anyString(), eq(mockFile));
+  }
+
+  @Test
+  @DisplayName("사용자 프로필 변경 실패 - 이름 null 또는 공백")
+  void updateUserFailureBlankName() {
+    // given
+    setId(user, FIXED_ID);
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    UserUpdateRequest blankReq = new UserUpdateRequest(" ");
+    UserUpdateRequest nullReq = new UserUpdateRequest(null);
+
+    // when & then
+    assertThatThrownBy(() -> userService.updateUser(FIXED_ID, blankReq, null, authentication))
+        .isInstanceOf(UserNameRequiredException.class);
+
+    assertThatThrownBy(() -> userService.updateUser(FIXED_ID, nullReq, null, authentication))
+        .isInstanceOf(UserNameRequiredException.class);
+
+    verify(s3Uploader, never()).upload(any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("사용자 프로필 변경 실패 - 사용자 없음")
+  void updateUserFailureUserNotFound() {
+    // given
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.empty());
+
+    UserUpdateRequest request = new UserUpdateRequest("NewName");
+
+    // when & then
+    assertThatThrownBy(() -> userService.updateUser(FIXED_ID, request, null, authentication))
+        .isInstanceOf(UserNotFoundException.class);
+
+    verify(s3Uploader, never()).upload(any(), any(), any());
+  }
 
   // 유틸: 테스트에서 ID 값을 강제로 세팅하는 메서드
   private void setId(Object target, UUID id) {
