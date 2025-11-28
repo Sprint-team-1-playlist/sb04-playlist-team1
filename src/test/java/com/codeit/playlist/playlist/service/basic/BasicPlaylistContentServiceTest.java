@@ -23,7 +23,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -273,7 +272,7 @@ public class BasicPlaylistContentServiceTest {
     }
 
     private Playlist createPlaylist(User owner) {
-        Playlist playlist = new Playlist(owner, "플리 제목", "플리 설명", 0L, new ArrayList<>());
+        Playlist playlist = new Playlist(owner, "플리 제목", "플리 설명");
         return playlist;
     }
 
