@@ -41,7 +41,7 @@ public class TempPasswordEventHandler {
 
   @Recover
   public void recover(MailException e, TempPasswordIssuedEvent event) {
-    log.error("❌ 이메일 발송 실패 → {} / 3회 재시도 후 포기", event.email(), e);
+    log.error("이메일 발송 실패 → {} / 3회 재시도 후 포기", event.email(), e);
   }
 }
 
