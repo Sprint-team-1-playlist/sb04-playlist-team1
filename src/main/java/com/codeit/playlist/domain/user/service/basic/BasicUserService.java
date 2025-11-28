@@ -269,7 +269,7 @@ public class BasicUserService implements UserService {
       }
 
       String extension = contentType.equals("image/png") ? ".png" : ".jpg";
-      String key = "profiles/" + userId + "_" + image.getOriginalFilename() + extension;
+      String key = "profiles/" + UUID.randomUUID() + "_" + image.getOriginalFilename() + extension;
 
       String imageUrl = s3Uploader.upload(
           s3Properties.getProfileBucket(),
