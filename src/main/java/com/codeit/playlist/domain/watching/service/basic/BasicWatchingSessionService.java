@@ -67,7 +67,7 @@ public class BasicWatchingSessionService implements WatchingSessionService {
         }
         if (!contentId.equals(raw.contentId())) {
             log.error("[실시간 같이 보기] 세션 정보 불일치");
-            throw WatchingSessionMismatch.withId(raw.watchingId());
+            throw WatchingSessionMismatch.withWatchingIdAndContentId(raw.watchingId(), raw.contentId());
         }
 
         broadcastEvent(raw, ChangeType.LEAVE);

@@ -55,9 +55,9 @@ class BasicWatchingServiceTest {
 
     @Test
     @DisplayName("getWatchingSessions 호출 시 RedisWatchingSessionRepository.getWatchingSessions가 호출된다")
-    void getWatchingSessions_callsRepository() {
+    void getWatchingSessionsCallsRepository() {
         // given
-        when(redisWatchingSessionRepository.getWatchingSessions(
+        when(redisWatchingSessionRepository.getWatchingSessionsByContentId(
                 contentId,
                 null,
                 10,
@@ -79,7 +79,7 @@ class BasicWatchingServiceTest {
         when(contentMapper.toDto(content, tags)).thenReturn(watchingSessionDto.content());
 
         // when
-        CursorResponseWatchingSessionDto response = watchingService.getWatchingSessions(
+        CursorResponseWatchingSessionDto response = watchingService.getWatchingSessionsByContent(
                 contentId,
                 "test",
                 null,
@@ -90,7 +90,7 @@ class BasicWatchingServiceTest {
 
         // then
         verify(redisWatchingSessionRepository, times(1))
-                .getWatchingSessions(
+                .getWatchingSessionsByContentId(
                         contentId,
                         null,
                         10,
@@ -107,5 +107,97 @@ class BasicWatchingServiceTest {
         assertThat(response.nextCursor()).isNotNull();
         assertThat(response.nextIdAfter()).isNotNull();
         assertThat(response.hasNext()).isEqualTo(rawPage.hasNext());
+    }
+
+    @Test
+    @DisplayName("컨텐츠별 사용자 목록 보기, limit이 0 이하 또는 50 초과일 경우 기본값 10으로 보정됨")
+    void invalidLimitIsChangedToDefaultValue() {
+        // given
+        when(redisWatchingSessionRepository.getWatchingSessionsByContentId(
+                contentId,
+                null,
+                10,
+                SortDirection.ASCENDING))
+                .thenReturn(rawPage);
+        when(redisWatchingSessionRepository.countWatchingSessionByContentId(contentId))
+                .thenReturn(1L);
+
+        User user = WatchingSessionFixtures.user();
+        Content content = WatchingSessionFixtures.content();
+        List<Tag> tags = WatchingSessionFixtures.tagList();
+
+        when(userRepository.findById(raw.userId())).thenReturn(Optional.of(user));
+        when(contentRepository.findById(raw.contentId())).thenReturn(Optional.of(content));
+        when(tagRepository.findByContentId(raw.contentId())).thenReturn(tags);
+
+        when(userMapper.toDto(user)).thenReturn(WatchingSessionFixtures.userDto());
+        when(contentMapper.toDto(content, tags)).thenReturn(WatchingSessionFixtures.watchingSessionDto().content());
+
+        // when
+        watchingService.getWatchingSessionsByContent(
+                contentId,
+                "test",
+                null,
+                null,
+                0, // invalid
+                SortDirection.ASCENDING,
+                SortBy.createdAt
+        );
+
+        // then
+        verify(redisWatchingSessionRepository, times(1))
+                .getWatchingSessionsByContentId(contentId, null, 10, SortDirection.ASCENDING);
+    }
+
+    @Test
+    @DisplayName("사용자의 시청 세션 조회, 세션이 없으면 null 반환")
+    void getWatchingSessionByUserReturnsNullWhenNoSession() {
+        // given
+        UUID userId = WatchingSessionFixtures.FIXED_ID;
+        when(redisWatchingSessionRepository.getWatchingSessionByUser(userId)).thenReturn(null);
+
+        // when
+        WatchingSessionDto result = watchingService.getWatchingSessionByUser(userId);
+
+        // then
+        assertThat(result).isNull();
+        verify(redisWatchingSessionRepository, times(1)).getWatchingSessionByUser(userId);
+        verifyNoInteractions(userRepository, contentRepository, tagRepository, userMapper, contentMapper);
+    }
+
+    @Test
+    @DisplayName("사용자의 시청 세션 조회, 세션이 있으면 DTO 반환")
+    void getWatchingSessionByUserSuccess() {
+        // given
+        UUID userId = WatchingSessionFixtures.FIXED_ID;
+        RawWatchingSession raw = WatchingSessionFixtures.rawWatchingSession();
+
+        when(redisWatchingSessionRepository.getWatchingSessionByUser(userId)).thenReturn(raw);
+
+        User user = WatchingSessionFixtures.user();
+        Content content = WatchingSessionFixtures.content();
+        List<Tag> tags = WatchingSessionFixtures.tagList();
+
+        when(userRepository.findById(raw.userId())).thenReturn(Optional.of(user));
+        when(contentRepository.findById(raw.contentId())).thenReturn(Optional.of(content));
+        when(tagRepository.findByContentId(raw.contentId())).thenReturn(tags);
+        when(userMapper.toDto(user)).thenReturn(WatchingSessionFixtures.userDto());
+        when(contentMapper.toDto(content, tags)).thenReturn(WatchingSessionFixtures.contentDto());
+
+        // when
+        WatchingSessionDto dto = watchingService.getWatchingSessionByUser(userId);
+
+        // then
+        assertThat(dto).isNotNull();
+        assertThat(dto.watcher().id()).isEqualTo(WatchingSessionFixtures.userDto().id());
+        assertThat(dto.content().id()).isEqualTo(WatchingSessionFixtures.contentDto().id());
+        assertThat(dto.watchingId()).isEqualTo(raw.watchingId());
+
+        verify(redisWatchingSessionRepository, times(1)).getWatchingSessionByUser(userId);
+        verify(userRepository, times(1)).findById(raw.userId());
+        verify(contentRepository, times(1)).findById(raw.contentId());
+        verify(tagRepository, times(1)).findByContentId(raw.contentId());
+        verify(userMapper, times(1)).toDto(user);
+        verify(contentMapper, times(1)).toDto(content, tags);
     }
 }

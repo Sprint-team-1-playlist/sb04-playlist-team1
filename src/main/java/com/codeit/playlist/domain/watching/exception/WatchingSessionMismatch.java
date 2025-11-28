@@ -7,9 +7,17 @@ public class WatchingSessionMismatch extends WatchingException {
         super(WatchingErrorCode.WATCHING_SESSION_MISMATCH);
     }
 
-    public static WatchingSessionMismatch withId(UUID id) {
+    public static WatchingSessionMismatch withWatchingIdAndContentId(UUID watchingId, UUID contentId) {
         WatchingSessionMismatch exception = new WatchingSessionMismatch();
-        exception.addDetail("watchingId", id);
+        exception.addDetail("watchingId", watchingId);
+        exception.addDetail("contentId", contentId);
+        return exception;
+    }
+
+    public static WatchingSessionMismatch withWatchingIdAndUserId(UUID watchingId, UUID userId) {
+        WatchingSessionMismatch exception = new WatchingSessionMismatch();
+        exception.addDetail("watchingId", watchingId);
+        exception.addDetail("userId", userId);
         return exception;
     }
 }

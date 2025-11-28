@@ -3,6 +3,8 @@ package com.codeit.playlist.watching.repository;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
+import com.codeit.playlist.domain.watching.exception.WatchingNotFoundException;
+import com.codeit.playlist.domain.watching.exception.WatchingSessionMismatch;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataRedisTest
 @Import(RedisWatchingSessionRepository.class)
@@ -113,12 +116,12 @@ class RedisWatchingSessionRepositoryTest {
         UUID w1 = UUID.randomUUID();
         UUID w2 = UUID.randomUUID();
 
-        RawWatchingSession s1 = repository.addWatchingSession(w1, contentId, u1);
+        repository.addWatchingSession(w1, contentId, u1);
         Thread.sleep(5);
-        RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
+        repository.addWatchingSession(w2, contentId, u2);
 
         // when
-        RawWatchingSessionPage page = repository.getWatchingSessions(
+        RawWatchingSessionPage page = repository.getWatchingSessionsByContentId(
                 contentId,
                 null,
                 10,
@@ -140,12 +143,12 @@ class RedisWatchingSessionRepositoryTest {
         UUID w1 = UUID.randomUUID();
         UUID w2 = UUID.randomUUID();
 
-        RawWatchingSession s1 = repository.addWatchingSession(w1, contentId, u1);
+        repository.addWatchingSession(w1, contentId, u1);
         Thread.sleep(5);
-        RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
+        repository.addWatchingSession(w2, contentId, u2);
 
         // when
-        RawWatchingSessionPage page = repository.getWatchingSessions(
+        RawWatchingSessionPage page = repository.getWatchingSessionsByContentId(
                 contentId,
                 null,
                 10,
@@ -170,13 +173,13 @@ class RedisWatchingSessionRepositoryTest {
         UUID w2 = UUID.randomUUID();
         UUID w3 = UUID.randomUUID();
 
-        RawWatchingSession s1 = repository.addWatchingSession(w1, contentId, u1);
+        repository.addWatchingSession(w1, contentId, u1);
         Thread.sleep(5);
-        RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
+        repository.addWatchingSession(w2, contentId, u2);
         Thread.sleep(5);
-        RawWatchingSession s3 = repository.addWatchingSession(w3, contentId, u3);
+        repository.addWatchingSession(w3, contentId, u3);
 
-        RawWatchingSessionPage firstPage = repository.getWatchingSessions(
+        RawWatchingSessionPage firstPage = repository.getWatchingSessionsByContentId(
                 contentId,
                 null,
                 1,
@@ -186,7 +189,7 @@ class RedisWatchingSessionRepositoryTest {
         long cursor = firstPage.raws().get(0).createdAtEpoch();
 
         // when - 두 번째 페이지
-        RawWatchingSessionPage nextPage = repository.getWatchingSessions(
+        RawWatchingSessionPage nextPage = repository.getWatchingSessionsByContentId(
                 contentId,
                 String.valueOf(cursor),
                 2,
@@ -195,5 +198,45 @@ class RedisWatchingSessionRepositoryTest {
         // then
         assertThat(nextPage.raws()).hasSize(2);
         assertThat(nextPage.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("사용자의 시청 세션 조회, 세션이 없으면 null 반환")
+    void getWatchingSessionByUserReturnNullIfNotExists() {
+        RawWatchingSession result = repository.getWatchingSessionByUser(userId);
+        assertThat(result).isNull();
+    }
+
+    @Test
+    @DisplayName("사용자의 시청 세션 조회, HASH 정보 없으면 WatchingNotFoundException 발생")
+    void getWatchingSessionByUser_hashNotFound() {
+        // given: user -> watchingId 는 존재하지만 hash 는 삭제된 상태
+        redisTemplate.opsForValue().set("user:" + userId + ":session", watchingId.toString());
+
+        assertThatThrownBy(() -> repository.getWatchingSessionByUser(userId))
+                .isInstanceOf(WatchingNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("사용자의 시청 세션 조회, userId가 동일하지 않으면 WatchingSessionMismatch 발생")
+    void getWatchingSessionByUserMismatch() {
+        repository.addWatchingSession(watchingId, contentId, userId);
+
+        redisTemplate.opsForHash().put("watching:" + watchingId, "userId", UUID.randomUUID().toString());
+
+        assertThatThrownBy(() -> repository.getWatchingSessionByUser(userId))
+                .isInstanceOf(WatchingSessionMismatch.class);
+    }
+
+    @Test
+    @DisplayName("사용자의 시청 세션 조회, 정상 조회 성공")
+    void getWatchingSessionByUserSuccess() {
+        repository.addWatchingSession(watchingId, contentId, userId);
+
+        RawWatchingSession raw = repository.getWatchingSessionByUser(userId);
+
+        assertThat(raw.watchingId()).isEqualTo(watchingId);
+        assertThat(raw.userId()).isEqualTo(userId);
+        assertThat(raw.contentId()).isEqualTo(contentId);
     }
 }

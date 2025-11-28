@@ -41,13 +41,13 @@ public class BasicWatchingService implements WatchingService {
     private final TagRepository tagRepository;
 
     @Override
-    public CursorResponseWatchingSessionDto getWatchingSessions(UUID contentId,
-                                                                String watcherNameLike,
-                                                                String cursor,
-                                                                UUID idAfter,
-                                                                int limit,
-                                                                SortDirection sortDirection,
-                                                                SortBy sortBy) {
+    public CursorResponseWatchingSessionDto getWatchingSessionsByContent(UUID contentId,
+                                                                         String watcherNameLike,
+                                                                         String cursor,
+                                                                         UUID idAfter,
+                                                                         int limit,
+                                                                         SortDirection sortDirection,
+                                                                         SortBy sortBy) {
         log.debug("[실시간 같이 보기] 실시간 시청자 조회 시작: " +
                         "contentId = {}, watcherNameLike = {}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
                 contentId, watcherNameLike, cursor, idAfter, limit, sortDirection, sortBy);
@@ -57,7 +57,7 @@ public class BasicWatchingService implements WatchingService {
             limit = 10;
         }
 
-        RawWatchingSessionPage page = redisWatchingSessionRepository.getWatchingSessions(
+        RawWatchingSessionPage page = redisWatchingSessionRepository.getWatchingSessionsByContentId(
                 contentId,
                 cursor,
                 limit,
@@ -89,6 +89,18 @@ public class BasicWatchingService implements WatchingService {
                 sortBy,
                 sortDirection
         );
+    }
+
+    @Override
+    public WatchingSessionDto getWatchingSessionByUser(UUID userId) {
+        log.debug("[실시간 같이 보기] 특정 사용자의 시청 세션 조회(nullable) 비즈니스 로직 시작: watcherId={}", userId);
+
+        RawWatchingSession raw = redisWatchingSessionRepository.getWatchingSessionByUser(userId);
+        if (raw == null) {
+            return null;
+        }
+        log.debug("[실시간 같이 보기] 특정 사용자의 시청 세션 조회(nullable) 비즈니스 로직 성공: raw={}", raw);
+        return createWatchingSessionDto(raw);
     }
 
     private WatchingSessionDto createWatchingSessionDto(RawWatchingSession raw) {
