@@ -158,11 +158,11 @@ public class RedisWatchingSessionRepository {
                                      SortDirection sortDirection) {
         if (sortDirection.equals(SortDirection.ASCENDING)) {
             return redisTemplate.opsForZSet()
-                    .range(contentKey(contentId), 0, limit);
+                    .range(contentKey(contentId), 0, limit + 1);
         }
 
         return redisTemplate.opsForZSet()
-                .reverseRange(contentKey(contentId), 0, limit);
+                .reverseRange(contentKey(contentId), 0, limit + 1);
     }
 
     private Set<String> getNextPage(UUID contentId,
