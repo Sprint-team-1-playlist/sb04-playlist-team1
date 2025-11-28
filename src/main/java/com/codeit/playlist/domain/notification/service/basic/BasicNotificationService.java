@@ -3,12 +3,17 @@ package com.codeit.playlist.domain.notification.service.basic;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
+import com.codeit.playlist.domain.notification.entity.Level;
 import com.codeit.playlist.domain.notification.entity.Notification;
 import com.codeit.playlist.domain.notification.exception.NotificationNotFoundException;
 import com.codeit.playlist.domain.notification.exception.NotificationReadDeniedException;
 import com.codeit.playlist.domain.notification.mapper.NotificationMapper;
 import com.codeit.playlist.domain.notification.repository.NotificationRepository;
 import com.codeit.playlist.domain.notification.service.NotificationService;
+import com.codeit.playlist.domain.sse.service.SseService;
+import com.codeit.playlist.domain.user.entity.User;
+import com.codeit.playlist.domain.user.exception.UserNotFoundException;
+import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.global.error.InvalidCursorException;
 import com.codeit.playlist.global.error.InvalidSortByException;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +25,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,6 +39,44 @@ public class BasicNotificationService implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
+    private final UserRepository userRepository;
+    private final SseService sseService;
+
+    //알림 생성
+    @Transactional
+    @Override
+    public NotificationDto createNotification(UUID receiverId, String title, String content, Level level) {
+        log.debug("[알림] 알림 생성 시작 : receiverId= {}, title= {}", receiverId, title);
+
+        //수신자 조회
+        User receiver = userRepository.findById(receiverId)
+                .orElseThrow(() -> {
+                    log.error("[알림] 수신자가 조회되지 않습니다 : receiverId= {}", receiverId);
+                    return UserNotFoundException.withId(receiverId);
+                });
+
+        //알림 생성(엔티티 생성)
+        Notification notification = new Notification(receiver, title, content, level);
+
+        //DB 저장
+        Notification saved = notificationRepository.save(notification);
+
+        //DTO 변환
+        NotificationDto dto = notificationMapper.toDto(saved);
+
+        try {
+            sseService.send(
+                    List.of(receiverId),
+                    "알림",
+                    dto                 //data payload
+            );
+            log.info("[알림] SSE 전송 완료: notificationId= {}", saved.getId());
+        } catch (Exception e) {
+            log.error("[알림] SSE 전송 실패 : notificationId= {}", saved.getId(), e);
+        }
+
+        return dto;
+    }
 
     //알림 목록 조회
     @Transactional(readOnly = true)
@@ -56,19 +103,17 @@ public class BasicNotificationService implements NotificationService {
         }
 
         //cursor 파싱
-        UUID cursorId = null;
+        LocalDateTime cursorDateTime = null;
 
         if (cursor != null && !cursor.isBlank()) {
             try {
-                cursorId = UUID.fromString(cursor);
-            } catch (IllegalArgumentException e) {
+                cursorDateTime = LocalDateTime.parse(cursor, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            } catch (DateTimeParseException e) {
                 throw InvalidCursorException.withCursor(cursor);
             }
         }
 
-        if (cursorId == null && idAfter != null) {
-            cursorId = idAfter;
-        }
+        UUID cursorId = idAfter;
 
         //정렬 정보 설정 (createdAt + id 보조 정렬)
         Sort sort = (safeSortDirection == SortDirection.ASCENDING)
@@ -82,6 +127,7 @@ public class BasicNotificationService implements NotificationService {
         Slice<Notification> slice =
                 notificationRepository.findByReceiverIdWithCursorPaging(
                         receiverId,
+                        cursorDateTime,
                         cursorId,
                         pageable
                 );
@@ -98,12 +144,14 @@ public class BasicNotificationService implements NotificationService {
 
         if (slice.hasNext() && !notifications.isEmpty()) {
             Notification last = notifications.get(notifications.size() - 1);
-            nextCursor = last.getId().toString();   // id를 커서로 사용
+            LocalDateTime lastCreatedAt = last.getCreatedAt();
+            nextCursor = lastCreatedAt.truncatedTo(ChronoUnit.SECONDS)
+                    .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
             nextIdAfter = last.getId();
         }
 
         Long totalCount = null;
-        if (cursorId == null) {
+        if (cursorDateTime == null && cursorId == null) {
             totalCount = notificationRepository.countByReceiver_Id(receiverId);
         }
 
