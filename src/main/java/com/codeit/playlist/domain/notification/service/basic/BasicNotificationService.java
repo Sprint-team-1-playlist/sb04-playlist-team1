@@ -42,11 +42,26 @@ public class BasicNotificationService implements NotificationService {
     private final UserRepository userRepository;
     private final SseService sseService;
 
-    //알림 생성
+    //알림 생성(알림 저장 + SSE 전송)
     @Transactional
     @Override
     public NotificationDto createNotification(UUID receiverId, String title, String content, Level level) {
         log.debug("[알림] 알림 생성 시작 : receiverId= {}, title= {}", receiverId, title);
+
+        NotificationDto dto = saveNotification(receiverId, title, content, level);
+
+        sendSse(dto);
+
+        log.info("[알림] 알림 생성 성공 : receiverId= {}, title= {}", receiverId, title);
+
+        return dto;
+    }
+
+    //알림 저장
+    @Transactional
+    public NotificationDto saveNotification(UUID receiverId, String title, String content, Level level) {
+
+        log.debug("[알림] 알림 저장 시작 : receiverId= {}, title= {}", receiverId, title);
 
         //수신자 조회
         User receiver = userRepository.findById(receiverId)
@@ -61,21 +76,28 @@ public class BasicNotificationService implements NotificationService {
         //DB 저장
         Notification saved = notificationRepository.save(notification);
 
-        //DTO 변환
-        NotificationDto dto = notificationMapper.toDto(saved);
+        log.info("[알림] 알림 저장 성공 : receiverId= {}, title= {}", receiverId, title);
+
+        return notificationMapper.toDto(saved);
+    }
+
+    //SSE 전송
+    public void sendSse(NotificationDto dto) {
+
+        log.debug("[알림] 알림 SSE 전송 시작 : receiverId= {}, title= {}", dto.receiverId(), dto.title());
 
         try {
             sseService.send(
-                    List.of(receiverId),
+                    List.of(dto.receiverId()),
                     "알림",
                     dto                 //data payload
             );
-            log.info("[알림] SSE 전송 완료: notificationId= {}", saved.getId());
+            log.info("[알림] SSE 전송 완료: notificationId= {}", dto.id());
         } catch (Exception e) {
-            log.error("[알림] SSE 전송 실패 : notificationId= {}", saved.getId(), e);
+            log.error("[알림] SSE 전송 실패 : notificationId= {}", dto.id(), e);
         }
 
-        return dto;
+        log.info("[알림] 알림 SSE 전송 성공 : receiverId= {}, title= {}", dto.receiverId(), dto.title());
     }
 
     //알림 목록 조회
