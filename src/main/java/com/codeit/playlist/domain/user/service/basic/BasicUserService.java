@@ -3,6 +3,9 @@ package com.codeit.playlist.domain.user.service.basic;
 import com.codeit.playlist.domain.auth.exception.AuthAccessDeniedException;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.file.S3Uploader;
+import com.codeit.playlist.domain.file.exception.FileTooLargeException;
+import com.codeit.playlist.domain.file.exception.InvalidImageContentException;
+import com.codeit.playlist.domain.file.exception.InvalidImageTypeException;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
@@ -19,18 +22,23 @@ import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
 import com.codeit.playlist.domain.user.exception.UserLockStateUnchangedException;
 import com.codeit.playlist.domain.user.exception.UserNameRequiredException;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
+import com.codeit.playlist.domain.user.exception.UserProfileAccessDeniedException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.repository.UserRepositoryCustom;
 import com.codeit.playlist.domain.user.service.UserService;
 import com.codeit.playlist.global.config.S3Properties;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -51,6 +59,9 @@ public class BasicUserService implements UserService {
   private final TemporaryPasswordStore temporaryPasswordStore;
   private final S3Uploader s3Uploader;
   private final S3Properties s3Properties;
+
+  private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png", "image/gif");
+  private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
 
   @Value("${ADMIN_EMAIL}")
   private String adminEmail;
@@ -211,11 +222,20 @@ public class BasicUserService implements UserService {
   }
 
   @Override
-  public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile image) {
+  public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile image, Authentication authentication) {
     log.debug("[프로필 관리] 프로필 변경 시작 : userId = {}", userId);
+
+    String currentUserEmail = authentication.getName();
+    User currentUser = userRepository.findByEmail(currentUserEmail)
+        .orElseThrow(() -> UserNotFoundException.withUsername(currentUserEmail));
 
     User user = userRepository.findById(userId)
             .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    if (!currentUser.getId().equals(user.getId()) && !authentication.getAuthorities().stream()
+        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+      throw UserProfileAccessDeniedException.withId(userId);
+    }
 
     if (request.name() == null || request.name().isBlank()) {
       throw UserNameRequiredException.withUserName(request.name());
@@ -223,13 +243,60 @@ public class BasicUserService implements UserService {
     user.updateUsername(request.name());
 
     if (image != null && !image.isEmpty()) {
-      String key = "profiles/" + userId + "_" + image.getOriginalFilename();
-      String imageUrl = s3Uploader.upload(s3Properties.getProfileBucket(), key, image);
+      String contentType = image.getContentType();
+      List<String> allowed = List.of("image/jpeg", "image/png");
+      if (!allowed.contains(contentType)) {
+        throw InvalidImageTypeException.withType(contentType);
+      }
+
+      long maxSize = 5 * 1024 * 1024;
+      if (image.getSize() > maxSize) {
+        throw FileTooLargeException.withSize(image.getSize());
+      }
+
+      try (InputStream is = image.getInputStream()) {
+        byte[] header = new byte[4];
+        if (is.read(header) != 4) {
+          throw InvalidImageContentException.defaultError();
+        }
+
+        boolean isJpeg = header[0] == (byte) 0xFF && header[1] == (byte) 0xD8;
+        boolean isPng = header[0] == (byte) 0x89 && header[1] == (byte) 0x50;
+
+        if (!isJpeg && !isPng) {
+          throw InvalidImageContentException.defaultError();
+        }
+      } catch (IOException e) {
+        throw InvalidImageContentException.defaultError();
+      }
+
+      String extension = contentType.equals("image/png") ? ".png" : ".jpg";
+      String key = "profiles/" + userId + "_" + image.getOriginalFilename() + extension;
+
+      String imageUrl = s3Uploader.upload(
+          s3Properties.getProfileBucket(),
+          key,
+          image
+      );
+
       user.updateProfileImageUrl(imageUrl);
     }
 
     UserDto userDto = userMapper.toDto(user);
     log.info("[프로필 관리] 프로필 변경 완료 : userId = {}", userId);
+
     return userDto;
+  }
+
+  private String sanitizeFilename(String filename) {
+    if (filename == null) return "profile";
+    // Remove path separators and keep only the filename
+    String sanitized = filename.replaceAll("[/\\\\]", "");
+    // Get extension safely
+    int dotIndex = sanitized.lastIndexOf('.');
+    if (dotIndex > 0) {
+      return sanitized.substring(dotIndex);
+    }
+    return ".jpg"; // default extension
   }
 }

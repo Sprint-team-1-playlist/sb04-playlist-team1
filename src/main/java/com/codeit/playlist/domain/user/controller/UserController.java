@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -61,10 +62,11 @@ public class UserController {
   )
   public ResponseEntity<UserDto> updateUser(
       @PathVariable UUID userId,
-      @RequestPart("request") UserUpdateRequest request,
-      @RequestPart(value = "image", required = false) MultipartFile image
+      @Valid @RequestPart("request") UserUpdateRequest request,
+      @RequestPart(value = "image", required = false) MultipartFile image,
+      Authentication authentication
   ) {
-    UserDto updated = userService.updateUser(userId, request, image);
+    UserDto updated = userService.updateUser(userId, request, image, authentication);
     return ResponseEntity.ok(updated);
   }
 

@@ -8,6 +8,7 @@ import com.codeit.playlist.domain.user.dto.request.UserLockUpdateRequest;
 import com.codeit.playlist.domain.user.dto.request.UserUpdateRequest;
 import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
 import java.util.UUID;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
@@ -22,5 +23,5 @@ public interface UserService {
 
   void updateUserLocked(UUID userId, UserLockUpdateRequest request);
 
-  UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile image);
+  UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile image, Authentication authentication);
 }

@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum UserErrorCode implements ErrorCode {
 
+  USER_PROFILE_ACCESS_DENIED(HttpStatus.FORBIDDEN.value(), "해당 프로필을 수정할 권한이 없습니다."),
+
   USER_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "사용자 정보가 없습니다."),
   EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT.value(), "중복된 이메일로 가입할 수 없습니다."),
   LOGIN_FAILED(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 올바르지 않습니다."),
