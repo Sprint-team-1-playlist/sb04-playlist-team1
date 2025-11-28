@@ -82,14 +82,14 @@ public class BasicNotificationService implements NotificationService {
     }
 
     //SSE 전송
-    public void sendSse(NotificationDto dto) {
+    private void sendSse(NotificationDto dto) {
 
         log.debug("[알림] 알림 SSE 전송 시작 : receiverId= {}, title= {}", dto.receiverId(), dto.title());
 
         try {
             sseService.send(
                     List.of(dto.receiverId()),
-                    "알림",
+                    "notifications",
                     dto                 //data payload
             );
             log.info("[알림] SSE 전송 성공: notificationId= {}, receiverId= {}, title= {}",
