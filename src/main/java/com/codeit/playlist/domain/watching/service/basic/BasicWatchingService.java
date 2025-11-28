@@ -52,7 +52,7 @@ public class BasicWatchingService implements WatchingService {
                         "contentId = {}, watcherNameLike = {}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
                 contentId, watcherNameLike, cursor, idAfter, limit, sortDirection, sortBy);
 
-        if (limit <= 0) {
+        if (limit <= 0 || limit > 50) {
             log.error("[실시간 같이 보기] 유효하지 않은 파라미터, 기본값으로 보정");
             limit = 10;
         }
