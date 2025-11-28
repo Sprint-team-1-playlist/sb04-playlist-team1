@@ -3,6 +3,8 @@ package com.codeit.playlist.domain.watching.repository;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
+import com.codeit.playlist.domain.watching.exception.WatchingNotFoundException;
+import com.codeit.playlist.domain.watching.exception.WatchingSessionMismatch;
 import com.codeit.playlist.global.error.InvalidCursorException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -115,10 +117,10 @@ public class RedisWatchingSessionRepository {
     }
 
     // 콘텐츠별 사용자 목록 조회(커서페이지네이션)
-    public RawWatchingSessionPage getWatchingSessions(UUID contentId,
-                                                      String cursor,
-                                                      int limit,
-                                                      SortDirection sortDirection) {
+    public RawWatchingSessionPage getWatchingSessionsByContentId(UUID contentId,
+                                                                 String cursor,
+                                                                 int limit,
+                                                                 SortDirection sortDirection) {
         Set<String> watchingIds;
         if (cursor == null) {
             watchingIds = getFirstPage(
@@ -151,6 +153,36 @@ public class RedisWatchingSessionRepository {
         Long count = redisTemplate.opsForZSet()
                 .size(contentKey(contentId));
         return count != null ? count : 0L;
+    }
+
+    // 특정 사용자의 시청 세션 조회
+    public RawWatchingSession getWatchingSessionByUser(UUID userId) {
+        String watchingIdStr = redisTemplate.opsForValue()
+                .get(userKey(userId));
+        if (watchingIdStr == null) {
+            log.debug("[실시간 같이 보기] watchingId가 없음: watchingId={}", watchingIdStr);
+            removeWatchingSession(userId);
+            return null;
+        }
+
+        UUID watchingId = UUID.fromString(watchingIdStr);
+        Map<Object, Object> map = redisTemplate.opsForHash()
+                .entries(watchingKey(watchingId));
+        if (map.isEmpty()) {
+            log.error("[실시간 같이 보기] 세선 졍보 없음: watchingId={}", watchingId);
+            throw WatchingNotFoundException.withId(watchingId);
+        }
+        if (!convertObjectToUuid(map, "userId").equals(userId)) {
+            log.error("[실시간 같이 보기] 사용자 정보가 일치하지 않음:  watchingId={}, userId={}", watchingId, userId);
+            throw WatchingSessionMismatch.withWatchingIdAndUserId(watchingId, userId);
+        }
+
+        return new RawWatchingSession(
+                watchingId,
+                convertObjectToUuid(map, "contentId"),
+                convertObjectToUuid(map, "userId"),
+                convertObjectToLong(map, "createdAt")
+        );
     }
 
     private Set<String> getFirstPage(UUID contentId,
@@ -210,5 +242,13 @@ public class RedisWatchingSessionRepository {
 
             raws.add(new RawWatchingSession(watchingId, contentId, userId, createdAtEpoch));
         }
+    }
+
+    private UUID convertObjectToUuid(Map<Object, Object> map, Object key) {
+        return UUID.fromString(map.get(key).toString());
+    }
+
+    private long convertObjectToLong(Map<Object, Object> map, Object key) {
+        return Long.parseLong(map.get(key).toString());
     }
 }
