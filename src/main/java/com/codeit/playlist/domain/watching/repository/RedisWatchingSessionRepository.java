@@ -183,7 +183,7 @@ public class RedisWatchingSessionRepository {
         }
 
         return redisTemplate.opsForZSet()
-                .reverseRangeByScore(contentKey(contentId), cursorLong - 1, Long.MAX_VALUE, 0, limit + 1);
+                .reverseRangeByScore(contentKey(contentId), cursorLong - 1, 0, 0, limit + 1);
     }
 
     private List<RawWatchingSession> getPageDetails(UUID contentId, Set<String> watchingIds) {
