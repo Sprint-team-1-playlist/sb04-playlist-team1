@@ -53,10 +53,10 @@ public class WatchingController {
     }
 
     @GetMapping("/users/{watcherId}/watching-sessions")
-    public ResponseEntity<WatchingSessionDto> getWatchingSessionByUser(@PathVariable("watcherId") UUID userId) {
-        log.debug("[실시간 같이 보기] 특정 사용자의 시청 세션 조회(nullable) 시작: watcherId={}", userId);
+    public ResponseEntity<WatchingSessionDto> getWatchingSessionByUser(@PathVariable("watcherId") UUID watcherId) {
+        log.debug("[실시간 같이 보기] 특정 사용자의 시청 세션 조회(nullable) 시작: watcherId={}", watcherId);
 
-        WatchingSessionDto response = watchingService.getWatchingSessionByUser(userId);
+        WatchingSessionDto response = watchingService.getWatchingSessionByUser(watcherId);
 
         log.info("[실시간 같이 보기] 특정 사용자의 시청 세션 조회(nullable) 완료: response={}", response);
 
