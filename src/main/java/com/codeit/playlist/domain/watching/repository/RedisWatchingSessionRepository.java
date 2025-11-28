@@ -3,7 +3,7 @@ package com.codeit.playlist.domain.watching.repository;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
-import com.codeit.playlist.domain.watching.dto.request.WatchingSessionRequest;
+import com.codeit.playlist.domain.watching.dto.data.SortBy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -126,17 +126,40 @@ public class RedisWatchingSessionRepository {
     }
 
     // 콘텐츠별 사용자 목록 조회(커서페이지네이션)
-    public RawWatchingSessionPage getWatchingSessions(UUID contentId, WatchingSessionRequest request) {
+    public RawWatchingSessionPage getWatchingSessions(UUID contentId,
+                                                      String watcherNameLike,
+                                                      String cursor,
+                                                      UUID idAfter,
+                                                      int limit,
+                                                      SortDirection sortDirection,
+                                                      SortBy sortBy) {
         Set<String> watchingIds;
-        if (request.cursor() == null) {
-            watchingIds = getFirstPage(contentId, request);
+        if (cursor == null) {
+            watchingIds = getFirstPage(
+                    contentId,
+                    watcherNameLike,
+                    cursor,
+                    idAfter,
+                    limit,
+                    sortDirection,
+                    sortBy);
         } else {
-            watchingIds = getNextPage(contentId, request);
+            watchingIds = getNextPage(
+                    contentId,
+                    watcherNameLike,
+                    cursor,
+                    idAfter,
+                    limit,
+                    sortDirection,
+                    sortBy);
         }
 
         List<RawWatchingSession> raws = getPageDetails(contentId, watchingIds);
 
-        boolean hasNext = (raws.size() == request.limit());
+        boolean hasNext = (raws.size() > limit);
+        if (hasNext) {
+            raws = raws.subList(0, limit);
+        }
 
         return new RawWatchingSessionPage(
                 raws,
@@ -151,26 +174,38 @@ public class RedisWatchingSessionRepository {
         return count != null ? count : 0L;
     }
 
-    private Set<String> getFirstPage(UUID contentId, WatchingSessionRequest request) {
-        if (request.sortDirection().equals(SortDirection.ASCENDING)) {
+    private Set<String> getFirstPage(UUID contentId,
+                                     String watcherNameLike,
+                                     String cursor,
+                                     UUID idAfter,
+                                     int limit,
+                                     SortDirection sortDirection,
+                                     SortBy sortBy) {
+        if (sortDirection.equals(SortDirection.ASCENDING)) {
             return redisTemplate.opsForZSet()
-                    .range(contentKey(contentId), 0, request.limit() - 1);
+                    .range(contentKey(contentId), 0, limit);
         }
 
         return redisTemplate.opsForZSet()
-                .reverseRange(contentKey(contentId), 0, request.limit() - 1);
+                .reverseRange(contentKey(contentId), 0, limit);
     }
 
-    private Set<String> getNextPage(UUID contentId, WatchingSessionRequest request) {
-        long cursor = Long.parseLong(request.cursor());
+    private Set<String> getNextPage(UUID contentId,
+                                    String watcherNameLike,
+                                    String cursor,
+                                    UUID idAfter,
+                                    int limit,
+                                    SortDirection sortDirection,
+                                    SortBy sortBy) {
+        long cursorLong = Long.parseLong(cursor);
 
-        if (request.sortDirection().equals(SortDirection.ASCENDING)) {
+        if (sortDirection.equals(SortDirection.ASCENDING)) {
             return redisTemplate.opsForZSet()
-                    .rangeByScore(contentKey(contentId), cursor + 1, Long.MAX_VALUE, 0, request.limit());
+                    .rangeByScore(contentKey(contentId), cursorLong + 1, Long.MAX_VALUE, 0, limit + 1);
         }
 
         return redisTemplate.opsForZSet()
-                .reverseRangeByScore(contentKey(contentId), cursor - 1, Long.MAX_VALUE, 0, request.limit());
+                .reverseRangeByScore(contentKey(contentId), cursorLong - 1, Long.MAX_VALUE, 0, limit + 1);
     }
 
     private List<RawWatchingSession> getPageDetails(UUID contentId, Set<String> watchingIds) {

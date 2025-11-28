@@ -1,5 +1,6 @@
 package com.codeit.playlist.watching.service.basic;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.content.mapper.ContentMapper;
@@ -10,8 +11,8 @@ import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
+import com.codeit.playlist.domain.watching.dto.data.SortBy;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
-import com.codeit.playlist.domain.watching.dto.request.WatchingSessionRequest;
 import com.codeit.playlist.domain.watching.dto.response.CursorResponseWatchingSessionDto;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.domain.watching.service.basic.BasicWatchingService;
@@ -49,7 +50,6 @@ class BasicWatchingServiceTest {
     private TagRepository tagRepository;
 
     private final UUID contentId = WatchingSessionFixtures.FIXED_ID;
-    private final WatchingSessionRequest request = WatchingSessionFixtures.watchingSessionRequest();
     private final RawWatchingSession raw = WatchingSessionFixtures.rawWatchingSession();
     private final RawWatchingSessionPage rawPage = WatchingSessionFixtures.rawWatchingSessionPage();
 
@@ -57,8 +57,15 @@ class BasicWatchingServiceTest {
     @DisplayName("getWatchingSessions 호출 시 RedisWatchingSessionRepository.getWatchingSessions가 호출된다")
     void getWatchingSessions_callsRepository() {
         // given
-        when(redisWatchingSessionRepository.getWatchingSessions(contentId, request))
-                .thenReturn(rawPage);
+        when(redisWatchingSessionRepository.getWatchingSessions(
+                contentId,
+                "test",
+                null,
+                null,
+                10,
+                SortDirection.ASCENDING,
+                SortBy.createdAt)
+        ).thenReturn(rawPage);
         when(redisWatchingSessionRepository.countWatchingSessionByContentId(contentId))
                 .thenReturn(10L);
 
@@ -75,11 +82,25 @@ class BasicWatchingServiceTest {
         when(contentMapper.toDto(content, tags)).thenReturn(watchingSessionDto.content());
 
         // when
-        CursorResponseWatchingSessionDto response = watchingService.getWatchingSessions(contentId, request);
+        CursorResponseWatchingSessionDto response = watchingService.getWatchingSessions(
+                contentId,
+                "test",
+                null,
+                null,
+                10,
+                SortDirection.ASCENDING,
+                SortBy.createdAt);
 
         // then
         verify(redisWatchingSessionRepository, times(1))
-                .getWatchingSessions(contentId, request);
+                .getWatchingSessions(
+                        contentId,
+                        "test",
+                        null,
+                        null,
+                        10,
+                        SortDirection.ASCENDING,
+                        SortBy.createdAt);
         verify(redisWatchingSessionRepository, times(1))
                 .countWatchingSessionByContentId(contentId);
 

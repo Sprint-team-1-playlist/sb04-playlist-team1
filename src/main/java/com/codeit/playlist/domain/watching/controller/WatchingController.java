@@ -1,9 +1,9 @@
 package com.codeit.playlist.domain.watching.controller;
 
-import com.codeit.playlist.domain.watching.dto.request.WatchingSessionRequest;
+import com.codeit.playlist.domain.base.SortDirection;
+import com.codeit.playlist.domain.watching.dto.data.SortBy;
 import com.codeit.playlist.domain.watching.dto.response.CursorResponseWatchingSessionDto;
 import com.codeit.playlist.domain.watching.service.WatchingService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -21,10 +21,30 @@ public class WatchingController {
 
     @GetMapping("/contents/{contentId}/watching-sessions")
     public ResponseEntity<CursorResponseWatchingSessionDto> getWatchingSessions(@PathVariable("contentId") UUID contentId,
-                                                                                @Valid @ModelAttribute WatchingSessionRequest request) {
-        log.debug("[실시간 같이 보기] 특정 콘텐츠의 시청 세션 목록 조회(커서 페이지네이션) 시작: contentId = {}, request = {}", contentId, request);
-        CursorResponseWatchingSessionDto response = watchingService.getWatchingSessions(contentId, request);
-        log.info("[실시간 같이 보기] 특정 콘텐츠의 시청 세션 목록 조회(커서 페이지네이션) 완료: contentId = {}, response = {}", contentId, response);
+                                                                                @RequestParam String watcherNameLike,
+                                                                                @RequestParam(required = false) String cursor,
+                                                                                @RequestParam(required = false) UUID idAfter,
+                                                                                @RequestParam(required = false) int limit,
+                                                                                @RequestParam(defaultValue = "ASCENDING") SortDirection sortDirection,
+                                                                                @RequestParam(defaultValue = "createdAt") SortBy sortBy) {
+        log.debug("[실시간 같이 보기] 특정 콘텐츠의 시청 세션 목록 조회(커서 페이지네이션) 시작: " +
+                        "contentId = {}, watcherNameLike = {}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
+                contentId, watcherNameLike, cursor, idAfter, limit, sortDirection, sortBy);
+
+        CursorResponseWatchingSessionDto response =
+                watchingService.getWatchingSessions(
+                        contentId,
+                        watcherNameLike,
+                        cursor,
+                        idAfter,
+                        limit,
+                        sortDirection,
+                        sortBy
+                );
+
+        log.info("[실시간 같이 보기] 특정 콘텐츠의 시청 세션 목록 조회(커서 페이지네이션) 성공: " +
+                        "contentId = {}, watcherNameLike = {}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
+                contentId, watcherNameLike, cursor, idAfter, limit, sortDirection, sortBy);
 
         return ResponseEntity
                 .status(HttpStatus.OK)

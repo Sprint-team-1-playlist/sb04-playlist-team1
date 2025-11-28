@@ -4,7 +4,6 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
 import com.codeit.playlist.domain.watching.dto.data.SortBy;
-import com.codeit.playlist.domain.watching.dto.request.WatchingSessionRequest;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -118,7 +117,9 @@ class RedisWatchingSessionRepositoryTest {
         RawWatchingSession s1 = repository.addWatchingSession(w1, contentId, u1);
         RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
 
-        WatchingSessionRequest request = new WatchingSessionRequest(
+        // when
+        RawWatchingSessionPage page = repository.getWatchingSessions(
+                contentId,
                 "test",
                 null,
                 null,
@@ -126,9 +127,6 @@ class RedisWatchingSessionRepositoryTest {
                 SortDirection.ASCENDING,
                 SortBy.createdAt
         );
-
-        // when
-        RawWatchingSessionPage page = repository.getWatchingSessions(contentId, request);
 
         // then
         assertThat(page.raws()).hasSize(2);
@@ -149,17 +147,15 @@ class RedisWatchingSessionRepositoryTest {
         RawWatchingSession s1 = repository.addWatchingSession(w1, contentId, u1);
         RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
 
-        WatchingSessionRequest request = new WatchingSessionRequest(
+        // when
+        RawWatchingSessionPage page = repository.getWatchingSessions(
+                contentId,
                 "test",
                 null,
                 null,
                 10,
                 SortDirection.DESCENDING,
-                SortBy.createdAt
-        );
-
-        // when
-        RawWatchingSessionPage page = repository.getWatchingSessions(contentId, request);
+                SortBy.createdAt);
 
         // then
         assertThat(page.raws()).hasSize(2);
@@ -184,35 +180,30 @@ class RedisWatchingSessionRepositoryTest {
         RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
         RawWatchingSession s3 = repository.addWatchingSession(w3, contentId, u3);
 
-        // 첫 페이지 limit=1
-        WatchingSessionRequest firstPageReq = new WatchingSessionRequest(
+        RawWatchingSessionPage firstPage = repository.getWatchingSessions(
+                contentId,
                 "test",
                 null,
                 null,
                 1,
                 SortDirection.ASCENDING,
-                SortBy.createdAt
-        );
-
-        RawWatchingSessionPage firstPage = repository.getWatchingSessions(contentId, firstPageReq);
+                SortBy.createdAt);
 
         assertThat(firstPage.raws()).hasSize(1);
         long cursor = firstPage.raws().get(0).createdAtEpoch();
 
         // when - 두 번째 페이지
-        WatchingSessionRequest nextPageReq = new WatchingSessionRequest(
+        RawWatchingSessionPage nextPage = repository.getWatchingSessions(
+                contentId,
                 "test",
                 String.valueOf(cursor),
                 null,
                 2,
                 SortDirection.ASCENDING,
-                SortBy.createdAt
-        );
-
-        RawWatchingSessionPage nextPage = repository.getWatchingSessions(contentId, nextPageReq);
+                SortBy.createdAt);
 
         // then
         assertThat(nextPage.raws()).hasSize(2);
-        assertThat(nextPage.hasNext()).isTrue();
+        assertThat(nextPage.hasNext()).isFalse();
     }
 }
