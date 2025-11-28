@@ -11,6 +11,8 @@ public interface NotificationService {
 
     NotificationDto createNotification(UUID receiverId, String title, String content, Level level);
 
+    NotificationDto saveNotification(UUID receiverId, String title, String content, Level level);
+
     CursorResponseNotificationDto getAllNotifications(UUID receiverId, String cursor, UUID idAfter,
                                                       int limit, SortDirection sortDirection, String sortBy);
 

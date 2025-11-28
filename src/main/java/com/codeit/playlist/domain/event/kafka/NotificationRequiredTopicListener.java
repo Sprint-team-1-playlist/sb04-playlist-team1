@@ -2,16 +2,19 @@ package com.codeit.playlist.domain.event.kafka;
 
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
+import com.codeit.playlist.domain.notification.entity.Level;
+import com.codeit.playlist.domain.notification.service.NotificationService;
 import com.codeit.playlist.domain.sse.entity.SseMessage;
 import com.codeit.playlist.domain.sse.service.SseService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Set;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+
+import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -20,6 +23,7 @@ public class NotificationRequiredTopicListener {
 
   private final ObjectMapper objectMapper;
   private final SseService sseService;
+  private final NotificationService notificationService;
 
   @KafkaListener(topics = "playlist.DirectMessageDto")
   public void onDirectMessageEvent(String kafkaEvent) {
@@ -29,6 +33,12 @@ public class NotificationRequiredTopicListener {
       UUID receiverId = event.receiver().userId();
 
       // notification 저장 로직
+      String title = String.format("[DM] %s", event.sender().name());
+      String rawMessage = event.content();
+      String preview = rawMessage.length() > 30 ? rawMessage.substring(0, 30) + "..." : rawMessage;
+
+      String content = String.format("%s", preview);
+      notificationService.saveNotification(receiverId, title, content, Level.INFO);
 
       SseMessage sseMessage = SseMessage.create(
           Set.of(receiverId),
@@ -55,6 +65,7 @@ public class NotificationRequiredTopicListener {
       UUID receiverId = event.receiverId();
 
       // notification 저장 로직
+      notificationService.saveNotification(receiverId, event.title(), event.content(), event.level());
 
       SseMessage sseMessage = SseMessage.create(
           Set.of(receiverId),
