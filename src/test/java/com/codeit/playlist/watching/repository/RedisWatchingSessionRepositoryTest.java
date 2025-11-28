@@ -3,7 +3,6 @@ package com.codeit.playlist.watching.repository;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
-import com.codeit.playlist.domain.watching.dto.data.SortBy;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,7 +106,7 @@ class RedisWatchingSessionRepositoryTest {
 
     @Test
     @DisplayName("getWatchingSessions: 첫 페이지 ASC 정상 조회")
-    void testGetWatchingSessionsFirstPageASC() {
+    void testGetWatchingSessionsFirstPageASC() throws InterruptedException {
         // given
         UUID u1 = UUID.randomUUID();
         UUID u2 = UUID.randomUUID();
@@ -115,6 +114,7 @@ class RedisWatchingSessionRepositoryTest {
         UUID w2 = UUID.randomUUID();
 
         RawWatchingSession s1 = repository.addWatchingSession(w1, contentId, u1);
+        Thread.sleep(5);
         RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
 
         // when
@@ -133,7 +133,7 @@ class RedisWatchingSessionRepositoryTest {
 
     @Test
     @DisplayName("getWatchingSessions: 첫 페이지 DESC 정상 조회")
-    void testGetWatchingSessionsFirstPageDESC() {
+    void testGetWatchingSessionsFirstPageDESC() throws InterruptedException {
         // given
         UUID u1 = UUID.randomUUID();
         UUID u2 = UUID.randomUUID();
@@ -141,6 +141,7 @@ class RedisWatchingSessionRepositoryTest {
         UUID w2 = UUID.randomUUID();
 
         RawWatchingSession s1 = repository.addWatchingSession(w1, contentId, u1);
+        Thread.sleep(5);
         RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
 
         // when
@@ -159,7 +160,7 @@ class RedisWatchingSessionRepositoryTest {
 
     @Test
     @DisplayName("getWatchingSessions - 다음 페이지 ASC 조회")
-    void testGetWatchingSessionsNextPageASC() {
+    void testGetWatchingSessionsNextPageASC() throws InterruptedException {
         // given
         UUID u1 = UUID.randomUUID();
         UUID u2 = UUID.randomUUID();
@@ -170,7 +171,9 @@ class RedisWatchingSessionRepositoryTest {
         UUID w3 = UUID.randomUUID();
 
         RawWatchingSession s1 = repository.addWatchingSession(w1, contentId, u1);
+        Thread.sleep(5);
         RawWatchingSession s2 = repository.addWatchingSession(w2, contentId, u2);
+        Thread.sleep(5);
         RawWatchingSession s3 = repository.addWatchingSession(w3, contentId, u3);
 
         RawWatchingSessionPage firstPage = repository.getWatchingSessions(
