@@ -59,12 +59,9 @@ class BasicWatchingServiceTest {
         // given
         when(redisWatchingSessionRepository.getWatchingSessions(
                 contentId,
-                "test",
-                null,
                 null,
                 10,
-                SortDirection.ASCENDING,
-                SortBy.createdAt)
+                SortDirection.ASCENDING)
         ).thenReturn(rawPage);
         when(redisWatchingSessionRepository.countWatchingSessionByContentId(contentId))
                 .thenReturn(10L);
@@ -95,12 +92,9 @@ class BasicWatchingServiceTest {
         verify(redisWatchingSessionRepository, times(1))
                 .getWatchingSessions(
                         contentId,
-                        "test",
-                        null,
                         null,
                         10,
-                        SortDirection.ASCENDING,
-                        SortBy.createdAt);
+                        SortDirection.ASCENDING);
         verify(redisWatchingSessionRepository, times(1))
                 .countWatchingSessionByContentId(contentId);
 

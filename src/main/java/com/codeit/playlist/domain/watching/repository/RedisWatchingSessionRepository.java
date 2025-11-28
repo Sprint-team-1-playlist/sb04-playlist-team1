@@ -3,7 +3,6 @@ package com.codeit.playlist.domain.watching.repository;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
-import com.codeit.playlist.domain.watching.dto.data.SortBy;
 import com.codeit.playlist.global.error.InvalidCursorException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -109,50 +108,29 @@ public class RedisWatchingSessionRepository {
             return List.of();
         }
 
-        List<RawWatchingSession> result = new ArrayList<>();
-        for (String id : watchingIds) {
-            UUID watchingId = UUID.fromString(id);
+        List<RawWatchingSession> raws = new ArrayList<>();
+        getRawSessions(contentId, watchingIds, raws);
 
-            Map<Object, Object> map = redisTemplate.opsForHash()
-                    .entries(watchingKey(watchingId));
-            if (map.isEmpty()) continue;
-
-            UUID userId = UUID.fromString(map.get("userId").toString());
-            long createdAtEpoch = Long.parseLong(map.get("createdAt").toString());
-
-            result.add(new RawWatchingSession(watchingId, contentId, userId, createdAtEpoch));
-        }
-
-        return result;
+        return raws;
     }
 
     // 콘텐츠별 사용자 목록 조회(커서페이지네이션)
     public RawWatchingSessionPage getWatchingSessions(UUID contentId,
-                                                      String watcherNameLike,
                                                       String cursor,
-                                                      UUID idAfter,
                                                       int limit,
-                                                      SortDirection sortDirection,
-                                                      SortBy sortBy) {
+                                                      SortDirection sortDirection) {
         Set<String> watchingIds;
         if (cursor == null) {
             watchingIds = getFirstPage(
                     contentId,
-                    watcherNameLike,
-                    cursor,
-                    idAfter,
                     limit,
-                    sortDirection,
-                    sortBy);
+                    sortDirection);
         } else {
             watchingIds = getNextPage(
                     contentId,
-                    watcherNameLike,
                     cursor,
-                    idAfter,
                     limit,
-                    sortDirection,
-                    sortBy);
+                    sortDirection);
         }
 
         List<RawWatchingSession> raws = getPageDetails(contentId, watchingIds);
@@ -176,12 +154,8 @@ public class RedisWatchingSessionRepository {
     }
 
     private Set<String> getFirstPage(UUID contentId,
-                                     String watcherNameLike,
-                                     String cursor,
-                                     UUID idAfter,
                                      int limit,
-                                     SortDirection sortDirection,
-                                     SortBy sortBy) {
+                                     SortDirection sortDirection) {
         if (sortDirection.equals(SortDirection.ASCENDING)) {
             return redisTemplate.opsForZSet()
                     .range(contentKey(contentId), 0, limit);
@@ -192,12 +166,9 @@ public class RedisWatchingSessionRepository {
     }
 
     private Set<String> getNextPage(UUID contentId,
-                                    String watcherNameLike,
                                     String cursor,
-                                    UUID idAfter,
                                     int limit,
-                                    SortDirection sortDirection,
-                                    SortBy sortBy) {
+                                    SortDirection sortDirection) {
         long cursorLong;
         try {
             cursorLong = Long.parseLong(cursor);
@@ -217,6 +188,16 @@ public class RedisWatchingSessionRepository {
 
     private List<RawWatchingSession> getPageDetails(UUID contentId, Set<String> watchingIds) {
         List<RawWatchingSession> raws = new ArrayList<>();
+        if (watchingIds == null) {
+            return raws;
+        }
+
+        getRawSessions(contentId, watchingIds, raws);
+
+        return raws;
+    }
+
+    private void getRawSessions(UUID contentId, Set<String> watchingIds, List<RawWatchingSession> raws) {
         for (String id : watchingIds) {
             UUID watchingId = UUID.fromString(id);
 
@@ -229,7 +210,5 @@ public class RedisWatchingSessionRepository {
 
             raws.add(new RawWatchingSession(watchingId, contentId, userId, createdAtEpoch));
         }
-
-        return raws;
     }
 }

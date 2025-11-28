@@ -120,13 +120,9 @@ class RedisWatchingSessionRepositoryTest {
         // when
         RawWatchingSessionPage page = repository.getWatchingSessions(
                 contentId,
-                "test",
-                null,
                 null,
                 10,
-                SortDirection.ASCENDING,
-                SortBy.createdAt
-        );
+                SortDirection.ASCENDING);
 
         // then
         assertThat(page.raws()).hasSize(2);
@@ -150,12 +146,9 @@ class RedisWatchingSessionRepositoryTest {
         // when
         RawWatchingSessionPage page = repository.getWatchingSessions(
                 contentId,
-                "test",
-                null,
                 null,
                 10,
-                SortDirection.DESCENDING,
-                SortBy.createdAt);
+                SortDirection.DESCENDING);
 
         // then
         assertThat(page.raws()).hasSize(2);
@@ -182,12 +175,9 @@ class RedisWatchingSessionRepositoryTest {
 
         RawWatchingSessionPage firstPage = repository.getWatchingSessions(
                 contentId,
-                "test",
-                null,
                 null,
                 1,
-                SortDirection.ASCENDING,
-                SortBy.createdAt);
+                SortDirection.ASCENDING);
 
         assertThat(firstPage.raws()).hasSize(1);
         long cursor = firstPage.raws().get(0).createdAtEpoch();
@@ -195,12 +185,9 @@ class RedisWatchingSessionRepositoryTest {
         // when - 두 번째 페이지
         RawWatchingSessionPage nextPage = repository.getWatchingSessions(
                 contentId,
-                "test",
                 String.valueOf(cursor),
-                null,
                 2,
-                SortDirection.ASCENDING,
-                SortBy.createdAt);
+                SortDirection.ASCENDING);
 
         // then
         assertThat(nextPage.raws()).hasSize(2);

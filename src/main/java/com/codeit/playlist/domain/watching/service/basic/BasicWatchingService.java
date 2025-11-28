@@ -59,12 +59,9 @@ public class BasicWatchingService implements WatchingService {
 
         RawWatchingSessionPage page = redisWatchingSessionRepository.getWatchingSessions(
                 contentId,
-                watcherNameLike,
                 cursor,
-                idAfter,
                 limit,
-                sortDirection,
-                sortBy);
+                sortDirection);
 
         List<WatchingSessionDto> dtos = page.raws().stream()
                 .map(this::createWatchingSessionDto)
