@@ -1,6 +1,9 @@
 package com.codeit.playlist.domain.watching.repository;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
+import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
+import com.codeit.playlist.global.error.InvalidCursorException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -52,10 +55,10 @@ public class RedisWatchingSessionRepository {
             removeWatchingSession(userId);
         }
 
-        long now = System.currentTimeMillis();
         redisTemplate.opsForValue()
                 .set(userKey(userId), watchingId.toString());
 
+        long now = System.currentTimeMillis();
         redisTemplate.opsForZSet()
                 .add(contentKey(contentId), watchingId.toString(), now);
 
@@ -97,15 +100,104 @@ public class RedisWatchingSessionRepository {
         return new RawWatchingSession(watchingId, contentId, uid, createdAtEpoch);
     }
 
-    // 콘텐츠별 사용자 목록 조회
-    public List<RawWatchingSession> getWatchingSessionsByContentId(UUID contentId) {
+    // 콘텐츠별 사용자 목록 전체 조회
+    public List<RawWatchingSession> getAllWatchingSessionsByContentId(UUID contentId) {
         Set<String> watchingIds = redisTemplate.opsForZSet()
                 .range(contentKey(contentId), 0, -1);
         if (watchingIds == null) {
             return List.of();
         }
 
-        List<RawWatchingSession> result = new ArrayList<>();
+        List<RawWatchingSession> raws = new ArrayList<>();
+        getRawSessions(contentId, watchingIds, raws);
+
+        return raws;
+    }
+
+    // 콘텐츠별 사용자 목록 조회(커서페이지네이션)
+    public RawWatchingSessionPage getWatchingSessions(UUID contentId,
+                                                      String cursor,
+                                                      int limit,
+                                                      SortDirection sortDirection) {
+        Set<String> watchingIds;
+        if (cursor == null) {
+            watchingIds = getFirstPage(
+                    contentId,
+                    limit,
+                    sortDirection);
+        } else {
+            watchingIds = getNextPage(
+                    contentId,
+                    cursor,
+                    limit,
+                    sortDirection);
+        }
+
+        List<RawWatchingSession> raws = getPageDetails(contentId, watchingIds);
+
+        boolean hasNext = (raws.size() > limit);
+        if (hasNext) {
+            raws = raws.subList(0, limit);
+        }
+
+        return new RawWatchingSessionPage(
+                raws,
+                hasNext
+        );
+    }
+
+    // 콘텐츠별 사용자 수 조회
+    public long countWatchingSessionByContentId(UUID contentId) {
+        Long count = redisTemplate.opsForZSet()
+                .size(contentKey(contentId));
+        return count != null ? count : 0L;
+    }
+
+    private Set<String> getFirstPage(UUID contentId,
+                                     int limit,
+                                     SortDirection sortDirection) {
+        if (sortDirection.equals(SortDirection.ASCENDING)) {
+            return redisTemplate.opsForZSet()
+                    .range(contentKey(contentId), 0, limit + 1);
+        }
+
+        return redisTemplate.opsForZSet()
+                .reverseRange(contentKey(contentId), 0, limit + 1);
+    }
+
+    private Set<String> getNextPage(UUID contentId,
+                                    String cursor,
+                                    int limit,
+                                    SortDirection sortDirection) {
+        long cursorLong;
+        try {
+            cursorLong = Long.parseLong(cursor);
+        } catch (NumberFormatException e) {
+            log.error("[실시간 같이 보기] 유효하지 않은 커서: cursor={}", cursor);
+            throw InvalidCursorException.withCursor(cursor);
+        }
+
+        if (sortDirection.equals(SortDirection.ASCENDING)) {
+            return redisTemplate.opsForZSet()
+                    .rangeByScore(contentKey(contentId), cursorLong + 1, Long.MAX_VALUE, 0, limit + 1);
+        }
+
+        return redisTemplate.opsForZSet()
+                .reverseRangeByScore(contentKey(contentId), 0, cursorLong - 1, 0, limit + 1);
+    }
+
+    private List<RawWatchingSession> getPageDetails(UUID contentId, Set<String> watchingIds) {
+        List<RawWatchingSession> raws = new ArrayList<>();
+        if (watchingIds == null) {
+            return raws;
+        }
+
+        getRawSessions(contentId, watchingIds, raws);
+
+        return raws;
+    }
+
+    private void getRawSessions(UUID contentId, Set<String> watchingIds, List<RawWatchingSession> raws) {
         for (String id : watchingIds) {
             UUID watchingId = UUID.fromString(id);
 
@@ -116,16 +208,7 @@ public class RedisWatchingSessionRepository {
             UUID userId = UUID.fromString(map.get("userId").toString());
             long createdAtEpoch = Long.parseLong(map.get("createdAt").toString());
 
-            result.add(new RawWatchingSession(watchingId, contentId, userId, createdAtEpoch));
+            raws.add(new RawWatchingSession(watchingId, contentId, userId, createdAtEpoch));
         }
-
-        return result;
-    }
-
-    // 콘텐츠별 사용자 수 조회
-    public long countWatchingSessionByContentId(UUID contentId) {
-        Long count = redisTemplate.opsForZSet()
-                .size(contentKey(contentId));
-        return count != null ? count : 0L;
     }
 }

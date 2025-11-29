@@ -7,6 +7,7 @@ import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.codeit.playlist.global.config.JpaConfig;
 import com.codeit.playlist.global.config.QuerydslConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,13 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
-import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(QuerydslConfig.class)
+@Import({QuerydslConfig.class, JpaConfig.class})
 public class SubscribeRepositoryTest {
 
     @Autowired
@@ -100,6 +100,6 @@ public class SubscribeRepositoryTest {
     }
 
     private Playlist createPlaylist(User owner) {
-        return new Playlist(owner, "테스트 플레이리스트", "테스트 설명", 0L, new ArrayList<>());
+        return new Playlist(owner, "테스트 플레이리스트", "테스트 설명");
     }
 }

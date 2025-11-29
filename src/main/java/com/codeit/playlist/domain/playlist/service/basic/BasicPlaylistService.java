@@ -43,7 +43,8 @@ public class BasicPlaylistService implements PlaylistService {
 
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> UserNotFoundException.withId(ownerId));
-        Playlist playlist = playlistMapper.toEntity(request, owner);
+
+        Playlist playlist = new Playlist(owner, request.title(), request.description());
 
         Playlist saved = playlistRepository.save(playlist);
 

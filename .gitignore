@@ -7,7 +7,6 @@ build/
 
 .env
 logs
-src/test/resources/application-test.yml
 
 ### STS ###
 .apt_generated

@@ -8,6 +8,7 @@ import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.watching.dto.data.ChangeType;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
+import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 
@@ -21,6 +22,7 @@ public class WatchingSessionFixtures {
     public static final UUID FIXED_ID = UUID.randomUUID();
     public static final LocalDateTime FIXED_TIME = LocalDateTime.now();
     public static final long FIXED_LONG_TIME = System.currentTimeMillis();
+
 
     public static Content content() {
         return mock(Content.class);
@@ -87,6 +89,13 @@ public class WatchingSessionFixtures {
                 FIXED_ID,
                 FIXED_ID,
                 FIXED_LONG_TIME
+        );
+    }
+
+    public static RawWatchingSessionPage rawWatchingSessionPage() {
+        return new RawWatchingSessionPage(
+                List.of(rawWatchingSession()),
+                true
         );
     }
 }

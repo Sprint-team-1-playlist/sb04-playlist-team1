@@ -14,8 +14,8 @@ import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.service.basic.BasicPlaylistService;
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.User;
+import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -85,11 +85,8 @@ public class BasicPlaylistServiceTest {
         User owner = mock(User.class);
         when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
 
-        Playlist mapped = mock(Playlist.class);
-        when(playlistMapper.toEntity(request, owner)).thenReturn(mapped);
-
         Playlist saved = mock(Playlist.class);
-        when(playlistRepository.save(mapped)).thenReturn(saved);
+        when(playlistRepository.save(any(Playlist.class))).thenReturn(saved);
 
         PlaylistDto expected = new PlaylistDto(
                 UUID.randomUUID(), null, "제목", "설명",
@@ -103,28 +100,27 @@ public class BasicPlaylistServiceTest {
         // then
         assertSame(expected, actual);
         verify(userRepository).findById(ownerId);
-        verify(playlistMapper).toEntity(request, owner);
-        verify(playlistRepository).save(mapped);
+        verify(playlistRepository).save(any(Playlist.class));
         verify(playlistMapper).toDto(saved);
         verifyNoMoreInteractions(userRepository, playlistRepository, playlistMapper);
     }
 
     @Test
     @DisplayName("ownerId가 있지만 DB에 사용자 행이 없어 EntityNotFoundException 발생")
-    void failToCreatewithOwnerIdwhenUserMissing() {
+    void failToCreateWithOwnerIdWhenUserMissing() {
         //given
         UUID ownerId = UUID.randomUUID();
         PlaylistCreateRequest request = new PlaylistCreateRequest("제목", "설명");
         when(userRepository.findById(ownerId)).thenReturn(Optional.empty());
 
         // when
-        EntityNotFoundException ex = assertThrows(
-                EntityNotFoundException.class,
+        UserNotFoundException ex = assertThrows(
+                UserNotFoundException.class,
                 () -> basicPlaylistService.createPlaylist(request, ownerId)
         );
 
         // then
-        assertTrue(ex.getMessage().contains("사용자를 찾을 수 없습니다"));
+        assertTrue(ex.getMessage().contains("사용자 정보가 없습니다."));
         verify(userRepository).findById(ownerId);
         verifyNoInteractions(playlistMapper, playlistRepository);
     }
@@ -137,7 +133,7 @@ public class BasicPlaylistServiceTest {
         UUID currentUserId = CURRENT_USER_ID;
         User owner = createUserWithId(currentUserId);  // owner == currentUser
 
-        Playlist playlist = new Playlist(owner, "old title", "old description", 0L, null);
+        Playlist playlist = new Playlist(owner, "old title", "old description");
 
         PlaylistUpdateRequest request = new PlaylistUpdateRequest("new title", "new description");
 
@@ -184,7 +180,7 @@ public class BasicPlaylistServiceTest {
         UUID ownerId = UUID.fromString("22222222-2222-2222-2222-222222222222");
         User owner = createUserWithId(ownerId);
 
-        Playlist playlist = new Playlist(owner, "old title", "old description", 0L, null);
+        Playlist playlist = new Playlist(owner, "old title", "old description");
 
         PlaylistUpdateRequest request =
                 new PlaylistUpdateRequest("new title", "new description");
