@@ -120,19 +120,19 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
 
     @Override
     public long countContents(ContentCursorRequest request) {
-        QContent c = QContent.content;
+        QContent qContent = QContent.content;
         BooleanBuilder builder = new BooleanBuilder();
 
         // 검색 조건만 적용
         if (request.typeEqual() != null) {
-            builder.and(c.type.eq(Type.valueOf(request.typeEqual().toUpperCase())));
+            builder.and(qContent.type.eq(Type.valueOf(request.typeEqual().toUpperCase())));
         }
 
         if (request.keywordLike() != null) {
-            builder.and(c.title.containsIgnoreCase(request.keywordLike()));
+            builder.and(qContent.title.containsIgnoreCase(request.keywordLike()));
         }
 
-        long result = query.select(c.count()).from(c).where(builder).fetchOne();
+        long result = query.select(qContent.count()).from(qContent).where(builder).fetchOne();
 
         return result;
     }

@@ -175,6 +175,12 @@ public class BasicContentService implements ContentService {
         List<Content> contents = contentRepository.searchContents(request, ascending, limit);
         List<ContentDto> data = new ArrayList<>();
 
+        for(int i=0; i < contents.size(); i++) {
+            Content content = contents.get(i);
+            List<Tag> tags = tagRepository.findByContentId(content.getId());
+            data.add(contentMapper.toDto(content, tags));
+        }
+
         String sortBy = request.sortBy();
         if(sortBy == null) {
             sortBy = "createdAt"; // 디폴트
@@ -199,6 +205,7 @@ public class BasicContentService implements ContentService {
 
                 case "watcherCount":
                     nextCursor = String.valueOf(lastPage.getWatcherCount());
+                    break;
 
                 case "rate":
                     nextCursor = String.valueOf(lastPage.getAverageRating());
