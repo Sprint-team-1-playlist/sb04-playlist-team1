@@ -211,8 +211,8 @@ public class BasicContentService implements ContentService {
 
         int size = contents.size();
         boolean hasNext = size == limit + 1;
-        int totalCount = contents.size(); // 전체 페이지 데이터의 갯수
-        log.info("totalCount : {}", totalCount);
+        int pageSize = Math.min(size,limit);
+        log.info("pageSize = {}", pageSize);
         log.info("hasNext : {}", hasNext);
 
         int itemsToReturn = Math.min(contents.size(), limit);
@@ -222,7 +222,7 @@ public class BasicContentService implements ContentService {
             data.add(contentMapper.toDto(content));
         }
 
-        CursorResponseContentDto responseDto = new CursorResponseContentDto(data, nextCursor, nextIdAfter, hasNext, totalCount, sortBy, sortDirection);
+        CursorResponseContentDto responseDto = new CursorResponseContentDto(data, nextCursor, nextIdAfter, hasNext, pageSize, sortBy, sortDirection);
         log.debug("커서 페이지네이션 컨텐츠 수집 완료, response = {}", responseDto);
         return responseDto;
     }
