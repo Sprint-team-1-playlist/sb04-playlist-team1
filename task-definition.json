@@ -8,6 +8,7 @@
   "memory": "1024",
   "executionRoleArn": "arn:aws:iam::ACCOUNT_ID_PLACEHOLDER:role/PlaylistAppExecutionRole",
   "taskRoleArn": "arn:aws:iam::ACCOUNT_ID_PLACEHOLDER:role/PlaylistAppTaskRole",
+  "enableExecuteCommand": true,
   "containerDefinitions": [
     {
       "name": "playlist-app",
