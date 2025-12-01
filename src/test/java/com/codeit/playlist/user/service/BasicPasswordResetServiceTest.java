@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.codeit.playlist.domain.auth.service.EmailService;
+import com.codeit.playlist.domain.user.dto.data.TempPasswordIssuedEvent;
 import com.codeit.playlist.domain.user.dto.request.ResetPasswordRequest;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
@@ -26,25 +27,29 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class BasicPasswordResetServiceTest {
 
-  @Mock
-  private UserRepository userRepository;
+   @Mock
+   private UserRepository userRepository;
 
-  @Mock
-  private EmailService emailService;
+   @Mock
+   private EmailService emailService;
 
-  @Mock
-  private TemporaryPasswordStore tempStore;
+   @Mock
+   private TemporaryPasswordStore tempStore;
 
-  @Mock
-  private PasswordEncoder passwordEncoder;
+   @Mock
+   private PasswordEncoder passwordEncoder;
 
-  @InjectMocks
-  private BasicPasswordResetService service;
+   @Mock
+   private ApplicationEventPublisher publisher;
+
+   @InjectMocks
+   private BasicPasswordResetService service;
 
   private User user;
   private UUID FIXED_ID;
@@ -94,8 +99,8 @@ public class BasicPasswordResetServiceTest {
         .save(eq(FIXED_ID), eq("ENCODED_VALUE"), eq(180L)); // TTL = 3분
     verify(userRepository, times(1))
         .changePassword(eq(FIXED_ID), eq("ENCODED_VALUE"));
-    verify(emailService, times(1))
-        .sendTemporaryPassword(eq(request.email()), anyString()); // 실제 값은 random
+    verify(publisher, times(1))
+        .publishEvent(any(TempPasswordIssuedEvent.class));
   }
 
   @Test

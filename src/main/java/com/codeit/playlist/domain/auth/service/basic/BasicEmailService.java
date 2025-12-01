@@ -2,17 +2,20 @@ package com.codeit.playlist.domain.auth.service.basic;
 
 import com.codeit.playlist.domain.auth.service.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BasicEmailService implements EmailService {
 
   private final JavaMailSender mailSender;
 
   public void sendTemporaryPassword(String toEmail, String tempPassword) {
+    log.debug("[메일] : 임시 비밀번호 이메일 전송 시작 - 수신자: {}", toEmail);
     SimpleMailMessage message = new SimpleMailMessage();
     message.setTo(toEmail);
     message.setSubject("[Playlist] 임시 비밀번호 안내");
@@ -24,6 +27,7 @@ public class BasicEmailService implements EmailService {
     );
 
     mailSender.send(message);
+    log.info("[메일] : 임시 비밀번호 이메일 전송 완료 - 수신자: {}", toEmail);
   }
 
 }
