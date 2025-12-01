@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.11'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'com.codeit'
@@ -86,6 +87,50 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+jacocoTestReport {
+    dependsOn test // 테스트 먼저 실행
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        csv.required.set(false)
+    }
+}
+
+tasks.register("jacocoTestReportOpen") {
+    dependsOn jacocoTestReport
+    doLast {
+        def reportFile = file("${layout.buildDirectory.get().asFile}/reports/jacoco/test/html/index.html")
+        if (reportFile.exists()) {
+            println "Opening JaCoCo HTML report: ${reportFile}"
+            def os = System.getProperty("os.name").toLowerCase()
+            try {
+                if (os.contains("windows")) {
+                    exec { commandLine 'cmd', '/c', 'start', reportFile }
+                } else if (os.contains("mac")) {
+                    exec { commandLine 'open', reportFile }
+                } else if (os.contains("linux")) {
+                    exec { commandLine 'xdg-open', reportFile }
+                } else {
+                    println "Unsupported OS: $os. Report is available at: ${reportFile}"
+                }
+            } catch (Exception e) {
+                println "Failed to open report: ${e.message}. Report is available at: ${reportFile}"
+            }
+        } else {
+            println "Report file does not exist: ${reportFile}"
+        }
+    }
+}
+
+tasks.check {
+    dependsOn tasks.jacocoTestCoverageVerification
 }
 
 // 모든 의존성에서 slf4j-simple을 제외

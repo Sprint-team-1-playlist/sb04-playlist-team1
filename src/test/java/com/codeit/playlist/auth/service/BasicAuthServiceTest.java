@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.codeit.playlist.domain.auth.exception.InvalidOrExpiredException;
 import com.codeit.playlist.domain.auth.service.basic.BasicAuthService;
+import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
@@ -21,6 +22,7 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -41,7 +44,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicAuthServiceTest {
-
 
   @Mock
   private AuthenticationManager authenticationManager;
@@ -78,6 +80,12 @@ public class BasicAuthServiceTest {
 
   @Mock
   private SecurityContext securityContext;
+
+  @Mock
+  ObjectMapper objectMapper;
+
+  @Mock
+  KafkaTemplate<String, Playlist> kafkaTemplate;
 
   private UUID FIXED_ID;
   private PlaylistUserDetails userDetails;
