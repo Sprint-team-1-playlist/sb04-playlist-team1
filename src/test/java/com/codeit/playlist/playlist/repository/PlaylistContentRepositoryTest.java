@@ -10,6 +10,7 @@ import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.codeit.playlist.global.config.JpaConfig;
 import com.codeit.playlist.global.config.QuerydslConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,14 +18,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(QuerydslConfig.class)
+@Import({QuerydslConfig.class, JpaConfig.class})
 public class PlaylistContentRepositoryTest {
 
     @Autowired
@@ -121,8 +121,8 @@ public class PlaylistContentRepositoryTest {
         userRepository.save(owner1);
         userRepository.save(owner2);
 
-        Playlist playlist1 = new Playlist(owner1, "플리1", "설명1", 0L, new ArrayList<>());
-        Playlist playlist2 = new Playlist(owner2, "플리2", "설명2", 0L, new ArrayList<>());
+        Playlist playlist1 = new Playlist(owner1, "플리1", "설명1");
+        Playlist playlist2 = new Playlist(owner2, "플리2", "설명2");
         playlistRepository.save(playlist1);
         playlistRepository.save(playlist2);
 
@@ -270,7 +270,7 @@ public class PlaylistContentRepositoryTest {
     }
     
     private Playlist createPlaylist(User owner, String title, String description) {
-        Playlist playlist = new Playlist(owner, title, description, 0L, new ArrayList<>());
+        Playlist playlist = new Playlist(owner, title, description);
         return playlist;
     }
 

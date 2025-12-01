@@ -63,6 +63,14 @@ public class User extends BaseUpdatableEntity {
     }
   }
 
+  public void updateUsername(String name) {
+    this.name = name;
+  }
+
+  public void updateProfileImageUrl(String profileImageUrl) {
+    this.profileImageUrl = profileImageUrl;
+  }
+
   // 여기부터 연관관계, 초반 설계단계 에러 방지를 위해 주석처리, 각 개발 과정에서 필요한부분 주석 제거하여 사용할것
 
   //  @OneToMany(mappedBy = "user")
@@ -106,5 +114,9 @@ public class User extends BaseUpdatableEntity {
     if (this.role != newRole) {
       this.role = newRole;
     }
+  }
+
+  public void setLocked(boolean locked) {
+    this.locked = locked;
   }
 }

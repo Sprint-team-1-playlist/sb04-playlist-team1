@@ -79,8 +79,16 @@ dependencies {
     implementation 'software.amazon.awssdk:s3:2.25.64'
     // test용 h2
     testImplementation 'com.h2database:h2'
+
+    // Kafka
+    implementation 'org.springframework.kafka:spring-kafka'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// 모든 의존성에서 slf4j-simple을 제외
+configurations.all {
+    exclude group: 'org.slf4j', module: 'slf4j-simple'
 }

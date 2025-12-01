@@ -2,9 +2,7 @@ package com.codeit.playlist.domain.content.controller;
 
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.dto.request.ContentCreateRequest;
-import com.codeit.playlist.domain.content.dto.request.ContentCursorRequest;
 import com.codeit.playlist.domain.content.dto.request.ContentUpdateRequest;
-import com.codeit.playlist.domain.content.dto.response.CursorResponseContentDto;
 import com.codeit.playlist.domain.content.service.basic.BasicContentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,8 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,11 +51,5 @@ public class ContentController {
     public ResponseEntity<Void> delete(@PathVariable UUID contentId) {
         contentService.delete(contentId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
-
-    @GetMapping
-    public ResponseEntity<CursorResponseContentDto> get(@ModelAttribute ContentCursorRequest request) {
-        CursorResponseContentDto response = contentService.get(request);
-        return ResponseEntity.ok(response);
     }
 }
