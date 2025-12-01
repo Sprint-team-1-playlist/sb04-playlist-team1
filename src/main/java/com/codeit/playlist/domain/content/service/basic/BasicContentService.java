@@ -181,46 +181,39 @@ public class BasicContentService implements ContentService {
         }
         log.info("sortBy : {}", sortBy);
 
-        String cursor = request.cursor();
         String nextCursor = null;
-        String nextIdAfter = request.idAfter();
-
-        switch(sortBy) {
-            case "createdAt" :
-                nextCursor = contents.size() == limit + 1 ? contents.get(limit).getCreatedAt().toString() : null;
-                nextIdAfter = contents.size() == limit + 1 ? contents.get(limit).getId().toString() : null;
-                break;
-
-            case "watcherCount" :
-                nextCursor = contents.size() == limit + 1 ? String.valueOf(contents.get(limit).getWatcherCount()) : null;
-                nextIdAfter = contents.size() == limit + 1 ? contents.get(limit).getId().toString() : null;
-                break;
-
-            case "rate" :
-                nextCursor = contents.size() == limit + 1 ? String.valueOf(contents.get(limit).getAverageRating()) : null;
-                nextIdAfter = contents.size() == limit + 1 ? contents.get(limit).getId().toString() : null;
-                break;
-
-            default:
-                throw new IllegalArgumentException();
-        }
-
-        log.info("after sortBy : {}", sortBy);
-        log.info("nextCursor : {}", nextCursor);
-        log.info("nextIdAfter : {}", nextIdAfter);
+        String nextIdAfter = null;
 
         int size = contents.size();
         boolean hasNext = size == limit + 1;
-        int pageSize = Math.min(size,limit);
-        log.info("pageSize = {}", pageSize);
-        log.info("hasNext : {}", hasNext);
+        int pageSize = Math.min(size, limit);
+        log.info("pageSize = {}, hasNext = {}", pageSize, hasNext);
 
-        int itemsToReturn = Math.min(contents.size(), limit);
+        if(hasNext && pageSize > 0) {
+            Content lastPage = contents.get(pageSize - 1); // 이번 페이지에서 실제로 반환되는 마지막 요소
 
-        for(int i = 0; i < itemsToReturn; i++) {
-            Content content = contents.get(i);
-            data.add(contentMapper.toDto(content));
+            switch(sortBy) {
+                case "createdAt":
+                    nextCursor = lastPage.getCreatedAt().toString();
+                    break;
+
+                case "watcherCount":
+                    nextCursor = String.valueOf(lastPage.getWatcherCount());
+
+                case "rate":
+                    nextCursor = String.valueOf(lastPage.getAverageRating());
+                    break;
+
+                default:
+                    throw new IllegalArgumentException("sortBy was something wrong" + sortBy);
+            }
+
+            nextIdAfter = lastPage.getId().toString();
         }
+
+        log.info("after SortBy : {}", sortBy);
+        log.info("nextCursor : {}", nextCursor);
+        log.info("nextIdAfter : {}", nextIdAfter);
 
         CursorResponseContentDto responseDto = new CursorResponseContentDto(data, nextCursor, nextIdAfter, hasNext, pageSize, sortBy, sortDirection);
         log.debug("커서 페이지네이션 컨텐츠 수집 완료, response = {}", responseDto);
