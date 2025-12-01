@@ -2,6 +2,7 @@ package com.codeit.playlist.playlist.service.basic;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.dto.data.ContentSummary;
+import com.codeit.playlist.domain.follow.repository.FollowRepository;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
@@ -16,6 +17,7 @@ import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,6 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Constructor;
@@ -67,12 +70,22 @@ public class BasicPlaylistServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private FollowRepository followRepository;
+
+    @Mock
+    private ObjectMapper objectMapper;
+
+    @Mock
+    private KafkaTemplate<String, String> kafkaTemplate;
+
     @InjectMocks
     BasicPlaylistService basicPlaylistService;
 
     @BeforeEach
     void setUp() {
-        basicPlaylistService = new BasicPlaylistService(playlistRepository, userRepository, playlistMapper);
+        basicPlaylistService = new BasicPlaylistService(playlistRepository, userRepository, playlistMapper,
+                                                        followRepository, objectMapper, kafkaTemplate);
     }
 
     @Test

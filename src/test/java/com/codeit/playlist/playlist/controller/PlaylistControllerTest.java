@@ -394,7 +394,7 @@ public class PlaylistControllerTest {
         mockMvc.perform(post("/api/playlists/{playlistId}/subscription", playlistId)
                         .with(authentication(auth))
                         .with(csrf()))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         then(playlistSubscriptionService).should()
                 .subscribe(eq(playlistId), eq(currentUserId));
