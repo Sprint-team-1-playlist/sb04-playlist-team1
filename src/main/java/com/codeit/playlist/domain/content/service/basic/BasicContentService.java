@@ -147,7 +147,7 @@ public class BasicContentService implements ContentService {
         log.debug("커서 페이지네이션 컨텐츠 수집 시작, request = {}", request);
         int limit = request.limit();
 
-        if(limit <= 0) {
+        if(limit <= 0 || limit > 1000) {
             limit = 10;
         }
 
