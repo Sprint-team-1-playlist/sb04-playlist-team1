@@ -92,7 +92,7 @@ public class BasicNotificationServiceTest {
         then(userRepository).should().findById(receiverId);
         then(notificationRepository).should().save(any(Notification.class));
         then(notificationMapper).should().toDto(savedNotification);
-        then(sseService).should().send(eq(List.of(receiverId)), eq("알림"), eq(dto));
+        then(sseService).should().send(eq(List.of(receiverId)), eq("notifications"), eq(dto));
     }
 
     @Test

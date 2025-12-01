@@ -86,6 +86,9 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
         // 동적 조건
         BooleanBuilder builder = new BooleanBuilder();
 
+        //논리삭제 제외
+        builder.and(playlist.deletedAt.isNull());
+
         if (keywordLike != null) {
             builder.and(playlist.title.containsIgnoreCase(keywordLike));
         }
@@ -142,7 +145,9 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
         // 커서를 DB에서 가져와야 primary sort 값을 비교할 수 있음
         Playlist cursorPlaylist = query
                 .selectFrom(playlist)
-                .where(playlist.id.eq(cursorId))
+                .where(playlist.id.eq(cursorId),
+                        playlist.deletedAt.isNull()
+                )
                 .fetchOne();
 
         if (cursorPlaylist == null) {
