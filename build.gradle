@@ -110,12 +110,18 @@ tasks.register("jacocoTestReportOpen") {
         if (reportFile.exists()) {
             println "Opening JaCoCo HTML report: ${reportFile}"
             def os = System.getProperty("os.name").toLowerCase()
-            if (os.contains("windows")) {
-                exec { commandLine 'cmd', '/c', 'start', reportFile }
-            } else if (os.contains("mac")) {
-                exec { commandLine 'open', reportFile }
-            } else if (os.contains("linux")) {
-                exec { commandLine 'xdg-open', reportFile }
+            try {
+                if (os.contains("windows")) {
+                    exec { commandLine 'cmd', '/c', 'start', reportFile }
+                } else if (os.contains("mac")) {
+                    exec { commandLine 'open', reportFile }
+                } else if (os.contains("linux")) {
+                    exec { commandLine 'xdg-open', reportFile }
+                } else {
+                    println "Unsupported OS: $os. Report is available at: ${reportFile}"
+                }
+            } catch (Exception e) {
+                println "Failed to open report: ${e.message}. Report is available at: ${reportFile}"
             }
         } else {
             println "Report file does not exist: ${reportFile}"
