@@ -93,6 +93,11 @@ public class BasicFollowService implements FollowService {
     log.debug("[Follow] 특정 유저를 내가 팔로우하는지 여부 조회 시작: {}", followeeId);
 
     UUID followerId = getCurrentUserId();
+
+    if (followerId.equals(followeeId)) {
+      throw FollowSelfNotAllowedException.withId(followeeId);
+    }
+
     boolean isFollowing = followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId);
 
     log.info("[Follow] 특정 유저를 내가 팔로우하는지 여부 조회 완료: {} -> {}", followeeId, isFollowing);
