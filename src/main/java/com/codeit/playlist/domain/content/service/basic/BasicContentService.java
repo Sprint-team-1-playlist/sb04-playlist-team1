@@ -2,7 +2,9 @@ package com.codeit.playlist.domain.content.service.basic;
 
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.dto.request.ContentCreateRequest;
+import com.codeit.playlist.domain.content.dto.request.ContentCursorRequest;
 import com.codeit.playlist.domain.content.dto.request.ContentUpdateRequest;
+import com.codeit.playlist.domain.content.dto.response.CursorResponseContentDto;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.content.entity.Type;
@@ -17,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -136,5 +139,93 @@ public class BasicContentService implements ContentService {
         } else {
             throw ContentNotFoundException.withId(contentId);
         }
+    }
+
+    @Transactional
+    @Override
+    public CursorResponseContentDto get(ContentCursorRequest request) {
+        log.debug("커서 페이지네이션 컨텐츠 수집 시작, request = {}", request);
+        int limit = request.limit();
+
+        if(limit <= 0) {
+            limit = 10;
+        }
+
+        log.info("요청 typeEqual : {}, keywordLike : {}, tagsIn : {}, cursor : {}, idAfter : {}, limit : {}, sortDirection : {}, sortBy : {}",
+                request.typeEqual(), request.keywordLike(), request.tagsIn(), request.cursor(), request.idAfter(), request.limit(), request.sortDirection(), request.sortBy());
+
+        String sortDirection = request.sortDirection().toString();
+        log.info("sortDirection : {}", sortDirection);
+
+        if(sortDirection == null) {
+            sortDirection = "DESCENDING";
+        }
+        boolean ascending;
+
+        switch(sortDirection) {
+            case "ASCENDING":
+                ascending = true;
+                break;
+
+            case "DESCENDING":
+                ascending = false;
+                break;
+
+            default:
+                throw new IllegalArgumentException("sortDirection was something wrong" + sortDirection);
+        }
+        log.info("after sortDirection : {}", sortDirection);
+
+        List<Content> contents = contentRepository.searchContents(request, ascending);
+        List<ContentDto> data = new ArrayList<>();
+
+        String sortBy = request.sortBy();
+        if(sortBy == null) {
+            sortBy = "createdAt"; // 디폴트
+        }
+        log.info("sortBy : {}", sortBy);
+
+        String cursor = request.cursor();
+        String nextCursor = null;
+        String nextIdAfter = request.idAfter();
+
+        switch(sortBy) {
+            case "createdAt" :
+                nextCursor = contents.size() == limit + 1 ? contents.get(limit).getCreatedAt().toString() : null;
+                nextIdAfter = contents.size() == limit + 1 ? contents.get(limit).getId().toString() : null;
+                break;
+
+            case "watcherCount" :
+                nextCursor = contents.size() == limit + 1 ? String.valueOf(contents.get(limit).getWatcherCount()) : null;
+                nextIdAfter = contents.size() == limit + 1 ? contents.get(limit).getId().toString() : null;
+                break;
+
+            case "rate" :
+                nextCursor = contents.size() == limit + 1 ? String.valueOf(contents.get(limit).getAverageRating()) : null;
+                nextIdAfter = contents.size() == limit + 1 ? contents.get(limit).getId().toString() : null;
+                break;
+
+            default:
+                throw new IllegalArgumentException();
+        }
+
+        log.info("after sortBy : {}", sortBy);
+        log.info("nextCursor : {}", nextCursor);
+        log.info("nextIdAfter : {}", nextIdAfter);
+
+        int size = contents.size();
+        boolean hasNext = size == limit + 1;
+        int totalCount = contents.size(); // 현재 페이지 데이터의 갯수
+        log.info("totalCount : {}", totalCount);
+        log.info("hasNext : {}", hasNext);
+
+        for(int i = 0; i < contents.size(); i++) {
+            Content content = contents.get(i);
+            data.add(contentMapper.toDto(content));
+        }
+
+        CursorResponseContentDto responseDto = new CursorResponseContentDto(data, nextCursor, nextIdAfter, hasNext, totalCount, sortBy, sortDirection);
+        log.debug("커서 페이지네이션 컨텐츠 수집 완료, response = {}", responseDto);
+        return responseDto;
     }
 }

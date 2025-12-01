@@ -26,11 +26,13 @@ public class TheMovieApiService {
     private String apikey; // tmdb API key
 
     private Mono<TheMovieListResponse> callTheMovieApi(String query, String path) {
+        log.info("TheMovie API 빌드 시작, callTheMovieApi query : {}, path : {}", query, path);
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .scheme("https")
                         .host("api.themoviedb.org")
                         .path(path)
+                        .queryParam("language", "ko-KR")
                         .queryParam("query", query)
                         .queryParam("api_key", apikey)
                         .build())
@@ -47,7 +49,8 @@ public class TheMovieApiService {
     }
 
     private Flux<TheMovieResponse> fluxingTheMovieApi(String query, String path) {
-            return callTheMovieApi(query, path)
+        log.info("TheMovie API 빌드 시작, fluxingTheMovieApi query : {}, path : {}", query, path);
+        return callTheMovieApi(query, path)
                     .flatMapMany(res -> {
                        if(res.results() == null || res.results().isEmpty()) {
                            return Flux.empty();
