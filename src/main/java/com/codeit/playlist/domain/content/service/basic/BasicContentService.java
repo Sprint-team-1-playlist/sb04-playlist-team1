@@ -21,7 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -183,9 +185,22 @@ public class BasicContentService implements ContentService {
         int actualLimitSize = Math.min(contents.size(), limit);
         List<ContentDto> data = new ArrayList<>();
 
+        /**
+         * N+1 쿼리 문제 및 반환 데이터 크기 오류, codeRabbit 참조
+         * 192 - 205
+         */
+        List<UUID> contentIds = contents.stream()
+                .limit(actualLimitSize)
+                .map(Content::getId)
+                .toList();
+
+        List<Tag> allTags = tagRepository.findByContentIdIn(contentIds);
+        Map<UUID, List<Tag>> tagsByContentId = allTags.stream()
+                .collect(Collectors.groupingBy(tag -> tag.getContent().getId()));
+
         for(int i=0; i < actualLimitSize; i++) {
             Content content = contents.get(i);
-            List<Tag> tags = tagRepository.findByContentId(content.getId());
+            List<Tag> tags = tagsByContentId.getOrDefault(content.getId(), List.of());
             data.add(contentMapper.toDto(content, tags));
         }
 
