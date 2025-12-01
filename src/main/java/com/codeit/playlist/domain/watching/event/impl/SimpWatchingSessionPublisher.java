@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class SimpWatchingSessionPublisher implements WatchingSessionPublisher {
+public class SimpWatchingSessionPublisher implements WatchingSessionPublisher { // TODO: 카프카 구현체로 변경
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override

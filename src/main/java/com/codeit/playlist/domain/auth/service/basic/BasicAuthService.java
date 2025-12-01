@@ -4,6 +4,8 @@ import com.codeit.playlist.domain.auth.exception.InvalidOrExpiredException;
 import com.codeit.playlist.domain.auth.exception.JwtInternalServerErrorException;
 import com.codeit.playlist.domain.auth.exception.RefreshTokenException;
 import com.codeit.playlist.domain.auth.service.AuthService;
+import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
+import com.codeit.playlist.domain.notification.entity.Level;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
@@ -15,12 +17,13 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
-import java.time.Instant;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,6 +34,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -46,6 +52,9 @@ public class BasicAuthService implements AuthService {
   private final UserDetailsService userDetailsService;
   private final StringRedisTemplate redisTemplate;
   private final PasswordEncoder passwordEncoder;
+
+  private final ObjectMapper objectMapper;
+  private final KafkaTemplate<String, String> kafkaTemplate;
 
   @Override
   @PreAuthorize("hasRole('ADMIN')")
@@ -69,6 +78,23 @@ public class BasicAuthService implements AuthService {
 
       // 역할 변경 시 해당 사용자의 모든 JWT 토큰 무효화
       jwtRegistry.invalidateJwtInformationByUserId(userId);
+    }
+
+    //권한 변경 알림 생성
+    String title = "내 권한이 변경되었어요.";
+    String contentMsg = String.format("내 권한이 [%s]에서 [%s](으)로 변경되었습니다.",oldRole, newRole);
+
+    NotificationDto notificationDto = new NotificationDto(null, null, userId,
+                                                          title, contentMsg, Level.INFO);
+
+    try {
+      String payload = objectMapper.writeValueAsString(notificationDto);
+      kafkaTemplate.send("playlist.NotificationDto", payload);
+
+      log.info("[사용자 관리] 권한 변경 알림 이벤트 발행 완료 : userId={}", userId);
+    } catch (JsonProcessingException e) {
+      //권한 변경 자체는 막지 않도록 로그만 남김
+      log.error("[사용자 관리] 권한 변경 알림 이벤트 직렬화 실패 : userId={}", userId, e);
     }
 
     log.info("[사용자 관리] 사용자 권한 변경 완료 : userId={} , {} -> {}", userId, oldRole, newRole);
