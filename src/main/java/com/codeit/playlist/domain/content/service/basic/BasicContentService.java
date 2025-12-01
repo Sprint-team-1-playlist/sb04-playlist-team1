@@ -172,20 +172,22 @@ public class BasicContentService implements ContentService {
         }
         log.info("after sortDirection : {}", sortDirection);
 
-        List<Content> contents = contentRepository.searchContents(request, ascending, limit);
-        List<ContentDto> data = new ArrayList<>();
-
-        for(int i=0; i < contents.size(); i++) {
-            Content content = contents.get(i);
-            List<Tag> tags = tagRepository.findByContentId(content.getId());
-            data.add(contentMapper.toDto(content, tags));
-        }
-
         String sortBy = request.sortBy();
         if(sortBy == null) {
             sortBy = "createdAt"; // 디폴트
         }
         log.info("sortBy : {}", sortBy);
+
+        List<Content> contents = contentRepository.searchContents(request, ascending, limit, sortBy);
+        // hasNext 판단용으로 limit + 1개를 가져왔으니 실제 반환할 데이터는 limit개까지만
+        int actualLimitSize = Math.min(contents.size(), limit);
+        List<ContentDto> data = new ArrayList<>();
+
+        for(int i=0; i < actualLimitSize; i++) {
+            Content content = contents.get(i);
+            List<Tag> tags = tagRepository.findByContentId(content.getId());
+            data.add(contentMapper.toDto(content, tags));
+        }
 
         String nextCursor = null;
         String nextIdAfter = null;
