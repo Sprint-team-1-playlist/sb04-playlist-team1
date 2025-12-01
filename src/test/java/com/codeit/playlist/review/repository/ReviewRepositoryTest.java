@@ -163,6 +163,7 @@ public class ReviewRepositoryTest {
     }
 
     private User createTestUser(String email) {
+        // 실제 User 생성자에 맞게 수정해 사용하면 됨
         User user = new User(email, "password", "test-user", null, Role.USER);
 
         LocalDateTime now = LocalDateTime.now();
@@ -173,6 +174,7 @@ public class ReviewRepositoryTest {
     }
 
     private Content createTestContent(String title) {
+        // 실제 Content 생성자에 맞게 수정
         Content content = new Content(
                 Type.MOVIE,
                 title,

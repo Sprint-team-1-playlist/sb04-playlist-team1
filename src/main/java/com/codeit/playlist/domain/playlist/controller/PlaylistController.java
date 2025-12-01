@@ -139,7 +139,7 @@ public class PlaylistController {
 
         playlistSubscriptionService.subscribe(playlistId, currentUserId);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     //플레이리스트 구독 해제

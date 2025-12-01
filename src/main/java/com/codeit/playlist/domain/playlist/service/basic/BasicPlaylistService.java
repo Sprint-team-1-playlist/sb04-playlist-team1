@@ -1,9 +1,6 @@
 package com.codeit.playlist.domain.playlist.service.basic;
 
 import com.codeit.playlist.domain.base.SortDirection;
-import com.codeit.playlist.domain.follow.repository.FollowRepository;
-import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
-import com.codeit.playlist.domain.notification.entity.Level;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
@@ -17,14 +14,11 @@ import com.codeit.playlist.domain.playlist.service.PlaylistService;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,9 +34,6 @@ public class BasicPlaylistService implements PlaylistService {
     private final PlaylistRepository playlistRepository;
     private final UserRepository userRepository;
     private final PlaylistMapper playlistMapper;
-    private final FollowRepository followRepository;
-    private final ObjectMapper objectMapper;                       // Kafka payload 직렬화
-    private final KafkaTemplate<String, String> kafkaTemplate;    //  Kafka 발행
 
     //플레이리스트 생성
     @Override
@@ -52,45 +43,20 @@ public class BasicPlaylistService implements PlaylistService {
 
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> UserNotFoundException.withId(ownerId));
-
-        Playlist playlist = new Playlist(owner, request.title(), request.description());
+        Playlist playlist = playlistMapper.toEntity(request, owner);
 
         Playlist saved = playlistRepository.save(playlist);
 
         PlaylistDto dto = playlistMapper.toDto(saved);
 
         log.info("[플레이리스트] 생성 완료: id={}", dto.id());
-
-        List<UUID> followerIds = followRepository.findFollowerIdsByFolloweeId(ownerId);
-
-        if (!followerIds.isEmpty()) {
-            String title = String.format("%s 님이 새 플레이리스트를 만들었어요.", owner.getName());
-            String contentMsg = String.format("[ %s ] %s", saved.getTitle(), saved.getDescription());
-
-            for (UUID followerId : followerIds) {
-                NotificationDto notificationDto = new NotificationDto(null, null, followerId,
-                                                                        title, contentMsg, Level.INFO);
-
-                try {
-                    String payload = objectMapper.writeValueAsString(notificationDto);
-                    kafkaTemplate.send("playlist.NotificationDto", payload);
-                } catch (JsonProcessingException e) {
-                    log.error("[플레이리스트] 팔로워 알림 직렬화 실패: followerId= {}, playlistId= {}",
-                            followerId, saved.getId(), e);
-                }
-            }
-
-            log.info("[플레이리스트] 팔로우한 사용자들에게 새 플레이리스트 생성 알림 발행: ownerId= {}, followerCount= {}",
-                    ownerId, followerIds.size());
-        }
-
         return dto;
     }
 
     //플레이리스트 수정
     @Override
     public PlaylistDto updatePlaylist(UUID playlistId, PlaylistUpdateRequest request, UUID currentUserId) {
-        log.debug("[플레이리스트] 수정 시작: playlistId= {}, currentUserId= {}", playlistId, currentUserId);
+        log.debug("[플레이리스트] 수정 시작: playlistId={}, currentUserId={}", playlistId, currentUserId);
 
         //플레이리스트 조회
         Playlist playlist = playlistRepository.findById(playlistId)
@@ -99,7 +65,7 @@ public class BasicPlaylistService implements PlaylistService {
         //3. 소유자 검증
         UUID ownerId = playlist.getOwner().getId();
 
-        log.debug("[플레이리스트] 소유자 검증: ownerId= {}, currentUserId= {}", ownerId, currentUserId);
+        log.debug("[플레이리스트] 소유자 검증: ownerId={}, currentUserId={}", ownerId, currentUserId);
 
         if (!ownerId.equals(currentUserId)) {
             throw PlaylistAccessDeniedException.withIds(playlist.getId(), ownerId, currentUserId);
@@ -107,7 +73,7 @@ public class BasicPlaylistService implements PlaylistService {
 
         playlist.updateInfo(request.title(), request.description());
 
-        log.info("[플레이리스트] 수정 성공: playlistId= {}", playlistId);
+        log.info("[플레이리스트] 수정 성공: playlistId={}", playlistId);
 
         return playlistMapper.toDto(playlist);
     }
@@ -115,20 +81,19 @@ public class BasicPlaylistService implements PlaylistService {
     //플레이리스트 논리 삭제
     @Override
     public void softDeletePlaylist(UUID playlistId, UUID requesterUserId) {
-        log.debug("[플레이리스트] 삭제 시작 : playlistId= {}, requesterUserId= {}", playlistId, requesterUserId);
+        log.debug("[플레이리스트] 삭제 시작 : playlistId={}, requesterUserId={}", playlistId, requesterUserId);
 
         //삭제되지 않은 플레이리스트 조회
         Playlist playlist = playlistRepository.findByIdAndDeletedAtIsNull(playlistId)
                 .orElseThrow(() -> {
-                    log.error("[플레이리스트] 삭제 실패: 존재하지 않거나 이미 삭제됨 playlistId= {}", playlistId);
+                    log.error("[플레이리스트] 삭제 실패: 존재하지 않거나 이미 삭제됨 playlistId={}", playlistId);
                     return PlaylistNotFoundException.withId(playlistId);
                 });
 
         //소유자 검증
         UUID ownerId = playlist.getOwner().getId();
         if (!ownerId.equals(requesterUserId)) {
-            log.error("[플레이리스트] 논리 삭제 실패: 권한 없음 playlistId= {}, ownerId= {}, requester= {}",
-                    playlistId, ownerId, requesterUserId);
+            log.error("[플레이리스트] 논리 삭제 실패: 권한 없음 playlistId={}, ownerId={}, requester={}", playlistId, ownerId, requesterUserId);
             throw PlaylistAccessDeniedException.withPlaylistId(playlistId);
         }
 
@@ -137,7 +102,7 @@ public class BasicPlaylistService implements PlaylistService {
             throw PlaylistNotFoundException.withId(playlistId);
         }
 
-        log.info("[플레이리스트] 논리 삭제 성공 playlistId= {}, requesterUserId= {}",
+        log.info("[플레이리스트] 논리 삭제 성공 playlistId={}, requesterUserId={}",
                 playlistId, requesterUserId);
     }
 
@@ -155,8 +120,8 @@ public class BasicPlaylistService implements PlaylistService {
                                                    UUID subscriberIdEqual, String cursor,
                                                    UUID idAfter, int limit, String sortBy,
                                                    SortDirection sortDirection) {
-        log.debug("[플레이리스트] 목록 조회 서비스 호출: keywordLike= {}, ownerIdEqual= {}, subscriberIdEqual= {}, " +
-                        "cursor= {}, idAfter= {}, limit= {}, sortBy= {}, sortDirection= {}",
+        log.debug("[플레이리스트] 목록 조회 서비스 호출: " +
+                        "keywordLike={}, ownerIdEqual={}, subscriberIdEqual={}, cursor={}, idAfter={}, limit={}, sortBy={}, sortDirection={}",
                 keywordLike, ownerIdEqual, subscriberIdEqual, cursor, idAfter, limit, sortBy, sortDirection);
 
         //파라미터 보정
@@ -177,7 +142,7 @@ public class BasicPlaylistService implements PlaylistService {
             try {
                 effectiveIdAfter = UUID.fromString(cursor);
             } catch (IllegalArgumentException e) {
-                log.error("[플레이리스트] 잘못된 cursor 형식: cursor= {}", cursor);
+                log.error("[플레이리스트] 잘못된 cursor 형식: cursor={}", cursor);
                 effectiveIdAfter = null;
             }
         }
@@ -237,8 +202,7 @@ public class BasicPlaylistService implements PlaylistService {
                 sortDirection
         );
 
-        log.debug("[플레이리스트] 목록 조회 서비스 완료: dataSize= {}, hasNext= {}, totalCount= {}, " +
-                        "nextCursor= {}, nextIdAfter= {}",
+        log.debug("[플레이리스트] 목록 조회 서비스 완료: dataSize={}, hasNext={}, totalCount={}, nextCursor={}, nextIdAfter={}",
                 data.size(), hasNext, totalCount, nextCursor, nextIdAfter);
 
         return response;
@@ -248,7 +212,7 @@ public class BasicPlaylistService implements PlaylistService {
     @Transactional(readOnly = true)
     @Override
     public PlaylistDto getPlaylist(UUID playlistId) {
-        log.debug("[플레이리스트] 단건 조회 시작: playlistId= {}", playlistId);
+        log.debug("[플레이리스트] 단건 조회 시작: playlistId={}", playlistId);
 
         //플레이리스트와 연관 객체 로딩
         Playlist playlist = playlistRepository.findWithDetailsById(playlistId)
@@ -271,7 +235,7 @@ public class BasicPlaylistService implements PlaylistService {
                 dto.contents()
         );
 
-        log.info("[플레이리스트] 단건 조회 완료: playlistId= {}", playlistId);
+        log.info("[플레이리스트] 단건 조회 완료: playlistId={}", playlistId);
         return result;
     }
 

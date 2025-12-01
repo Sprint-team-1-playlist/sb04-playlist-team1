@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,6 +23,7 @@ import java.util.List;
 @Table(name = "playlists")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class Playlist extends BaseDeletableEntity {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -40,13 +42,6 @@ public class Playlist extends BaseDeletableEntity {
     @OneToMany(mappedBy = "playlist", fetch = FetchType.LAZY,
                 cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PlaylistContent> playlistContents = new ArrayList<>();
-
-    public Playlist(User owner, String title, String description) {
-        this.owner = owner;
-        this.title = title;
-        this.description = description;
-        this.subscriberCount = 0L;   // 항상 0부터 시작
-    }
 
     // 편의 메서드
     public void addContent(Content content) {

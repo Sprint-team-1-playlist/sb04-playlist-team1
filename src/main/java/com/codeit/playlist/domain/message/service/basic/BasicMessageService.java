@@ -5,7 +5,6 @@ import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundExc
 import com.codeit.playlist.global.error.InvalidCursorException;
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
-import com.codeit.playlist.domain.event.message.DirectMessageSentEvent;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
@@ -25,7 +24,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -42,7 +40,6 @@ public class BasicMessageService implements MessageService {
   private final MessageRepository messageRepository;
   private final MessageMapper messageMapper;
   private final ConversationRepository conversationRepository;
-  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   public DirectMessageDto save(UUID conversationId, DirectMessageSendRequest sendRequest) {
@@ -74,9 +71,6 @@ public class BasicMessageService implements MessageService {
     log.info("[Message] 메시지 저장 완료: {}", savedMessage.getId());
 
     DirectMessageDto messageDto = messageMapper.toDto(savedMessage);
-
-    eventPublisher.publishEvent(new DirectMessageSentEvent(conversationId, messageDto));
-
     return messageDto;
   }
 

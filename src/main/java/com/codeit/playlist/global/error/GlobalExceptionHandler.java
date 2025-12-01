@@ -1,5 +1,7 @@
 package com.codeit.playlist.global.error;
 
+import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,10 +9,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
@@ -56,19 +54,5 @@ public class GlobalExceptionHandler {
         details.put("expectedType", e.getParameterType());
         details.put("reason", e.getMessage());
         return ResponseEntity.badRequest().body(new ErrorResponse(new DomainException(details)));
-    }
-
-    //타입 미스 매치 -> 400
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
-        Map<String, Object> details = new HashMap<>();
-        details.put("name", e.getName());               // 파라미터/변수 이름
-        details.put("value", e.getValue());             // 들어온 값
-        details.put("requiredType",
-                e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : null);
-        DomainException domainException = new DomainException(details);
-
-        return ResponseEntity.status(domainException.getStatus()).body(new ErrorResponse(domainException));
-
     }
 }

@@ -1,8 +1,5 @@
 package com.codeit.playlist.global.config;
 
-import static org.springframework.http.HttpMethod.PATCH;
-import static org.springframework.http.HttpMethod.POST;
-
 import com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter;
 import com.codeit.playlist.domain.security.jwt.JwtLogoutSuccessHandler;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +19,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -38,22 +34,18 @@ public class SecurityConfig {
     return http
         .csrf(csrf -> csrf
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-            .ignoringRequestMatchers(
-                new AntPathRequestMatcher("/"),
-                new AntPathRequestMatcher("/error"),
-                new AntPathRequestMatcher("/index.html"),
-                new AntPathRequestMatcher("/vite.svg"),
-                new AntPathRequestMatcher("/assets/**"),
-                new AntPathRequestMatcher("/api/auth/sign-in"),
-                new AntPathRequestMatcher("/api/auth/sign-up"),
-                new AntPathRequestMatcher("/api/auth/reset-password"),
-                new AntPathRequestMatcher("/api/auth/sign-out"),
-                new AntPathRequestMatcher("/api/users/*/password"),
-                new AntPathRequestMatcher("/api/users", POST.name()),
-                new AntPathRequestMatcher("/api/users/*/role"),
-                new AntPathRequestMatcher("/api/users/*/locked"),
-                new AntPathRequestMatcher("/api/users/*", PATCH.name())
-            )
+            .ignoringRequestMatchers("/",
+                "/error",
+                "/index.html",
+                "/vite.svg",
+                "/assets/**",
+                "/api/auth/sign-in",
+                "/api/auth/sign-up",
+                "/api/auth/reset-password",
+                "/api/auth/sign-out",
+                "/api/users/*/password",
+                "/api/users",
+                "/api/users/*/role")
         )
 
         .formLogin(AbstractHttpConfigurer::disable)

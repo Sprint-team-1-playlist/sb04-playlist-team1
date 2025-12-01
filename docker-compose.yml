@@ -2,11 +2,11 @@ version: "3.8"
 
 services:
   redis:
-    image: redis:7
+    image: redis:7.2
     container_name: playlist-redis
     ports:
       - "6379:6379"
-    command: redis-server
+    command: redis-server --requirepass ${REDIS_PASSWORD}
 
   db:
     image: postgres:16
@@ -21,70 +21,22 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  kafka:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: playlist-kafka
-    ports:
-      - "29092:29092"
-    environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: 'broker,controller'
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
-
-      KAFKA_LISTENERS: >
-        PLAINTEXT://kafka:9092,
-        CONTROLLER://kafka:29093,
-        PLAINTEXT_HOST://0.0.0.0:29092
-
-      KAFKA_ADVERTISED_LISTENERS: >
-        PLAINTEXT://kafka:9092,
-        PLAINTEXT_HOST://host.docker.internal:29092
-
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >
-        CONTROLLER:PLAINTEXT,
-        PLAINTEXT:PLAINTEXT,
-        PLAINTEXT_HOST:PLAINTEXT
-
-      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      CLUSTER_ID: 'ciWo7IWazngRchmPES6q5A=='
-      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
-    healthcheck:
-      test: [ "CMD", "bash", "-c", "echo > /dev/tcp/localhost/29092" ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui:v0.7.2
-    container_name: playlist-kafka-ui
-    ports:
-      - "8081:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-    depends_on:
-      kafka:
-        condition: service_healthy
-
   app:
     build: .
     container_name: playlist-app
     depends_on:
-      db:
-        condition: service_started
-      redis:
-        condition: service_started
-      kafka:
-        condition: service_healthy
+      - db
+      - redis
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       REDIS_HOST: ${REDIS_HOST}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_PORT: ${REDIS_PORT}
       JWT_ACCESS_TOKEN_SECRET: ${JWT_ACCESS_TOKEN_SECRET}
       JWT_REFRESH_TOKEN_SECRET: ${JWT_REFRESH_TOKEN_SECRET}
@@ -102,7 +54,6 @@ services:
       TMDB_BASE_URL: ${TMDB_BASE_URL}
       SPORTSDB_API_KEY: ${SPORTSDB_API_KEY}
       SPORTSDB_BASE_URL: ${SPORTSDB_BASE_URL}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
       - "8080:8080"
     restart: always

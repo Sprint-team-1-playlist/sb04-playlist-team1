@@ -12,13 +12,18 @@ public class RateLimitConfig {
     @Bean
     public RedissonClient redissonClient(
             @Value("${spring.data.redis.host:localhost}") String host,
-            @Value("${spring.data.redis.port:6379}") int port) {
+            @Value("${spring.data.redis.port:6379}") int port,
+            @Value("${spring.data.redis.password:}") String password) {
         Config config = new Config();
         var serverConfig = config.useSingleServer()
                 .setAddress(String.format("redis://%s:%d", host, port))
                 .setConnectTimeout(5000)
                 .setRetryAttempts(5)
                 .setRetryInterval(2000);
+        if (!password.isEmpty()) {
+            serverConfig.setPassword(password);
+        }
         return Redisson.create(config);
     }
+
 }

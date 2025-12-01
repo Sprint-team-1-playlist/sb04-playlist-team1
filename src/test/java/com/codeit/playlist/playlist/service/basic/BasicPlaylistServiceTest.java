@@ -2,7 +2,6 @@ package com.codeit.playlist.playlist.service.basic;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.dto.data.ContentSummary;
-import com.codeit.playlist.domain.follow.repository.FollowRepository;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
@@ -15,9 +14,8 @@ import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.service.basic.BasicPlaylistService;
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.User;
-import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +26,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Constructor;
@@ -70,22 +67,12 @@ public class BasicPlaylistServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
-    private FollowRepository followRepository;
-
-    @Mock
-    private ObjectMapper objectMapper;
-
-    @Mock
-    private KafkaTemplate<String, String> kafkaTemplate;
-
     @InjectMocks
     BasicPlaylistService basicPlaylistService;
 
     @BeforeEach
     void setUp() {
-        basicPlaylistService = new BasicPlaylistService(playlistRepository, userRepository, playlistMapper,
-                                                        followRepository, objectMapper, kafkaTemplate);
+        basicPlaylistService = new BasicPlaylistService(playlistRepository, userRepository, playlistMapper);
     }
 
     @Test
@@ -98,8 +85,11 @@ public class BasicPlaylistServiceTest {
         User owner = mock(User.class);
         when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
 
+        Playlist mapped = mock(Playlist.class);
+        when(playlistMapper.toEntity(request, owner)).thenReturn(mapped);
+
         Playlist saved = mock(Playlist.class);
-        when(playlistRepository.save(any(Playlist.class))).thenReturn(saved);
+        when(playlistRepository.save(mapped)).thenReturn(saved);
 
         PlaylistDto expected = new PlaylistDto(
                 UUID.randomUUID(), null, "제목", "설명",
@@ -113,27 +103,28 @@ public class BasicPlaylistServiceTest {
         // then
         assertSame(expected, actual);
         verify(userRepository).findById(ownerId);
-        verify(playlistRepository).save(any(Playlist.class));
+        verify(playlistMapper).toEntity(request, owner);
+        verify(playlistRepository).save(mapped);
         verify(playlistMapper).toDto(saved);
         verifyNoMoreInteractions(userRepository, playlistRepository, playlistMapper);
     }
 
     @Test
     @DisplayName("ownerId가 있지만 DB에 사용자 행이 없어 EntityNotFoundException 발생")
-    void failToCreateWithOwnerIdWhenUserMissing() {
+    void failToCreatewithOwnerIdwhenUserMissing() {
         //given
         UUID ownerId = UUID.randomUUID();
         PlaylistCreateRequest request = new PlaylistCreateRequest("제목", "설명");
         when(userRepository.findById(ownerId)).thenReturn(Optional.empty());
 
         // when
-        UserNotFoundException ex = assertThrows(
-                UserNotFoundException.class,
+        EntityNotFoundException ex = assertThrows(
+                EntityNotFoundException.class,
                 () -> basicPlaylistService.createPlaylist(request, ownerId)
         );
 
         // then
-        assertTrue(ex.getMessage().contains("사용자 정보가 없습니다."));
+        assertTrue(ex.getMessage().contains("사용자를 찾을 수 없습니다"));
         verify(userRepository).findById(ownerId);
         verifyNoInteractions(playlistMapper, playlistRepository);
     }
@@ -146,7 +137,7 @@ public class BasicPlaylistServiceTest {
         UUID currentUserId = CURRENT_USER_ID;
         User owner = createUserWithId(currentUserId);  // owner == currentUser
 
-        Playlist playlist = new Playlist(owner, "old title", "old description");
+        Playlist playlist = new Playlist(owner, "old title", "old description", 0L, null);
 
         PlaylistUpdateRequest request = new PlaylistUpdateRequest("new title", "new description");
 
@@ -193,7 +184,7 @@ public class BasicPlaylistServiceTest {
         UUID ownerId = UUID.fromString("22222222-2222-2222-2222-222222222222");
         User owner = createUserWithId(ownerId);
 
-        Playlist playlist = new Playlist(owner, "old title", "old description");
+        Playlist playlist = new Playlist(owner, "old title", "old description", 0L, null);
 
         PlaylistUpdateRequest request =
                 new PlaylistUpdateRequest("new title", "new description");

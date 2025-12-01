@@ -1,17 +1,20 @@
 {
   "family": "playlist-task",
   "networkMode": "awsvpc",
-  "requiresCompatibilities": [
-    "FARGATE"
-  ],
+  "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
   "memory": "1024",
   "executionRoleArn": "arn:aws:iam::ACCOUNT_ID_PLACEHOLDER:role/PlaylistAppExecutionRole",
   "taskRoleArn": "arn:aws:iam::ACCOUNT_ID_PLACEHOLDER:role/PlaylistAppTaskRole",
-  "enableExecuteCommand": true,
   "containerDefinitions": [
     {
       "name": "playlist-app",
+      "dependsOn": [
+        {
+          "containerName": "playlist-redis",
+          "condition": "HEALTHY"
+        }
+      ],
       "image": "dummy",
       "essential": true,
       "portMappings": [
@@ -22,14 +25,31 @@
           "appProtocol": "http"
         }
       ],
+      "environment": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/playlist-task",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    },
+    {
+      "name": "playlist-redis",
+      "image": "redis:7.2",
+      "essential": true,
+      "command": ["sh", "-c", "redis-server --requirepass \\$REDIS_PASSWORD"],
+      "portMappings": [
+        {
+          "containerPort": 6379,
+          "protocol": "tcp"
+        }
+      ],
       "environment": [
         {
-          "name": "REDIS_HOST",
-          "value": "REDIS_HOST_PLACEHOLDER"
-        },
-        {
-          "name": "REDIS_PORT",
-          "value": "6379"
+          "name": "REDIS_PASSWORD",
+          "value": "REDIS_PASSWORD_PLACEHOLDER"
         }
       ],
       "logConfiguration": {
@@ -39,6 +59,13 @@
           "awslogs-region": "ap-northeast-2",
           "awslogs-stream-prefix": "ecs"
         }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "redis-cli -a \"$REDIS_PASSWORD\" ping"],
+        "interval": 5,
+        "timeout": 3,
+        "retries": 5,
+        "startPeriod": 10
       }
     }
   ]

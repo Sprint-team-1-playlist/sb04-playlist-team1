@@ -206,7 +206,7 @@ public class BasicAuthServiceTest {
   }
   
   @Test
-  @DisplayName("로그인 실패 - BadCredentialsException")
+  @DisplayName("로그인 실패 : BadCredentialsException")
   void signInBadCredentials() {
     when(authenticationManager.authenticate(any()))
         .thenThrow(new org.springframework.security.authentication.BadCredentialsException("bad"));
@@ -231,7 +231,7 @@ public class BasicAuthServiceTest {
   }
 
   @Test
-  @DisplayName("refreshToken: rotate 실패 - InvalidOrExpiredException")
+  @DisplayName("refreshToken: rotate 실패 → InvalidOrExpiredException")
   void refreshTokenRotateFail() {
     String token = "refresh123";
 
@@ -252,7 +252,7 @@ public class BasicAuthServiceTest {
   }
 
   @Test
-  @DisplayName("로그아웃 - refreshToken 유효하면 invalidate + revoke 호출")
+  @DisplayName("logout: refreshToken 유효하면 invalidate + revoke 호출")
   void logoutSuccess() {
     String token = "ref";
     UUID userId = UUID.randomUUID();
