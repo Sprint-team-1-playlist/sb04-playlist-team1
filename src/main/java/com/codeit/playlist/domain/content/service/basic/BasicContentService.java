@@ -154,12 +154,8 @@ public class BasicContentService implements ContentService {
         log.info("요청 typeEqual : {}, keywordLike : {}, tagsIn : {}, cursor : {}, idAfter : {}, limit : {}, sortDirection : {}, sortBy : {}",
                 request.typeEqual(), request.keywordLike(), request.tagsIn(), request.cursor(), request.idAfter(), request.limit(), request.sortDirection(), request.sortBy());
 
-        String sortDirection = request.sortDirection().toString();
+        String sortDirection = request.sortDirection() != null ? request.sortDirection().toString() : "DESCENDING";
         log.info("sortDirection : {}", sortDirection);
-
-        if(sortDirection == null) {
-            sortDirection = "DESCENDING";
-        }
         boolean ascending;
 
         switch(sortDirection) {
