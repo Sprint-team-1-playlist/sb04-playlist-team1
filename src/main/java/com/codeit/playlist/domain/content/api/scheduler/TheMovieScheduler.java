@@ -2,6 +2,7 @@ package com.codeit.playlist.domain.content.api.scheduler;
 
 import com.codeit.playlist.domain.content.api.mapper.TheMovieMapper;
 import com.codeit.playlist.domain.content.api.service.TheMovieApiService;
+import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,14 @@ public class TheMovieScheduler {
         String query = "Japan";
 
         movieSubscription = theMovieApiService.getApiMovie(query)
-                .map(response -> theMovieMapper.toContent(response, Type.MOVIE))
+                .map(response -> {
+                    Content content = theMovieMapper.toContent(response, Type.MOVIE);
+                    String thumbnailUrl = response.thumbnailUrl();
+                    if(thumbnailUrl != null && !thumbnailUrl.isBlank()) {
+                        content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
+                    }
+                    return content;
+                })
                 .doOnNext(content -> contentRepository.save(content))
                 .doOnComplete(() -> log.info("The Movie 스케줄러 동작 완료, API 데이터 수집"))
                 .doOnError(e -> log.error("The Movie 스케줄러 에러 발생 : {}", e.getMessage(), e))
