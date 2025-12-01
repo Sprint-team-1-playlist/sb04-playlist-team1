@@ -24,7 +24,7 @@ public class TheMovieScheduler {
     // 초, 분, 시, 일, 월, 요일
     // 프로덕션은 요일 상관없이 매월 1일, 01시에 스케쥴링을 시작함
     // 테스트는 30초마다 실행함
-    @Scheduled(cron = "/30 * * * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "*/30 * * * * *", zone = "Asia/Seoul")
     public void startTheMovieScheduler() {
         // 이전 구독이 있으면 정리하는 조건문
         if(movieSubscription != null && !movieSubscription.isDisposed()) {
