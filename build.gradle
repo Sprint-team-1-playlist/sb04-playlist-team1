@@ -106,14 +106,15 @@ jacocoTestReport {
 tasks.register("jacocoTestReportOpen") {
     dependsOn jacocoTestReport
     doLast {
-        def reportFile = file("${buildDir}/reports/jacoco/test/html/index.html")
+        def reportFile = file("${layout.buildDirectory.get().asFile}/reports/jacoco/test/html/index.html")
         if (reportFile.exists()) {
             println "Opening JaCoCo HTML report: ${reportFile}"
-            if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            def os = System.getProperty("os.name").toLowerCase()
+            if (os.contains("windows")) {
                 exec { commandLine 'cmd', '/c', 'start', reportFile }
-            } else if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+            } else if (os.contains("mac")) {
                 exec { commandLine 'open', reportFile }
-            } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+            } else if (os.contains("linux")) {
                 exec { commandLine 'xdg-open', reportFile }
             }
         } else {
