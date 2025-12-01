@@ -172,7 +172,7 @@ public class BasicContentService implements ContentService {
         }
         log.info("after sortDirection : {}", sortDirection);
 
-        List<Content> contents = contentRepository.searchContents(request, ascending);
+        List<Content> contents = contentRepository.searchContents(request, ascending, limit);
         List<ContentDto> data = new ArrayList<>();
 
         String sortBy = request.sortBy();

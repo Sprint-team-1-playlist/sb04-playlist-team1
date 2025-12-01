@@ -24,7 +24,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
     private final JPAQueryFactory query;
 
     @Override
-    public List<Content> searchContents(ContentCursorRequest request, boolean ascending) {
+    public List<Content> searchContents(ContentCursorRequest request, boolean ascending, int limit) {
         QContent qContent = QContent.content;
         BooleanBuilder builder = new BooleanBuilder(); // BooleanBuilder
         log.info("searchContents: ascending={}, sortBy={}, cursor={}, idAfter={}",
@@ -92,8 +92,6 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
         }
 
         // 정렬 + limit+1
-        int limit = request.limit() <= 0 ? 30 : request.limit();
-
         return query.selectFrom(qContent)
                 .where(builder)
                 .orderBy(getOrderSpecifier(sortBy, order),
