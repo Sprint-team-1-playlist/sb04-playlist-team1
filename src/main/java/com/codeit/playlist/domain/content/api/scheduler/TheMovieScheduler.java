@@ -2,7 +2,6 @@ package com.codeit.playlist.domain.content.api.scheduler;
 
 import com.codeit.playlist.domain.content.api.mapper.TheMovieMapper;
 import com.codeit.playlist.domain.content.api.service.TheMovieApiService;
-import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,7 @@ public class TheMovieScheduler {
     // 초, 분, 시, 일, 월, 요일
     // 프로덕션은 요일 상관없이 매월 1일, 01시에 스케쥴링을 시작함
     // 테스트는 30초마다 실행함
-    @Scheduled(cron = "* */30 * * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 */30 * * * *", zone = "Asia/Seoul")
     public void startTheMovieScheduler() {
         // 이전 구독이 있으면 정리하는 조건문
         if(movieSubscription != null && !movieSubscription.isDisposed()) {
@@ -35,14 +34,7 @@ public class TheMovieScheduler {
         String query = "Japan";
 
         movieSubscription = theMovieApiService.getApiMovie(query)
-                .map(response -> {
-                    Content content = theMovieMapper.toContent(response, Type.MOVIE);
-                    String thumbnailUrl = response.thumbnailUrl();
-                    if(thumbnailUrl != null && !thumbnailUrl.isBlank()) {
-                        content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
-                    }
-                    return content;
-                })
+                .map(response -> theMovieMapper.toContent(response, Type.MOVIE))
                 .doOnNext(content -> contentRepository.save(content))
                 .doOnComplete(() -> log.info("The Movie 스케줄러 동작 완료, API 데이터 수집"))
                 .doOnError(e -> log.error("The Movie 스케줄러 에러 발생 : {}", e.getMessage(), e))
