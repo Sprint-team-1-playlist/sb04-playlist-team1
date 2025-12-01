@@ -14,15 +14,11 @@ public class RedisConfig {
     @Bean
     public RedisConnectionFactory redisConnectionFactory(
             @Value("${spring.data.redis.host}") String host,
-            @Value("${spring.data.redis.port}") int port,
-            @Value("${spring.data.redis.password:}") String password
+            @Value("${spring.data.redis.port}") int port
     ) {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setHostName(host);
         config.setPort(port);
-        if (!password.isBlank()) {
-            config.setPassword(password);
-        }
 
         LettuceConnectionFactory factory = new LettuceConnectionFactory(config);
         factory.setValidateConnection(true); // 연결 유효성 체크
