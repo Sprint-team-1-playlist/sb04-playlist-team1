@@ -83,7 +83,7 @@ jobs:
                 {"name": "LOGS_BUCKET", "value": $LOGS_BUCKET},
                 {"name": "PROFILE_BUCKET", "value": $PROFILE_BUCKET},
                 {"name": "CONTENT_BUCKET", "value": $CONTENT_BUCKET},
-                {"name": "REDIS_HOST", "value": "$REDIS_HOST"},
+                {"name": "REDIS_HOST", "value": $REDIS_HOST},
                 {"name": "REDIS_PORT", "value": "6379"},
                 {"name": "SPRING_MAIL_HOST", "value": $SPRING_MAIL_HOST},
                 {"name": "SPRING_MAIL_PASSWORD", "value": $SPRING_MAIL_PASSWORD},
