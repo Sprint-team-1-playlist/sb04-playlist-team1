@@ -215,11 +215,13 @@ public class BasicContentService implements ContentService {
 
         int size = contents.size();
         boolean hasNext = size == limit + 1;
-        int totalCount = contents.size(); // 현재 페이지 데이터의 갯수
+        int totalCount = contents.size(); // 전체 페이지 데이터의 갯수
         log.info("totalCount : {}", totalCount);
         log.info("hasNext : {}", hasNext);
 
-        for(int i = 0; i < contents.size(); i++) {
+        int itemsToReturn = Math.min(contents.size(), limit);
+
+        for(int i = 0; i < itemsToReturn; i++) {
             Content content = contents.get(i);
             data.add(contentMapper.toDto(content));
         }
