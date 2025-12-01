@@ -170,7 +170,7 @@ public class BasicContentService implements ContentService {
                 break;
 
             default:
-                throw new IllegalArgumentException("sortDirection was something wrong" + sortDirection);
+                throw new IllegalArgumentException("sortDirection was something wrong : " + sortDirection);
         }
         log.info("after sortDirection : {}", sortDirection);
 
@@ -229,7 +229,7 @@ public class BasicContentService implements ContentService {
                     break;
 
                 default:
-                    throw new IllegalArgumentException("sortBy was something wrong" + sortBy);
+                    throw new IllegalArgumentException("sortBy was something wrong : " + sortBy);
             }
 
             nextIdAfter = lastPage.getId().toString();
