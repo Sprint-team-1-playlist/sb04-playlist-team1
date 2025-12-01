@@ -13,6 +13,7 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.global.config.JpaConfig;
 import com.codeit.playlist.global.config.QuerydslConfig;
+import jakarta.persistence.EntityManager;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -99,12 +100,29 @@ public class PlaylistRepositoryTest {
         Playlist p2 = createPlaylist(owner, "플리2");
         Playlist p3 = createPlaylist(owner, "플리3");
 
-        // updatedAt 강제 조정
-        ReflectionTestUtils.setField(p1, "updatedAt", LocalDateTime.now().minusHours(3));
-        ReflectionTestUtils.setField(p2, "updatedAt", LocalDateTime.now().minusHours(2));
-        ReflectionTestUtils.setField(p3, "updatedAt", LocalDateTime.now().minusHours(1));
-
         playlistRepository.saveAll(List.of(p1, p2, p3));
+        entityManager.flush();
+
+        EntityManager em = entityManager.getEntityManager();
+
+        // updatedAt 강제 조정(Auditing 우회)
+        LocalDateTime base = LocalDateTime.now();
+        em.createQuery("UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
+                .setParameter("t", base.minusHours(3))
+                .setParameter("id", p1.getId())
+                .executeUpdate();
+
+        em.createQuery("UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
+                .setParameter("t", base.minusHours(2))
+                .setParameter("id", p2.getId())
+                .executeUpdate();
+
+        em.createQuery("UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
+                .setParameter("t", base.minusHours(1))
+                .setParameter("id", p3.getId())
+                .executeUpdate();
+
+        entityManager.clear();
 
         Pageable pageable = PageRequest.of(0, 10);
 
