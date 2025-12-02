@@ -16,13 +16,13 @@ public class RateLimitConfig {
         Config config = new Config();
         var serverConfig = config.useSingleServer()
                 .setAddress(String.format("rediss://%s:%d", host, port)) // TLS
-                .setSslEnableEndpointIdentification(false) // TLS 호스트 인증 비활성화
                 .setConnectTimeout(10000) // 10초
                 .setTimeout(10000) // Command timeout 10초
                 .setRetryAttempts(10)
-                .setRetryInterval(2000)
-                .setConnectionPoolSize(20)     // Redisson connection pool
-                .setConnectionMinimumIdleSize(5);
+                .setConnectionPoolSize(32)     // Redisson connection pool: 64(default)
+                .setConnectionMinimumIdleSize(8)
+                .setSubscriptionConnectionPoolSize(16)
+                .setSubscriptionConnectionMinimumIdleSize(4);
 
         return Redisson.create(config);
     }
