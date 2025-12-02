@@ -44,7 +44,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     // 사용자 조회 또는 OAuth 전용 신규 생성
     User user = userRepository.findByEmail(email)
         .orElseGet(() -> {
-          log.info("[소셜 로그인 ] : 신규 소셜 사용자 생성 = {}", email);
+          log.debug("[소셜 로그인 ] : 신규 소셜 사용자 생성 = {}", email);
           return userRepository.save(User.createOAuthUser(name, email, imageUrl));
         });
 
