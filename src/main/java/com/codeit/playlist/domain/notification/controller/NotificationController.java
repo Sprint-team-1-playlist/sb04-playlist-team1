@@ -1,13 +1,17 @@
 package com.codeit.playlist.domain.notification.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
+import com.codeit.playlist.domain.notification.dto.data.NotificationSortBy;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
 import com.codeit.playlist.domain.notification.service.NotificationService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +25,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
+@Validated
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -29,9 +34,9 @@ public class NotificationController {
     public ResponseEntity<CursorResponseNotificationDto> getNotificationList(
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) UUID idAfter,
-            @RequestParam int limit,
-            @RequestParam SortDirection sortDirection,
-            @RequestParam String sortBy,  //createdAt
+            @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit,
+            @RequestParam(defaultValue = "DESCENDING") SortDirection sortDirection,
+            @RequestParam(defaultValue = "createdAt") NotificationSortBy sortBy,  //createdAt
             @AuthenticationPrincipal PlaylistUserDetails userDetails
             ) {
         UUID receiverId = userDetails.getUserDto().id();
