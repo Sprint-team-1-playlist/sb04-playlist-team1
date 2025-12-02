@@ -45,7 +45,7 @@ public class WatchingController {
                         sortBy
                 );
 
-        log.info("[실시간 같이 보기] 특정 콘텐츠의 시청 세션 목록 조회(커서 페이지네이션) 성공: reponse={}", response);
+        log.info("[실시간 같이 보기] 특정 콘텐츠의 시청 세션 목록 조회(커서 페이지네이션) 성공: response={}", response);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
