@@ -1,7 +1,9 @@
 package com.codeit.playlist.domain.message.service.basic;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
+import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
 import com.codeit.playlist.global.error.InvalidCursorException;
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
@@ -83,9 +85,12 @@ public class BasicMessageService implements MessageService {
   @Transactional(readOnly = true)
   @Override
   public CursorResponseDirectMessageDto findAll(UUID conversationId, String cursor,
-      UUID idAfter, int limit, String sortDirection, String sortBy) {
+      UUID idAfter, int limit, SortDirection sortDirection, MessageSortBy sortBy) {
 
     log.debug("[Message] DM 목록 조회 시작: {}", conversationId);
+
+    sortBy = MessageSortBy.createdAt;
+    sortDirection = SortDirection.DESCENDING;
 
     Conversation conversation = conversationRepository.findById(conversationId)
         .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));

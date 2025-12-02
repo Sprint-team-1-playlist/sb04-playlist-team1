@@ -1,7 +1,7 @@
 package com.codeit.playlist.domain.message.controller;
 
-import com.codeit.playlist.global.error.InvalidSortByException;
-import com.codeit.playlist.global.error.InvalidSortDirectionException;
+import com.codeit.playlist.domain.base.SortDirection;
+import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.service.MessageService;
 import jakarta.validation.constraints.Max;
@@ -35,16 +35,19 @@ public class MessageController {
       @RequestParam @Min(1) @Max(100) int limit,
       @RequestParam String sortDirection,
       @RequestParam String sortBy) {
-    if (!sortBy.equals("createdAt")) {
-      throw InvalidSortByException.withSortBy(sortBy);
-    }
-    if (!sortDirection.equals("DESCENDING")) {
-      throw InvalidSortDirectionException.withSortDirection(sortDirection);
-    }
 
     log.debug("[Message] DM 목록 조회 요청: {}", conversationId);
 
-    CursorResponseDirectMessageDto cursorMessageDto = messageService.findAll(conversationId, cursor, idAfter, limit, sortDirection, sortBy);
+    SortDirection direction = SortDirection.valueOf(sortDirection);
+    MessageSortBy messageSortBy = MessageSortBy.createdAt;
+
+    CursorResponseDirectMessageDto cursorMessageDto = messageService.findAll(
+        conversationId,
+        cursor,
+        idAfter,
+        limit,
+        direction,
+        messageSortBy);
 
     log.info("[Message] DM 목록 조회 응답: {}", cursorMessageDto);
     return ResponseEntity
