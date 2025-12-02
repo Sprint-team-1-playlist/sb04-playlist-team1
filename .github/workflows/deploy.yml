@@ -97,7 +97,7 @@ jobs:
                 {"name": "SPORTSDB_API_KEY", "value": $SPORTSDB_API_KEY},
                 {"name": "SPORTSDB_BASE_URL", "value": $SPORTSDB_BASE_URL},
                 {"name": "TMDB_API_KEY", "value": $TMDB_API_KEY},
-                {"name": "TMDB_BASE_URL", "value": $TMDB_BASE_URL},
+                {"name": "TMDB_BASE_URL", "value": $TMDB_BASE_URL}
               ]
             ' \
             task-definition.json > tmp.json && mv tmp.json task-definition.json
