@@ -1,16 +1,8 @@
 package com.codeit.playlist.notification.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
-
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
+import com.codeit.playlist.domain.notification.dto.data.NotificationSortBy;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
 import com.codeit.playlist.domain.notification.entity.Level;
 import com.codeit.playlist.domain.notification.entity.Notification;
@@ -24,13 +16,6 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.global.error.InvalidCursorException;
-import com.codeit.playlist.global.error.InvalidSortByException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +28,22 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.domain.Sort;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicNotificationServiceTest {
@@ -184,7 +185,7 @@ public class BasicNotificationServiceTest {
         UUID idAfter = null;
         int limit = 10;
         SortDirection sortDirection = SortDirection.DESCENDING;
-        String sortBy = "createdAt";
+        NotificationSortBy sortBy = NotificationSortBy.createdAt;
 
         Notification notification1 = Mockito.mock(Notification.class);
         Notification notification2 = Mockito.mock(Notification.class);
@@ -256,34 +257,6 @@ public class BasicNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("알림 목록 조회 실패 - 유효하지 않은 sortBy 값으로 InvalidSortByException 발생")
-    void getAllNotificationsFailWithInvalidSortBy() {
-        // given
-        UUID receiverId = UUID.randomUUID();
-        String cursor = null;
-        UUID idAfter = null;
-        int limit = 10;
-        SortDirection sortDirection = SortDirection.DESCENDING;
-        String sortBy = "title";
-
-        // when & then
-        assertThatThrownBy(() ->
-                notificationService.getAllNotifications(
-                        receiverId,
-                        cursor,
-                        idAfter,
-                        limit,
-                        sortDirection,
-                        sortBy
-                )
-        )
-                .isInstanceOf(InvalidSortByException.class);
-
-        then(notificationRepository).shouldHaveNoInteractions();
-        then(notificationMapper).shouldHaveNoInteractions();
-    }
-
-    @Test
     @DisplayName("알림 목록 조회 실패 - 잘못된 cursor 문자열로 InvalidCursorException 발생")
     void getAllNotificationsFailWithInvalidCursorFormat() {
         // given
@@ -292,7 +265,7 @@ public class BasicNotificationServiceTest {
         UUID idAfter = null;
         int limit = 10;
         SortDirection sortDirection = SortDirection.DESCENDING;
-        String sortBy = "createdAt";
+        NotificationSortBy sortBy = NotificationSortBy.createdAt;
 
         // when & then
         assertThatThrownBy(() ->
@@ -321,7 +294,7 @@ public class BasicNotificationServiceTest {
         UUID idAfter = null;
         int limit = 10;
         SortDirection sortDirection = SortDirection.DESCENDING;
-        String sortBy = "createdAt";
+        NotificationSortBy sortBy = NotificationSortBy.createdAt;
 
         given(notificationRepository.findByReceiverIdWithCursorPaging(
                 eq(receiverId),
