@@ -8,5 +8,6 @@ import java.util.UUID;
 
 public interface TagRepository extends JpaRepository<Tag, UUID> {
     List<Tag> findByContentId(UUID contentId);
+    List<Tag> findByContentIdIn(List<UUID> contentIds);
     void deleteAllByContentId(UUID contentId);
 }

@@ -79,6 +79,10 @@ public class Content extends BaseUpdatableEntity {
         return content;
     }
 
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
     /**
      * 컨텐츠 편의 메서드(리뷰용)
      */

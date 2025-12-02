@@ -1,5 +1,12 @@
 package com.codeit.playlist.playlist.service.basic;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
@@ -12,9 +19,12 @@ import com.codeit.playlist.domain.playlist.exception.PlaylistContentNotFoundExce
 import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
 import com.codeit.playlist.domain.playlist.repository.PlaylistContentRepository;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
+import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.playlist.service.basic.BasicPlaylistContentService;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,16 +32,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicPlaylistContentServiceTest {
@@ -52,6 +52,9 @@ public class BasicPlaylistContentServiceTest {
 
     @Mock
     private PlaylistContentRepository playlistContentRepository;
+
+    @Mock
+    private SubscribeRepository subscribeRepository;
 
     @InjectMocks
     private BasicPlaylistContentService basicPlaylistContentService;

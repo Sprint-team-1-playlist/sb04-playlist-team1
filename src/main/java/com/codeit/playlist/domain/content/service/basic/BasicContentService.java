@@ -2,7 +2,9 @@ package com.codeit.playlist.domain.content.service.basic;
 
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.dto.request.ContentCreateRequest;
+import com.codeit.playlist.domain.content.dto.request.ContentCursorRequest;
 import com.codeit.playlist.domain.content.dto.request.ContentUpdateRequest;
+import com.codeit.playlist.domain.content.dto.response.CursorResponseContentDto;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.content.entity.Type;
@@ -17,8 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -136,5 +141,106 @@ public class BasicContentService implements ContentService {
         } else {
             throw ContentNotFoundException.withId(contentId);
         }
+    }
+
+    @Transactional
+    @Override
+    public CursorResponseContentDto get(ContentCursorRequest request) {
+        log.debug("커서 페이지네이션 컨텐츠 수집 시작, request = {}", request);
+        int limit = request.limit();
+
+        if(limit <= 0 || limit > 1000) {
+            limit = 10;
+        }
+
+        log.info("요청 typeEqual : {}, keywordLike : {}, cursor : {}, idAfter : {}, limit : {}, sortDirection : {}, sortBy : {}",
+                request.typeEqual(), request.keywordLike(), request.cursor(), request.idAfter(), request.limit(), request.sortDirection(), request.sortBy());
+
+        String sortDirection = request.sortDirection() != null ? request.sortDirection().toString() : "DESCENDING";
+        log.info("sortDirection : {}", sortDirection);
+        boolean ascending;
+
+        switch(sortDirection) {
+            case "ASCENDING":
+                ascending = true;
+                break;
+
+            case "DESCENDING":
+                ascending = false;
+                break;
+
+            default:
+                throw new IllegalArgumentException("sortDirection was something wrong : " + sortDirection);
+        }
+        log.info("after sortDirection : {}", sortDirection);
+
+        String sortBy = request.sortBy();
+        if(sortBy == null) {
+            sortBy = "createdAt"; // 디폴트
+        }
+        log.info("sortBy : {}", sortBy);
+
+        List<Content> contents = contentRepository.searchContents(request, ascending, limit, sortBy);
+        // hasNext 판단용으로 limit + 1개를 가져왔으니 실제 반환할 데이터는 limit개까지만
+        int actualLimitSize = Math.min(contents.size(), limit);
+        List<ContentDto> data = new ArrayList<>();
+
+        /**
+         * N+1 쿼리 문제 및 반환 데이터 크기 오류, codeRabbit 참조
+         * 192 - 205
+         */
+        List<UUID> contentIds = contents.stream()
+                .limit(actualLimitSize)
+                .map(Content::getId)
+                .toList();
+
+        List<Tag> allTags = tagRepository.findByContentIdIn(contentIds);
+        Map<UUID, List<Tag>> tagsByContentId = allTags.stream()
+                .collect(Collectors.groupingBy(tag -> tag.getContent().getId()));
+
+        for(int i=0; i < actualLimitSize; i++) {
+            Content content = contents.get(i);
+            List<Tag> tags = tagsByContentId.getOrDefault(content.getId(), List.of());
+            data.add(contentMapper.toDto(content, tags));
+        }
+
+        String nextCursor = null;
+        String nextIdAfter = null;
+
+        int size = contents.size();
+        boolean hasNext = size == limit + 1;
+        int pageSize = Math.min(size, limit);
+        log.info("pageSize = {}, hasNext = {}", pageSize, hasNext);
+
+        if(hasNext && pageSize > 0) {
+            Content lastPage = contents.get(pageSize - 1); // 이번 페이지에서 실제로 반환되는 마지막 요소
+
+            switch(sortBy) {
+                case "createdAt":
+                    nextCursor = lastPage.getCreatedAt().toString();
+                    break;
+
+                case "watcherCount":
+                    nextCursor = String.valueOf(lastPage.getWatcherCount());
+                    break;
+
+                case "rate":
+                    nextCursor = String.valueOf(lastPage.getAverageRating());
+                    break;
+
+                default:
+                    throw new IllegalArgumentException("sortBy was something wrong : " + sortBy);
+            }
+
+            nextIdAfter = lastPage.getId().toString();
+        }
+
+        log.info("after SortBy : {}", sortBy);
+        log.info("nextCursor : {}", nextCursor);
+        log.info("nextIdAfter : {}", nextIdAfter);
+
+        CursorResponseContentDto responseDto = new CursorResponseContentDto(data, nextCursor, nextIdAfter, hasNext, pageSize, sortBy, sortDirection);
+        log.debug("커서 페이지네이션 컨텐츠 수집 완료, response = {}", responseDto);
+        return responseDto;
     }
 }
