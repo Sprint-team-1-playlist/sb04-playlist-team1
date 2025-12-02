@@ -2,7 +2,7 @@ package com.codeit.playlist.review.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.review.controller.ReviewController;
-import com.codeit.playlist.domain.review.dto.ReviewSortBy;
+import com.codeit.playlist.domain.review.dto.data.ReviewSortBy;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
 import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
@@ -329,7 +329,7 @@ public class ReviewControllerTest {
                 null,
                 false,
                 0L,
-                ReviewSortBy.CREATED_AT.name(),
+                ReviewSortBy.createdAt.name(),
                 SortDirection.DESCENDING
         );
 
@@ -339,7 +339,7 @@ public class ReviewControllerTest {
                 isNull(),
                 eq(limit),
                 eq(SortDirection.DESCENDING),
-                eq(ReviewSortBy.CREATED_AT)
+                eq(ReviewSortBy.createdAt)
         )).willReturn(responseDto);
 
         // when & then
@@ -347,10 +347,10 @@ public class ReviewControllerTest {
                         .param("contentId", contentId.toString())
                         .param("limit", String.valueOf(limit))
                         .param("sortDirection", "DESCENDING")
-                        .param("sortBy", "CREATED_AT"))
+                        .param("sortBy", "createdAt"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nextCursor").value("NEXT_CURSOR"))
-                .andExpect(jsonPath("$.sortBy").value("CREATED_AT"))
+                .andExpect(jsonPath("$.sortBy").value("createdAt"))
                 .andExpect(jsonPath("$.sortDirection").value("DESCENDING"));
 
         then(reviewService).should().findReviews(
@@ -359,7 +359,7 @@ public class ReviewControllerTest {
                 isNull(),
                 eq(limit),
                 eq(SortDirection.DESCENDING),
-                eq(ReviewSortBy.CREATED_AT)
+                eq(ReviewSortBy.createdAt)
         );
     }
 

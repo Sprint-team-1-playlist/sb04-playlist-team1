@@ -32,7 +32,6 @@ public class NotificationRequiredTopicListener {
 
       UUID receiverId = event.receiver().userId();
 
-      // notification 저장 로직
       String title = String.format("[DM] %s", event.sender().name());
       String rawMessage = event.content();
       String preview = rawMessage.length() > 30 ? rawMessage.substring(0, 30) + "..." : rawMessage;
@@ -64,7 +63,6 @@ public class NotificationRequiredTopicListener {
 
       UUID receiverId = event.receiverId();
 
-      // notification 저장 로직
       notificationService.saveNotification(receiverId, event.title(), event.content(), event.level());
 
       SseMessage sseMessage = SseMessage.create(
