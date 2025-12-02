@@ -1,7 +1,5 @@
 package com.codeit.playlist.review.repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Type;
@@ -11,8 +9,6 @@ import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.global.config.QuerydslConfig;
 import jakarta.persistence.EntityManager;
-import java.time.LocalDateTime;
-import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +16,11 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Slice;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @Import(QuerydslConfig.class)
@@ -49,20 +50,39 @@ public class ReviewRepositoryTest {
         Review r2 = createReview(user, content1, 4, "리뷰2");
         Review r3 = createReview(user, content1, 5, "리뷰3");
 
-        ReflectionTestUtils.setField(r1, "createdAt", LocalDateTime.now().minusDays(3));
-        ReflectionTestUtils.setField(r2, "createdAt", LocalDateTime.now().minusDays(2));
-        ReflectionTestUtils.setField(r3, "createdAt", LocalDateTime.now().minusDays(1));
-
         // content2 에 대한 리뷰 1개 (필터링에서 걸러져야 함)
         Review other = createReview(user, content2, 1, "다른 콘텐츠 리뷰");
-        ReflectionTestUtils.setField(other, "createdAt", LocalDateTime.now().minusDays(1));
 
         em.persist(r1);
         em.persist(r2);
         em.persist(r3);
         em.persist(other);
-
         em.flush();
+
+        LocalDateTime base = LocalDateTime.now();
+
+        // r1 < r2 < r3 (오래된 순)
+        em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
+                .setParameter("t", base.minusDays(3))
+                .setParameter("id", r1.getId())
+                .executeUpdate();
+
+        em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
+                .setParameter("t", base.minusDays(2))
+                .setParameter("id", r2.getId())
+                .executeUpdate();
+
+        em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
+                .setParameter("t", base.minusDays(1))
+                .setParameter("id", r3.getId())
+                .executeUpdate();
+
+        // 다른 콘텐츠 리뷰는 같은 날로
+        em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
+                .setParameter("t", base.minusDays(1))
+                .setParameter("id", other.getId())
+                .executeUpdate();
+
         em.clear();
 
         int limit = 2;
