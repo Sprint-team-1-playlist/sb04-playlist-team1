@@ -1,8 +1,5 @@
 package com.codeit.playlist.global.config;
 
-import static org.springframework.http.HttpMethod.PATCH;
-import static org.springframework.http.HttpMethod.POST;
-
 import com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter;
 import com.codeit.playlist.domain.security.jwt.JwtLogoutSuccessHandler;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +20,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import static org.springframework.http.HttpMethod.PATCH;
+import static org.springframework.http.HttpMethod.POST;
 
 @Configuration
 @EnableWebSecurity
@@ -77,6 +77,9 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
             .requestMatchers("/api/auth/csrf-token").permitAll()
+
+            // 웹 소켓 핸드웨이크를 위한 엔드포인트
+            .requestMatchers("/ws/**").permitAll()
 
             //정적 리소스
             .requestMatchers("/").permitAll()
