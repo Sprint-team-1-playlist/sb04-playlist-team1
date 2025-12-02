@@ -1,5 +1,7 @@
 package com.codeit.playlist.domain.security;
 
+import com.codeit.playlist.domain.security.jwt.DbJwtRegistry;
+import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.entity.User;
@@ -24,6 +26,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
   private final JwtTokenProvider tokenProvider;
   private final UserRepository userRepository;
   private final UserMapper userMapper;
+  private final DbJwtRegistry  jwtRegistry;
 
   @Override
   public void onAuthenticationSuccess(
@@ -62,14 +65,46 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
       throw new RuntimeException("OAuth2 로그인 JWT 생성 실패", e);
     }
 
+    // JWT 저장 정보 생성
+    Instant accessExp = tokenProvider.getExpiryFromToken(accessToken);
+    Instant refreshExp = tokenProvider.getExpiryFromToken(refreshToken);
+
+    JwtInformation info = new JwtInformation(
+        userDto,
+        accessToken, accessExp, now,
+        refreshToken, refreshExp, now
+    );
+
+    // DB 저장
+    jwtRegistry.registerJwtInformation(info);
+
     // Refresh Token Cookie 생성
-    ResponseCookie refreshCookie = tokenProvider.generateRefreshTokenCookie(refreshToken);
+    ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
+        .httpOnly(true)
+        .secure(false) // localhost 환경이므로 false, 배포에서는 true 필수
+        .path("/")
+        .sameSite("Lax") // <-- 프론트가 같은 도메인(localhost:8080)이므로 Lax가 안정적
+        .maxAge(60 * 60 * 24 * 14) // 14일
+        .build();
+
     response.addHeader("Set-Cookie", refreshCookie.toString());
 
-    // 프론트로 Redirect (AccessToken 전달)
-    String redirect = "http://localhost:8080/#/contents" + "?accessToken=" + accessToken;
+    // Access Token Cookie 생성
+    ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", accessToken)
+        .httpOnly(true)
+        .secure(false)
+        .path("/")
+        .sameSite("Lax")
+        .maxAge(60 * 30) // 30분
+        .build();
 
-    log.info("OAuth2 로그인 성공 → 사용자: {}, Redirect: {}", email, redirect);
+    response.addHeader("Set-Cookie", accessCookie.toString());
+
+    //프론트로 Redirect (AccessToken 전달 X)
+
+    String redirect = "http://localhost:8080/#/contents";
+
+    log.info("OAuth2 로그인 성공 → 사용자: {}", email);
 
     response.sendRedirect(redirect);
   }

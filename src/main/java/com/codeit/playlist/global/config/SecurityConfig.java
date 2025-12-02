@@ -3,6 +3,7 @@ package com.codeit.playlist.global.config;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 
+import com.codeit.playlist.domain.security.OAuth2SuccessHandler;
 import com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter;
 import com.codeit.playlist.domain.security.jwt.JwtLogoutSuccessHandler;
 import com.codeit.playlist.domain.user.service.CustomOAuth2Service;
@@ -33,7 +34,8 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final CustomOAuth2Service oAuth2Service;
+  private final CustomOAuth2Service customOAuth2Service;
+  private final OAuth2SuccessHandler  oAuth2SuccessHandler;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http,
@@ -56,7 +58,8 @@ public class SecurityConfig {
                 new AntPathRequestMatcher("/api/users", POST.name()),
                 new AntPathRequestMatcher("/api/users/*/role"),
                 new AntPathRequestMatcher("/api/users/*/locked"),
-                new AntPathRequestMatcher("/api/users/*", PATCH.name())
+                new AntPathRequestMatcher("/api/users/*", PATCH.name()),
+                new AntPathRequestMatcher("/api/auth/refresh")
             )
         )
 
@@ -89,6 +92,13 @@ public class SecurityConfig {
             .requestMatchers("/assets/**").permitAll()
             .anyRequest().authenticated()
         )
+
+
+        .oauth2Login(oauth -> oauth
+            .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2Service))
+            .successHandler(oAuth2SuccessHandler)
+        )
+
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
         .oauth2Login(Customizer.withDefaults())

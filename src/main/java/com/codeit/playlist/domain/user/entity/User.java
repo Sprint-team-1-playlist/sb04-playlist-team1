@@ -130,10 +130,11 @@ public class User extends BaseUpdatableEntity {
     User user = new User();
     user.name = name;
     user.email = email;
-    user.password = null;      // 소셜 유저는 패스워드 없음
+    user.password = "";      // 소셜 유저는 패스워드 없음
     user.provider = AuthProvider.GOOGLE;
     user.role = Role.USER;
     user.locked = false;
+    user.followCount = 0L;
     return user;
   }
 }
