@@ -15,7 +15,8 @@ public class RateLimitConfig {
             @Value("${spring.data.redis.port}") int port) {
         Config config = new Config();
         var serverConfig = config.useSingleServer()
-                .setAddress(String.format("redis://%s:%d", host, port))
+                .setAddress(String.format("rediss://%s:%d", host, port)) // TLS
+                .setSslEnableEndpointIdentification(false) // TLS 호스트 인증 비활성화
                 .setConnectTimeout(10000) // 10초
                 .setTimeout(10000) // Command timeout 10초
                 .setRetryAttempts(10)
