@@ -109,9 +109,6 @@ public class BasicNotificationService implements NotificationService {
         log.debug("[알림] 알림 목록 조회 서비스 시작: receiverId= {}, cursor= {}, idAfter= {}, limit= {}, sortDirection= {}, sortBy= {}",
                 receiverId, cursor, idAfter, limit, sortDirection, sortBy);
 
-        int pageSize = Math.min(Math.max(limit, 1), 50);
-
-
         SortDirection safeSortDirection =
                 (sortDirection == null) ? SortDirection.DESCENDING : sortDirection;
 
@@ -143,7 +140,7 @@ public class BasicNotificationService implements NotificationService {
                 : Sort.by(Sort.Order.desc(safeSortBy), Sort.Order.desc("id"));
 
         //Pageable 설정
-        Pageable pageable = PageRequest.of(0, pageSize, sort);
+        Pageable pageable = PageRequest.of(0, limit, sort);
 
         //Repository 호출 (limit+1 조회)
         Slice<Notification> slice =
