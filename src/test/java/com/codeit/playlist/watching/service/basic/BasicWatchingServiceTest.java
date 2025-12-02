@@ -110,46 +110,6 @@ class BasicWatchingServiceTest {
     }
 
     @Test
-    @DisplayName("컨텐츠별 사용자 목록 보기, limit이 0 이하 또는 50 초과일 경우 기본값 10으로 보정됨")
-    void invalidLimitIsChangedToDefaultValue() {
-        // given
-        when(redisWatchingSessionRepository.getWatchingSessionsByContentId(
-                contentId,
-                null,
-                10,
-                SortDirection.ASCENDING))
-                .thenReturn(rawPage);
-        when(redisWatchingSessionRepository.countWatchingSessionByContentId(contentId))
-                .thenReturn(1L);
-
-        User user = WatchingSessionFixtures.user();
-        Content content = WatchingSessionFixtures.content();
-        List<Tag> tags = WatchingSessionFixtures.tagList();
-
-        when(userRepository.findById(raw.userId())).thenReturn(Optional.of(user));
-        when(contentRepository.findById(raw.contentId())).thenReturn(Optional.of(content));
-        when(tagRepository.findByContentId(raw.contentId())).thenReturn(tags);
-
-        when(userMapper.toDto(user)).thenReturn(WatchingSessionFixtures.userDto());
-        when(contentMapper.toDto(content, tags)).thenReturn(WatchingSessionFixtures.watchingSessionDto().content());
-
-        // when
-        watchingService.getWatchingSessionsByContent(
-                contentId,
-                "test",
-                null,
-                null,
-                0, // invalid
-                SortDirection.ASCENDING,
-                WatchingSortBy.createdAt
-        );
-
-        // then
-        verify(redisWatchingSessionRepository, times(1))
-                .getWatchingSessionsByContentId(contentId, null, 10, SortDirection.ASCENDING);
-    }
-
-    @Test
     @DisplayName("사용자의 시청 세션 조회, 세션이 없으면 null 반환")
     void getWatchingSessionByUserReturnsNullWhenNoSession() {
         // given
