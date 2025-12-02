@@ -5,6 +5,7 @@ import com.codeit.playlist.domain.follow.repository.FollowRepository;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.codeit.playlist.domain.notification.entity.Level;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
+import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
 import com.codeit.playlist.domain.playlist.dto.response.CursorResponsePlaylistDto;
@@ -153,21 +154,14 @@ public class BasicPlaylistService implements PlaylistService {
     @Override
     public CursorResponsePlaylistDto findPlaylists(String keywordLike, UUID ownerIdEqual,
                                                    UUID subscriberIdEqual, String cursor,
-                                                   UUID idAfter, int limit, String sortBy,
+                                                   UUID idAfter, int limit, PlaylistSortBy sortBy,
                                                    SortDirection sortDirection) {
         log.debug("[플레이리스트] 목록 조회 서비스 호출: keywordLike= {}, ownerIdEqual= {}, subscriberIdEqual= {}, " +
                         "cursor= {}, idAfter= {}, limit= {}, sortBy= {}, sortDirection= {}",
                 keywordLike, ownerIdEqual, subscriberIdEqual, cursor, idAfter, limit, sortBy, sortDirection);
 
-        //파라미터 보정
-        if(limit <= 0 || limit > 50) {
-            limit = 10; //기본 페이지 크기(10개 가져옴)
-        }
-
-        //sortBy 허용값(updatedAt / subscriberCount)
-        if (!"updatedAt".equals(sortBy) && !"subscriberCount".equals(sortBy)) {
-            sortBy = "updatedAt";
-        }
+        // 1. limit 보정 (컨트롤러에서도 @Min/@Max 있지만 방어용)
+        int pageSize = Math.min(Math.max(limit, 1), 50);
 
         boolean asc = (sortDirection == SortDirection.ASCENDING);
 
@@ -190,7 +184,7 @@ public class BasicPlaylistService implements PlaylistService {
         boolean hasCursor = (effectiveIdAfter != null);
 
 
-        Pageable pageable = PageRequest.of(0, limit);
+        Pageable pageable = PageRequest.of(0, pageSize);
 
         Slice<Playlist> playlists = playlistRepository.searchPlaylists(
                 keywordLike,

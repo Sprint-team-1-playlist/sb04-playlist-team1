@@ -1,5 +1,6 @@
 package com.codeit.playlist.domain.playlist.repository.custom;
 
+import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -16,7 +17,7 @@ public interface PlaylistRepositoryCustom {
             @Param("hasCursor") boolean hasCursor,
             @Param("cursorId") UUID cursorId,
             @Param("asc") boolean asc,
-            String sortBy,
+            PlaylistSortBy sortBy,
             Pageable pageable
     );
 
