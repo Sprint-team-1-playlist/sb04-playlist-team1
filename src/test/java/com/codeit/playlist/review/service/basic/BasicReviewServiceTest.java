@@ -4,7 +4,7 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
-import com.codeit.playlist.domain.review.dto.ReviewSortBy;
+import com.codeit.playlist.domain.review.dto.data.ReviewSortBy;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
 import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
@@ -342,7 +342,7 @@ public class BasicReviewServiceTest {
 
         int limit = 2;
         SortDirection sortDirection = SortDirection.DESCENDING;
-        ReviewSortBy sortBy = ReviewSortBy.CREATED_AT;
+        ReviewSortBy sortBy = ReviewSortBy.createdAt;
 
         // 리뷰에 들어갈 user / content
         User user = mock(User.class);
@@ -440,7 +440,7 @@ public class BasicReviewServiceTest {
                 idAfter,
                 limit,
                 SortDirection.ASCENDING,
-                ReviewSortBy.CREATED_AT
+                ReviewSortBy.createdAt
         );
 
         // then
