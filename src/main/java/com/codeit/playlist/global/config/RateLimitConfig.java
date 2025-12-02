@@ -12,12 +12,14 @@ public class RateLimitConfig {
     @Bean
     public RedissonClient redissonClient(
             @Value("${spring.data.redis.host}") String host,
-            @Value("${spring.data.redis.port}") int port) {
+            @Value("${spring.data.redis.port}") int port,
+            @Value("${spring.data.redis.ssl.enabled}") boolean ssl) {
+
         Config config = new Config();
         var serverConfig = config.useSingleServer()
-                .setAddress(String.format("rediss://%s:%d", host, port)) // TLS
-                .setConnectTimeout(10000) // 10초
-                .setTimeout(10000) // Command timeout 10초
+                .setAddress((ssl ? "rediss://" : "redis://") + host + ":" + port) // TLS
+                .setConnectTimeout(60000) // 60초
+                .setTimeout(60000) // Command timeout 60초
                 .setRetryAttempts(10)
                 .setConnectionPoolSize(32)     // Redisson connection pool: 64(default)
                 .setConnectionMinimumIdleSize(8)
