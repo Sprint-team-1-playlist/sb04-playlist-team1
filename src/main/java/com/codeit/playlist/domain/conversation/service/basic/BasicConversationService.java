@@ -223,8 +223,7 @@ public class BasicConversationService implements ConversationService {
   }
 
   private void validateParticipant(Conversation conversation, UUID userId) {
-    if (!userId.equals(conversation.getUser1().getId()) &&
-        !userId.equals(conversation.getUser2().getId())) {
+    if (!conversation.isParticipant(userId)) {
       throw NotConversationParticipantException.withId(userId);
     }
   }

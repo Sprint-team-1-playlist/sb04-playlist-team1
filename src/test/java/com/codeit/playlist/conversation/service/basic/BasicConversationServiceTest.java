@@ -145,7 +145,6 @@ public class BasicConversationServiceTest {
   @Test
   @DisplayName("대화 목록 조회 - ASC 정렬")
   void findAllAscSortedByCreatedAt() {
-    String sortDirection = "ASCENDING";
     int limit = 10;
 
     Conversation oldConv = new Conversation(currentUser, otherUser);
@@ -173,7 +172,6 @@ public class BasicConversationServiceTest {
   @Test
   @DisplayName("대화 목록 조회 - DESC 정렬")
   void findAllDescSortedByCreatedAt() {
-    String sortDirection = "DESCENDING";
     int limit = 10;
 
     Conversation oldConv = new Conversation(currentUser, otherUser);
