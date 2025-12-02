@@ -13,4 +13,5 @@ public interface ContentService {
     ContentDto update(UUID contentId, ContentUpdateRequest request, String thumbnail);
     void delete(UUID contentId);
     CursorResponseContentDto get(ContentCursorRequest request);
+    ContentDto search(UUID contentId);
 }

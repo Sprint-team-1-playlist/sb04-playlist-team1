@@ -243,4 +243,12 @@ public class BasicContentService implements ContentService {
         log.debug("[콘텐츠 데이터 관리] 커서 페이지네이션 컨텐츠 수집 완료, response = {}", responseDto);
         return responseDto;
     }
+
+    public ContentDto search(UUID contentId) {
+        log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 시작, contentId : {}",contentId);
+        Content searchContent = contentRepository.findById(contentId)
+                .orElseThrow(() -> new ContentBadRequestException("[콘텐츠 데이터] 잘못된 요청입니다."));
+        log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 완료, searchContent : {}", searchContent);
+        return contentMapper.toDto(searchContent);
+    }
 }
