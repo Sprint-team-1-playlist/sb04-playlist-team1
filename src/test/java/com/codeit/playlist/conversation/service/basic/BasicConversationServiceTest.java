@@ -9,7 +9,9 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 import com.codeit.playlist.domain.base.BaseEntity;
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
+import com.codeit.playlist.domain.conversation.dto.data.ConversationSortBy;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
@@ -163,7 +165,7 @@ public class BasicConversationServiceTest {
     when(userMapper.toUserSummary(otherUser)).thenReturn(summary);
     when(conversationMapper.toDto(any(), any(), any())).thenReturn(new ConversationDto(UUID.randomUUID(), summary, null, false));
 
-    CursorResponseConversationDto response = conversationService.findAll(null, null, null, limit, sortDirection, "createdAt");
+    CursorResponseConversationDto response = conversationService.findAll(null, null, null, limit, SortDirection.ASCENDING, ConversationSortBy.createdAt);
     assertNotNull(response);
     assertEquals(3, response.data().size());
   }
@@ -191,7 +193,7 @@ public class BasicConversationServiceTest {
     when(userMapper.toUserSummary(otherUser)).thenReturn(summary);
     when(conversationMapper.toDto(any(), any(), any())).thenReturn(new ConversationDto(UUID.randomUUID(), summary, null, false));
 
-    CursorResponseConversationDto response = conversationService.findAll(null, null, null, limit, sortDirection, "createdAt");
+    CursorResponseConversationDto response = conversationService.findAll(null, null, null, limit, SortDirection.DESCENDING, ConversationSortBy.createdAt);
     assertNotNull(response);
     assertEquals(3, response.data().size());
   }
@@ -202,7 +204,7 @@ public class BasicConversationServiceTest {
     String invalidCursor = "invalid";
     String sortDirection = "ASCENDING";
     assertThrows(InvalidCursorException.class,
-        () -> conversationService.findAll(null, invalidCursor, null, 10, sortDirection, "createdAt"));
+        () -> conversationService.findAll(null, invalidCursor, null, 10, SortDirection.ASCENDING, ConversationSortBy.createdAt));
   }
 
   @Test

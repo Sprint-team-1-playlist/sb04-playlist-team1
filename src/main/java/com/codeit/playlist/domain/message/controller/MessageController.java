@@ -1,7 +1,11 @@
 package com.codeit.playlist.domain.message.controller;
 
+import com.codeit.playlist.domain.base.SortDirection;
+import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.service.MessageService;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,9 +32,9 @@ public class MessageController {
   public ResponseEntity<CursorResponseDirectMessageDto> findAll(@PathVariable UUID conversationId,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) UUID idAfter,
-      @RequestParam int limit,
-      @RequestParam String sortDirection,
-      @RequestParam String sortBy) {
+      @RequestParam @Min(1) @Max(50) int limit,
+      @RequestParam(defaultValue = "DESCENDING") String sortDirection,
+      @RequestParam(defaultValue = "createdAt") String sortBy) {
 
     log.debug("[Message] DM 목록 조회 요청: {}", conversationId);
 
@@ -39,8 +43,8 @@ public class MessageController {
         cursor,
         idAfter,
         limit,
-        sortDirection,
-        sortBy);
+        SortDirection.valueOf(sortDirection),
+        MessageSortBy.valueOf(sortBy));
 
     log.info("[Message] DM 목록 조회 응답: {}", cursorMessageDto);
     return ResponseEntity

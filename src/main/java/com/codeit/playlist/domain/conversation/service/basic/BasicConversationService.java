@@ -89,30 +89,12 @@ public class BasicConversationService implements ConversationService {
       String cursor,
       UUID idAfter,
       int limit,
-      String sortDirection,
-      String sortBy
+      SortDirection sortDirection,
+      ConversationSortBy sortBy
   ) {
     log.debug("[Conversation] 대화 조회 시작");
 
-    ConversationSortBy conversationSortBy;
-    try {
-      conversationSortBy = ConversationSortBy.valueOf(sortBy);
-    } catch (IllegalArgumentException e) {
-      conversationSortBy = ConversationSortBy.createdAt;
-    }
-
-    SortDirection direction;
-    try {
-      direction = SortDirection.valueOf(sortDirection);
-    } catch (IllegalArgumentException e) {
-      direction = SortDirection.ASCENDING;
-    }
-
-    if (limit > 30) {
-      limit = 30;
-    }
-
-    boolean isAsc = direction.equals(SortDirection.ASCENDING);
+    boolean isAsc = sortDirection.equals(SortDirection.ASCENDING);
 
     Pageable pageable = PageRequest.of(0, limit + 1);
 
@@ -175,8 +157,8 @@ public class BasicConversationService implements ConversationService {
         nextIdAfter,
         hasNext,
         total,
-        conversationSortBy,
-        direction
+        sortBy,
+        sortDirection
     );
 
     log.info("[Conversation] 대화 조회 완료: total={}", total);

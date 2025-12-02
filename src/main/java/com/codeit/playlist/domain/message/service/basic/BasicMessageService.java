@@ -55,8 +55,7 @@ public class BasicMessageService implements MessageService {
 
     UUID currentUserId = getCurrentUserId();
 
-    if (!conversation.getUser1().getId().equals(currentUserId)
-        && !conversation.getUser2().getId().equals(currentUserId)) {
+    if (!conversation.isParticipant(currentUserId)) {
       throw NotConversationParticipantException.withId(currentUserId);
     }
 
@@ -85,35 +84,16 @@ public class BasicMessageService implements MessageService {
   @Transactional(readOnly = true)
   @Override
   public CursorResponseDirectMessageDto findAll(UUID conversationId, String cursor,
-      UUID idAfter, int limit, String sortDirection, String sortBy) {
+      UUID idAfter, int limit, SortDirection sortDirection, MessageSortBy sortBy) {
 
     log.debug("[Message] DM 목록 조회 시작: {}", conversationId);
-
-    MessageSortBy messageSortBy;
-    try {
-      messageSortBy = MessageSortBy.valueOf(sortBy);
-    } catch (IllegalArgumentException e) {
-      messageSortBy = MessageSortBy.createdAt;
-    }
-
-    SortDirection direction;
-    try {
-      direction = SortDirection.valueOf(sortDirection);
-    } catch (IllegalArgumentException e) {
-      direction = SortDirection.DESCENDING;
-    }
-
-    if (limit > 30) {
-      limit = 30;
-    }
 
     Conversation conversation = conversationRepository.findById(conversationId)
         .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
 
     UUID currentUserId = getCurrentUserId();
 
-    if (!conversation.getUser1().getId().equals(currentUserId)
-        && !conversation.getUser2().getId().equals(currentUserId)) {
+    if (!conversation.isParticipant(currentUserId)) {
       throw NotConversationParticipantException.withId(currentUserId);
     }
 
@@ -155,8 +135,8 @@ public class BasicMessageService implements MessageService {
         nextIdAfter,
         hasNext,
         totalCount,
-        messageSortBy,
-        direction
+        sortBy,
+        sortDirection
     );
 
     log.info("[Message] DM 목록 조회 완료: conversationId={}, count={}", conversationId, content.size());
@@ -172,8 +152,7 @@ public class BasicMessageService implements MessageService {
             .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
 
     UUID currentUserId = getCurrentUserId();
-    if (!conversation.getUser1().getId().equals(currentUserId)
-        && !conversation.getUser2().getId().equals(currentUserId)) {
+    if (!conversation.isParticipant(currentUserId)) {
       throw NotConversationParticipantException.withId(currentUserId);
     }
 
