@@ -5,12 +5,14 @@ import static org.springframework.http.HttpMethod.POST;
 
 import com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter;
 import com.codeit.playlist.domain.security.jwt.JwtLogoutSuccessHandler;
+import com.codeit.playlist.domain.user.service.OAuth2Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -30,6 +32,8 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+  private final OAuth2Service oAuth2Service;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http,
@@ -86,6 +90,9 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         )
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+        .oauth2Login(Customizer.withDefaults())
+
 
         .build();
   }
