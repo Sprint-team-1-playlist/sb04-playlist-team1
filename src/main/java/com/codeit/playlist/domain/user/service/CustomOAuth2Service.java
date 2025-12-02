@@ -23,11 +23,12 @@ public class CustomOAuth2Service extends DefaultOAuth2UserService {
 
     String email = oAuth2User.getAttributes().get("email").toString();
     String name = oAuth2User.getAttributes().get("name").toString();
+    String picture = oAuth2User.getAttributes().get("picture").toString();
 
     User user = userRepository.findByEmail(email)
         .orElseGet(() ->
             userRepository.save(
-                User.createOAuthUser(name, email)
+                User.createOAuthUser(name, email, picture)
             )
         );
     return new CustomOAuth2User(oAuth2User.getAttributes(), user.getId());

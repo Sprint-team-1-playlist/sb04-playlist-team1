@@ -67,10 +67,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     response.addHeader("Set-Cookie", refreshCookie.toString());
 
     // 프론트로 Redirect (AccessToken 전달)
-//    String redirect = redirectUrl + "?accessToken=" + accessToken;
-//
-//    log.info("OAuth2 로그인 성공 → 사용자: {}, Redirect: {}", email, redirect);
-//
-//    response.sendRedirect(redirect);
+    String redirect = "http://localhost:8080/#/contents" + "?accessToken=" + accessToken;
+
+    log.info("OAuth2 로그인 성공 → 사용자: {}, Redirect: {}", email, redirect);
+
+    response.sendRedirect(redirect);
   }
 }

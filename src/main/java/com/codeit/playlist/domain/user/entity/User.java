@@ -40,7 +40,7 @@ public class User extends BaseUpdatableEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private AuthProvider provider;
+  private AuthProvider provider = AuthProvider.LOCAL;
 
   public User(String email, String password, String name, String profileImageUrl, Role role) {
     this.email = email;
@@ -50,6 +50,7 @@ public class User extends BaseUpdatableEntity {
     this.role = role;
     this.locked = false;
     this.followCount = 0L;
+    this.provider = AuthProvider.LOCAL;
   }
 
   public void increaseFollowCount() {
