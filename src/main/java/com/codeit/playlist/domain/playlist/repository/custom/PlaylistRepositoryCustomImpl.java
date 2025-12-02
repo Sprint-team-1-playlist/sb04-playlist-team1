@@ -1,5 +1,6 @@
 package com.codeit.playlist.domain.playlist.repository.custom;
 
+import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.entity.QPlaylist;
 import com.codeit.playlist.domain.playlist.entity.QSubscribe;
@@ -34,7 +35,7 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
             @Param("hasCursor") boolean hasCursor,
             @Param("cursorId") UUID cursorId,
             @Param("asc") boolean asc,
-            String sortBy,
+            PlaylistSortBy sortBy,
             Pageable pageable
     ) {
         BooleanBuilder builder = buildFilterConditions(keywordLike, ownerIdEqual, subscriberIdEqual);
@@ -113,15 +114,14 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
         return builder;
     }
 
-    private OrderSpecifier<?>[] createOrderSpecifiers(String sortBy, boolean asc) {
+    private OrderSpecifier<?>[] createOrderSpecifiers(PlaylistSortBy sortBy, boolean asc) {
 
         OrderSpecifier<?> primary;
         OrderSpecifier<?> secondary;
 
-        if ("subscriberCount".equals(sortBy)) {
+        if (sortBy == PlaylistSortBy.subscribeCount) {
             primary = asc ? playlist.subscriberCount.asc() : playlist.subscriberCount.desc();
-        } else {
-            // default = updatedAt
+        } else { // updatedAt (기본값)
             primary = asc ? playlist.updatedAt.asc() : playlist.updatedAt.desc();
         }
 
@@ -136,7 +136,7 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
             boolean hasCursor,
             UUID cursorId,
             boolean asc,
-            String sortBy
+            PlaylistSortBy sortBy
     ) {
         if (!hasCursor || cursorId == null) {
             return null;
@@ -157,7 +157,7 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
         BooleanExpression primaryCompare;
         BooleanExpression tieBreakerCompare;
 
-        if ("subscriberCount".equals(sortBy)) {
+        if (sortBy == PlaylistSortBy.subscribeCount) {
             Long cursorCount = cursorPlaylist.getSubscriberCount();
 
             if (asc) {
