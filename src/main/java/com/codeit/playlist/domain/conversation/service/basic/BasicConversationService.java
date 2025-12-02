@@ -1,6 +1,8 @@
 package com.codeit.playlist.domain.conversation.service.basic;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
+import com.codeit.playlist.domain.conversation.dto.data.ConversationSortBy;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
@@ -87,12 +89,12 @@ public class BasicConversationService implements ConversationService {
       String cursor,
       UUID idAfter,
       int limit,
-      String sortDirection,
-      String sortBy
+      SortDirection sortDirection,
+      ConversationSortBy sortBy
   ) {
     log.debug("[Conversation] 대화 조회 시작");
 
-    boolean isAsc = sortDirection.equalsIgnoreCase("ASCENDING");
+    boolean isAsc = sortDirection.equals(SortDirection.ASCENDING);
 
     Pageable pageable = PageRequest.of(0, limit + 1);
 
@@ -155,7 +157,7 @@ public class BasicConversationService implements ConversationService {
         nextIdAfter,
         hasNext,
         total,
-        "createdAt",
+        sortBy,
         sortDirection
     );
 

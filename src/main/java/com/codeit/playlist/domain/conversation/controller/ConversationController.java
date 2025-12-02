@@ -1,10 +1,10 @@
 package com.codeit.playlist.domain.conversation.controller;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
+import com.codeit.playlist.domain.conversation.dto.data.ConversationSortBy;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
-import com.codeit.playlist.global.error.InvalidSortByException;
-import com.codeit.playlist.global.error.InvalidSortDirectionException;
 import com.codeit.playlist.domain.conversation.service.ConversationService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -49,19 +49,16 @@ public class ConversationController {
       @RequestParam(defaultValue = "ASCENDING") String sortDirection,
       @RequestParam(defaultValue = "createdAt") String sortBy
   ){
-    if (!sortBy.equals("createdAt")) {
-      throw InvalidSortByException.withSortBy(sortBy);
-    }
-    if (!sortDirection.equals("ASCENDING") && !sortDirection.equals("DESCENDING")) {
-      throw InvalidSortDirectionException.withSortDirection(sortDirection);
-    }
+    ConversationSortBy conversationSortBy = ConversationSortBy.createdAt;
+    SortDirection direction = SortDirection.valueOf(sortDirection);
+
     log.debug("[Conversation] 대화 조회 요청");
     CursorResponseConversationDto cursorConversationDto = conversationService.findAll(keywordLike,
         cursor,
         idAfter,
         limit,
-        sortDirection,
-        sortBy);
+        direction,
+        conversationSortBy);
     log.info("[Conversation] 대화 조회 응답: {}", cursorConversationDto);
     return  ResponseEntity
         .status(HttpStatus.OK)
