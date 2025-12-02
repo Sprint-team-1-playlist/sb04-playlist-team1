@@ -36,9 +36,9 @@ public class BasicContentService implements ContentService {
     @Transactional
     @Override
     public ContentDto create(ContentCreateRequest request, String thumbnail) {
-        log.debug("컨텐츠 생성 시작 : request = {}", request);
+        log.debug("[콘텐츠 데이터 관리] 컨텐츠 생성 시작 : request = {}", request);
 
-        log.debug("타입 생성 시작 : type = {}", request.type());
+        log.debug("[콘텐츠 데이터 관리] 타입 생성 시작 : type = {}", request.type());
         Type type = null;
         if(request.type() == null) {
             throw new ContentBadRequestException("타입을 입력해주세요.");
@@ -69,7 +69,7 @@ public class BasicContentService implements ContentService {
 
         contentRepository.save(content);
 
-        log.debug("태그 생성 시작 : tags = {}", request.tags());
+        log.debug("[콘텐츠 데이터 관리] 태그 생성 시작 : tags = {}", request.tags());
         List<Tag> tagList = request.tags().stream()
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
@@ -80,16 +80,16 @@ public class BasicContentService implements ContentService {
         if(!tagList.isEmpty()) {
             tagRepository.saveAll(tagList);
         }
-        log.info("태그 생성 완료 : tags = {}", tagList);
+        log.info("[콘텐츠 데이터 관리] 태그 생성 완료 : tags = {}", tagList);
 
-        log.info("컨텐츠 생성 완료, cotnent = {}, tag = {}", content, tagList);
+        log.info("[콘텐츠 데이터 관리] 컨텐츠 생성 완료, cotnent = {}, tag = {}", content, tagList);
         return contentMapper.toDto(content, tagList);
     }
 
     @Transactional
     @Override
     public ContentDto update(UUID contentId, ContentUpdateRequest request, String thumbnail) {
-        log.debug("컨텐츠 수정 시작 : id = {}", contentId);
+        log.debug("[콘텐츠 데이터 관리] 컨텐츠 수정 시작 : id = {}", contentId);
         Content content = contentRepository.findById(contentId)
                 .orElseThrow(() -> ContentNotFoundException.withId(contentId));
 
@@ -105,7 +105,7 @@ public class BasicContentService implements ContentService {
             tagRepository.deleteAll(oldtags);
         }
 
-        log.info("태그 수정 시작 : tag = {}", request.tags());
+        log.info("[콘텐츠 데이터 관리] 태그 수정 시작 : tag = {}", request.tags());
 
         List<String> newTags = request.tags();
         if(request.tags() == null) {
@@ -120,9 +120,9 @@ public class BasicContentService implements ContentService {
                         .toList();
 
         tagRepository.saveAll(tagList);
-        log.info("태그 수정 완료 : tag = {}", tagList);
+        log.info("[콘텐츠 데이터 관리] 태그 수정 완료 : tag = {}", tagList);
 
-        log.info("컨텐츠 수정 완료 : id = {}, tag = {}",
+        log.info("[콘텐츠 데이터 관리] 컨텐츠 수정 완료 : id = {}, tag = {}",
                 content.getId(), tagRepository.findByContentId(content.getId()));
         return contentMapper.toDto(content, tagList);
     }
@@ -130,14 +130,14 @@ public class BasicContentService implements ContentService {
     @Transactional
     @Override
     public void delete(UUID contentId) {
-        log.debug("컨텐츠 삭제 시작 : id = {}", contentId);
+        log.debug("[콘텐츠 데이터 관리] 컨텐츠 삭제 시작 : id = {}", contentId);
         if(contentRepository.existsById(contentId)) {
-            log.debug("태그 삭제 시작 : tag = {}", tagRepository.findByContentId(contentId));
+            log.debug("[콘텐츠 데이터 관리] 태그 삭제 시작 : tag = {}", tagRepository.findByContentId(contentId));
             tagRepository.deleteAllByContentId(contentId); // contentId와 연결된 tags 리스트를 삭제함
-            log.info("태그 삭제 완료 : tag = {}", tagRepository.findByContentId(contentId));
+            log.info("[콘텐츠 데이터 관리] 태그 삭제 완료 : tag = {}", tagRepository.findByContentId(contentId));
 
             contentRepository.deleteById(contentId);
-            log.info("컨텐츠 삭제 완료 : id = {}", contentId);
+            log.info("[콘텐츠 데이터 관리] 컨텐츠 삭제 완료 : id = {}", contentId);
         } else {
             throw ContentNotFoundException.withId(contentId);
         }
@@ -146,18 +146,18 @@ public class BasicContentService implements ContentService {
     @Transactional
     @Override
     public CursorResponseContentDto get(ContentCursorRequest request) {
-        log.debug("커서 페이지네이션 컨텐츠 수집 시작, request = {}", request);
+        log.debug("[콘텐츠 데이터 관리] 커서 페이지네이션 컨텐츠 수집 시작, request = {}", request);
         int limit = request.limit();
 
         if(limit <= 0 || limit > 1000) {
             limit = 10;
         }
 
-        log.info("요청 typeEqual : {}, keywordLike : {}, cursor : {}, idAfter : {}, limit : {}, sortDirection : {}, sortBy : {}",
+        log.info("[콘텐츠 데이터 관리] 요청 typeEqual : {}, keywordLike : {}, cursor : {}, idAfter : {}, limit : {}, sortDirection : {}, sortBy : {}",
                 request.typeEqual(), request.keywordLike(), request.cursor(), request.idAfter(), request.limit(), request.sortDirection(), request.sortBy());
 
         String sortDirection = request.sortDirection() != null ? request.sortDirection().toString() : "DESCENDING";
-        log.info("sortDirection : {}", sortDirection);
+        log.info("[콘텐츠 데이터 관리] sortDirection : {}", sortDirection);
         boolean ascending;
 
         switch(sortDirection) {
@@ -170,15 +170,15 @@ public class BasicContentService implements ContentService {
                 break;
 
             default:
-                throw new IllegalArgumentException("sortDirection was something wrong : " + sortDirection);
+                throw new IllegalArgumentException("[콘텐츠 데이터 관리] sortDirection was something wrong : " + sortDirection);
         }
-        log.info("after sortDirection : {}", sortDirection);
+        log.info("[콘텐츠 데이터 관리] after sortDirection : {}", sortDirection);
 
         String sortBy = request.sortBy();
         if(sortBy == null) {
             sortBy = "createdAt"; // 디폴트
         }
-        log.info("sortBy : {}", sortBy);
+        log.info("[콘텐츠 데이터 관리] sortBy : {}", sortBy);
 
         List<Content> contents = contentRepository.searchContents(request, ascending, limit, sortBy);
         // hasNext 판단용으로 limit + 1개를 가져왔으니 실제 반환할 데이터는 limit개까지만
@@ -210,7 +210,7 @@ public class BasicContentService implements ContentService {
         int size = contents.size();
         boolean hasNext = size == limit + 1;
         int pageSize = Math.min(size, limit);
-        log.info("pageSize = {}, hasNext = {}", pageSize, hasNext);
+        log.info("[콘텐츠 데이터 관리] pageSize = {}, hasNext = {}", pageSize, hasNext);
 
         if(hasNext && pageSize > 0) {
             Content lastPage = contents.get(pageSize - 1); // 이번 페이지에서 실제로 반환되는 마지막 요소
@@ -229,18 +229,18 @@ public class BasicContentService implements ContentService {
                     break;
 
                 default:
-                    throw new IllegalArgumentException("sortBy was something wrong : " + sortBy);
+                    throw new IllegalArgumentException("[콘텐츠 데이터 관리] sortBy was something wrong : " + sortBy);
             }
 
             nextIdAfter = lastPage.getId().toString();
         }
 
-        log.info("after SortBy : {}", sortBy);
-        log.info("nextCursor : {}", nextCursor);
-        log.info("nextIdAfter : {}", nextIdAfter);
+        log.info("[콘텐츠 데이터 관리] after SortBy : {}", sortBy);
+        log.info("[콘텐츠 데이터 관리] nextCursor : {}", nextCursor);
+        log.info("[콘텐츠 데이터 관리] nextIdAfter : {}", nextIdAfter);
 
         CursorResponseContentDto responseDto = new CursorResponseContentDto(data, nextCursor, nextIdAfter, hasNext, pageSize, sortBy, sortDirection);
-        log.debug("커서 페이지네이션 컨텐츠 수집 완료, response = {}", responseDto);
+        log.debug("[콘텐츠 데이터 관리] 커서 페이지네이션 컨텐츠 수집 완료, response = {}", responseDto);
         return responseDto;
     }
 }
