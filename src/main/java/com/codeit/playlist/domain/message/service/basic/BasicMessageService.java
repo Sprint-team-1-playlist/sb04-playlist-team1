@@ -1,7 +1,9 @@
 package com.codeit.playlist.domain.message.service.basic;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
+import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
 import com.codeit.playlist.global.error.InvalidCursorException;
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
@@ -53,8 +55,7 @@ public class BasicMessageService implements MessageService {
 
     UUID currentUserId = getCurrentUserId();
 
-    if (!conversation.getUser1().getId().equals(currentUserId)
-        && !conversation.getUser2().getId().equals(currentUserId)) {
+    if (!conversation.isParticipant(currentUserId)) {
       throw NotConversationParticipantException.withId(currentUserId);
     }
 
@@ -83,7 +84,7 @@ public class BasicMessageService implements MessageService {
   @Transactional(readOnly = true)
   @Override
   public CursorResponseDirectMessageDto findAll(UUID conversationId, String cursor,
-      UUID idAfter, int limit, String sortDirection, String sortBy) {
+      UUID idAfter, int limit, SortDirection sortDirection, MessageSortBy sortBy) {
 
     log.debug("[Message] DM 목록 조회 시작: {}", conversationId);
 
@@ -92,20 +93,12 @@ public class BasicMessageService implements MessageService {
 
     UUID currentUserId = getCurrentUserId();
 
-    if (!conversation.getUser1().getId().equals(currentUserId)
-        && !conversation.getUser2().getId().equals(currentUserId)) {
+    if (!conversation.isParticipant(currentUserId)) {
       throw NotConversationParticipantException.withId(currentUserId);
     }
 
-    LocalDateTime cursorTime = null;
-    if (cursor != null) {
-      try {
-        cursorTime = LocalDateTime.parse(cursor);
-      } catch (DateTimeParseException e) {
-        throw InvalidCursorException.withCursor(cursor);
-      }
+    LocalDateTime cursorTime = parseCursor(cursor);
 
-    }
     Pageable pageable = PageRequest.of(0, limit + 1);
     List<Message> messages = messageRepository.findMessagesByConversationWithCursor(
         conversationId, cursorTime, idAfter, pageable);
@@ -152,19 +145,14 @@ public class BasicMessageService implements MessageService {
             .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
 
     UUID currentUserId = getCurrentUserId();
-    if (!conversation.getUser1().getId().equals(currentUserId)
-        && !conversation.getUser2().getId().equals(currentUserId)) {
+    if (!conversation.isParticipant(currentUserId)) {
       throw NotConversationParticipantException.withId(currentUserId);
     }
 
     Message message = messageRepository.findById(directMessageId)
         .orElseThrow(() -> MessageNotFoundException.withId(directMessageId));
 
-    Optional<Message> latestMessageOpt = messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation);
-
-    if (latestMessageOpt.isEmpty() || !latestMessageOpt.get().getId().equals(message.getId())) {
-      throw InvalidMessageReadOperationException.withId(directMessageId);
-    }
+    validateReadMessage(message, conversation);
 
     conversation.markAsRead();
 
@@ -175,5 +163,21 @@ public class BasicMessageService implements MessageService {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     PlaylistUserDetails userDetails = (PlaylistUserDetails) authentication.getPrincipal();
     return userDetails.getUserDto().id();
+  }
+
+  private LocalDateTime parseCursor(String cursor) {
+    if (cursor == null) return null;
+    try {
+      return LocalDateTime.parse(cursor);
+    } catch (DateTimeParseException e) {
+      throw InvalidCursorException.withCursor(cursor);
+    }
+  }
+
+  private void validateReadMessage(Message message, Conversation conversation) {
+    Optional<Message> latest = messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation);
+    if (latest.isEmpty() || !latest.get().getId().equals(message.getId())) {
+      throw InvalidMessageReadOperationException.withId(message.getId());
+    }
   }
 }

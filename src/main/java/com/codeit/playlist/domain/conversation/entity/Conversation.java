@@ -8,6 +8,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,5 +42,9 @@ public class Conversation extends BaseUpdatableEntity {
 
   public void markAsUnread() {
     this.hasUnread = true;
+  }
+
+  public boolean isParticipant(UUID userId) {
+    return user1.getId().equals(userId) || user2.getId().equals(userId);
   }
 }
