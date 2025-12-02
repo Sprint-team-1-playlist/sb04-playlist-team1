@@ -2,6 +2,7 @@ package com.codeit.playlist.domain.playlist.service;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
+import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
 import com.codeit.playlist.domain.playlist.dto.response.CursorResponsePlaylistDto;
@@ -19,7 +20,7 @@ public interface PlaylistService {
 
     CursorResponsePlaylistDto findPlaylists(String keywordLike, UUID ownerIdEqual,
                                             UUID subscriberIdEqual, String cursor,
-                                            UUID idAfter, int limit, String sortBy,
+                                            UUID idAfter, int limit, PlaylistSortBy sortBy,
                                             SortDirection sortDirection);
 
     PlaylistDto getPlaylist(UUID playlistId);
