@@ -69,6 +69,10 @@ jobs:
             --arg SPRING_MAIL_PORT "${{ secrets.SPRING_MAIL_PORT }}" \
             --arg SPRING_MAIL_USERNAME "${{ secrets.SPRING_MAIL_USERNAME }}" \
             --arg WEBSOCKET_ALLOWED_ORIGINS "${{ secrets.WEBSOCKET_ALLOWED_ORIGINS }}" \
+            --arg SPORTSDB_API_KEY "${{ secrets.SPORTSDB_API_KEY }}" \
+            --arg SPORTSDB_BASE_URL "${{ secrets.SPORTSDB_BASE_URL }}" \
+            --arg TMDB_API_KEY "${{ secrets.TMDB_API_KEY }}" \
+            --arg TMDB_BASE_URL "${{ secrets.TMDB_BASE_URL }}" \
             '
             .containerDefinitions[0].image = $IMAGE
             | .containerDefinitions[0].environment = [
@@ -89,7 +93,11 @@ jobs:
                 {"name": "SPRING_MAIL_PASSWORD", "value": $SPRING_MAIL_PASSWORD},
                 {"name": "SPRING_MAIL_PORT", "value": $SPRING_MAIL_PORT},
                 {"name": "SPRING_MAIL_USERNAME", "value": $SPRING_MAIL_USERNAME},
-                {"name": "WEBSOCKET_ALLOWED_ORIGINS", "value": $WEBSOCKET_ALLOWED_ORIGINS}
+                {"name": "WEBSOCKET_ALLOWED_ORIGINS", "value": $WEBSOCKET_ALLOWED_ORIGINS},
+                {"name": "SPORTSDB_API_KEY", "value": $SPORTSDB_API_KEY},
+                {"name": "SPORTSDB_BASE_URL", "value": $SPORTSDB_BASE_URL},
+                {"name": "TMDB_API_KEY", "value": $TMDB_API_KEY},
+                {"name": "TMDB_BASE_URL", "value": $TMDB_BASE_URL},
               ]
             ' \
             task-definition.json > tmp.json && mv tmp.json task-definition.json
