@@ -11,14 +11,19 @@ import org.springframework.context.annotation.Configuration;
 public class RateLimitConfig {
     @Bean
     public RedissonClient redissonClient(
-            @Value("${spring.data.redis.host:localhost}") String host,
-            @Value("${spring.data.redis.port:6379}") int port) {
+            @Value("${spring.data.redis.host}") String host,
+            @Value("${spring.data.redis.port}") int port) {
         Config config = new Config();
         var serverConfig = config.useSingleServer()
-                .setAddress(String.format("redis://%s:%d", host, port))
-                .setConnectTimeout(5000)
-                .setRetryAttempts(5)
-                .setRetryInterval(2000);
+                .setAddress(String.format("rediss://%s:%d", host, port)) // TLS
+                .setConnectTimeout(10000) // 10초
+                .setTimeout(10000) // Command timeout 10초
+                .setRetryAttempts(10)
+                .setConnectionPoolSize(32)     // Redisson connection pool: 64(default)
+                .setConnectionMinimumIdleSize(8)
+                .setSubscriptionConnectionPoolSize(16)
+                .setSubscriptionConnectionMinimumIdleSize(4);
+
         return Redisson.create(config);
     }
 }
