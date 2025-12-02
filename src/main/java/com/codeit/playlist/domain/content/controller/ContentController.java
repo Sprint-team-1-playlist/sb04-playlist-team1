@@ -65,7 +65,7 @@ public class ContentController {
     }
 
     @GetMapping("/{contentId}")
-    public ResponseEntity<ContentDto> searchById(@RequestParam UUID contentId) {
+    public ResponseEntity<ContentDto> searchById(@PathVariable UUID contentId) {
         ContentDto content = contentService.search(contentId);
         return ResponseEntity.ok(content);
     }

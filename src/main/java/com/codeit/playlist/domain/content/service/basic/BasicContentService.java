@@ -244,11 +244,13 @@ public class BasicContentService implements ContentService {
         return responseDto;
     }
 
+    @Transactional
     public ContentDto search(UUID contentId) {
         log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 시작, contentId : {}",contentId);
         Content searchContent = contentRepository.findById(contentId)
-                .orElseThrow(() -> new ContentBadRequestException("[콘텐츠 데이터] 잘못된 요청입니다."));
+                .orElseThrow(() -> new ContentNotFoundException());
+        List<Tag> tags = tagRepository.findByContentId(contentId);
         log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 완료, searchContent : {}", searchContent);
-        return contentMapper.toDto(searchContent);
+        return contentMapper.toDto(searchContent,tags);
     }
 }
