@@ -71,9 +71,7 @@ public class BasicWatchingService implements WatchingService {
             nextIdAfter = last.watchingId();
         }
 
-        log.info("[실시간 같이 보기] 실시간 시청자 조회 성공: " +
-                        "contentId = {}, watcherNameLike = {}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
-                contentId, watcherNameLike, cursor, idAfter, limit, sortDirection, sortBy);
+        log.info("[실시간 같이 보기] 실시간 시청자 조회 성공: watchingSessions={}", dtos);
 
         return new CursorResponseWatchingSessionDto(
                 dtos,
