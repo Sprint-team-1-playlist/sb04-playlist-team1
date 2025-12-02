@@ -18,9 +18,9 @@ public class TheSportsScheduler {
 
     @Scheduled(cron = "0 */30 * * * *", zone = "Asia/Seoul")
     public void startTheSportsScheduler() {
-        log.info("The Sports 스케쥴러 시작, API 데이터 수집");
+        log.info("[콘텐츠 데이터 관리] The Sports 스케쥴러 시작, API 데이터 수집");
         LocalDate localDate = LocalDate.now().minusDays(1);
         theSportsApiService.saveContentsUsingContents(localDate);
-        log.info("The Sports 스케쥴러 동작 완료, API 데이터 수집, localDate = {}", localDate);
+        log.info("[콘텐츠 데이터 관리] The Sports 스케쥴러 동작 완료, API 데이터 수집, localDate = {}", localDate);
     }
 }

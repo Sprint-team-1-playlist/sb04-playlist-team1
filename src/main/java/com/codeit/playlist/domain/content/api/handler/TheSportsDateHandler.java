@@ -28,7 +28,7 @@ public class TheSportsDateHandler {
     }
 
     public List<TheSportsResponse> getSportsEvent(LocalDate localDate) {
-        log.info("Sports API 수집 시작 : localDate = {}", localDate);
+        log.info("[콘텐츠 데이터 관리] Sports API 수집 시작 : localDate = {}", localDate);
 
         String sportsJson = webClient.get()
                 .uri("/123/eventsday.php?d=" + localDate)
@@ -64,11 +64,11 @@ public class TheSportsDateHandler {
                 log.info("썸네일 : {}", response.strThumb());
                 sportsList.add(response);
             }
-            log.info("Sports API 수집 완료, localDate = {}", localDate);
+            log.info("[콘텐츠 데이터 관리] Sports API 수집 완료, localDate = {}", localDate);
             return sportsList;
 
         } catch (JsonProcessingException e) {
-            log.error("Sports API 단일 날짜 수집 실패, localDate = {}", localDate, e);
+            log.error("[콘텐츠 데이터 관리] Sports API 단일 날짜 수집 실패, localDate = {}", localDate, e);
             return List.of();
         }
     }

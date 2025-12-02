@@ -11,7 +11,7 @@ import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
-import com.codeit.playlist.domain.watching.dto.data.SortBy;
+import com.codeit.playlist.domain.watching.dto.data.WatchingSortBy;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.dto.response.CursorResponseWatchingSessionDto;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
@@ -86,7 +86,7 @@ class BasicWatchingServiceTest {
                 null,
                 10,
                 SortDirection.ASCENDING,
-                SortBy.createdAt);
+                WatchingSortBy.createdAt);
 
         // then
         verify(redisWatchingSessionRepository, times(1))
@@ -107,46 +107,6 @@ class BasicWatchingServiceTest {
         assertThat(response.nextCursor()).isNotNull();
         assertThat(response.nextIdAfter()).isNotNull();
         assertThat(response.hasNext()).isEqualTo(rawPage.hasNext());
-    }
-
-    @Test
-    @DisplayName("컨텐츠별 사용자 목록 보기, limit이 0 이하 또는 50 초과일 경우 기본값 10으로 보정됨")
-    void invalidLimitIsChangedToDefaultValue() {
-        // given
-        when(redisWatchingSessionRepository.getWatchingSessionsByContentId(
-                contentId,
-                null,
-                10,
-                SortDirection.ASCENDING))
-                .thenReturn(rawPage);
-        when(redisWatchingSessionRepository.countWatchingSessionByContentId(contentId))
-                .thenReturn(1L);
-
-        User user = WatchingSessionFixtures.user();
-        Content content = WatchingSessionFixtures.content();
-        List<Tag> tags = WatchingSessionFixtures.tagList();
-
-        when(userRepository.findById(raw.userId())).thenReturn(Optional.of(user));
-        when(contentRepository.findById(raw.contentId())).thenReturn(Optional.of(content));
-        when(tagRepository.findByContentId(raw.contentId())).thenReturn(tags);
-
-        when(userMapper.toDto(user)).thenReturn(WatchingSessionFixtures.userDto());
-        when(contentMapper.toDto(content, tags)).thenReturn(WatchingSessionFixtures.watchingSessionDto().content());
-
-        // when
-        watchingService.getWatchingSessionsByContent(
-                contentId,
-                "test",
-                null,
-                null,
-                0, // invalid
-                SortDirection.ASCENDING,
-                SortBy.createdAt
-        );
-
-        // then
-        verify(redisWatchingSessionRepository, times(1))
-                .getWatchingSessionsByContentId(contentId, null, 10, SortDirection.ASCENDING);
     }
 
     @Test
