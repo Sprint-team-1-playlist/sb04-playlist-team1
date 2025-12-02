@@ -1,5 +1,6 @@
-package com.codeit.playlist.domain.security;
+package com.codeit.playlist.domain.security.oauth;
 
+import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.DbJwtRegistry;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;

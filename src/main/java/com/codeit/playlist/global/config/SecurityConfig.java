@@ -3,10 +3,10 @@ package com.codeit.playlist.global.config;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 
-import com.codeit.playlist.domain.security.OAuth2SuccessHandler;
+import com.codeit.playlist.domain.security.oauth.OAuth2SuccessHandler;
 import com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter;
 import com.codeit.playlist.domain.security.jwt.JwtLogoutSuccessHandler;
-import com.codeit.playlist.domain.user.service.CustomOAuth2Service;
+import com.codeit.playlist.domain.security.oauth.CustomOAuth2Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;

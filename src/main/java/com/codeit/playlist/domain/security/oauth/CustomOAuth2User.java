@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.security;
+package com.codeit.playlist.domain.security.oauth;
 
 import java.util.Collection;
 import java.util.List;

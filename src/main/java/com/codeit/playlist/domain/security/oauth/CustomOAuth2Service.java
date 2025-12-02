@@ -1,6 +1,5 @@
-package com.codeit.playlist.domain.user.service;
+package com.codeit.playlist.domain.security.oauth;
 
-import com.codeit.playlist.domain.security.CustomOAuth2User;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
