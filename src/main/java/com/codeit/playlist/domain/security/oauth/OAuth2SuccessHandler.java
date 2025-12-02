@@ -44,7 +44,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     // 사용자 조회 또는 OAuth 전용 신규 생성
     User user = userRepository.findByEmail(email)
         .orElseGet(() -> {
-          log.info("신규 소셜 사용자 생성: {}", email);
+          log.info("[소셜 로그인 ] : 신규 소셜 사용자 생성 = {}", email);
           return userRepository.save(User.createOAuthUser(name, email, imageUrl));
         });
 
@@ -63,7 +63,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
       accessToken = tokenProvider.generateAccessToken(userDetails, now);
       refreshToken = tokenProvider.generateRefreshToken(userDetails, now);
     } catch (Exception e) {
-      throw new RuntimeException("OAuth2 로그인 JWT 생성 실패", e);
+      throw new RuntimeException("[소셜 로그인] : OAuth2 로그인 JWT 생성 실패", e);
     }
 
     // JWT 저장 정보 생성
@@ -105,7 +105,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     String redirect = "http://localhost:8080/#/contents";
 
-    log.info("OAuth2 로그인 성공 → 사용자: {}", email);
+    log.info("[소셜 로그인] : OAuth2 로그인 성공 -> 사용자 = {}", email);
 
     response.sendRedirect(redirect);
   }
