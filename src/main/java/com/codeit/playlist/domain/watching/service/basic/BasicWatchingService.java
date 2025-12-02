@@ -13,7 +13,7 @@ import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
-import com.codeit.playlist.domain.watching.dto.data.SortBy;
+import com.codeit.playlist.domain.watching.dto.data.WatchingSortBy;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.dto.response.CursorResponseWatchingSessionDto;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
@@ -47,15 +47,10 @@ public class BasicWatchingService implements WatchingService {
                                                                          UUID idAfter,
                                                                          int limit,
                                                                          SortDirection sortDirection,
-                                                                         SortBy sortBy) {
+                                                                         WatchingSortBy sortBy) {
         log.debug("[실시간 같이 보기] 실시간 시청자 조회 시작: " +
                         "contentId = {}, watcherNameLike = {}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
                 contentId, watcherNameLike, cursor, idAfter, limit, sortDirection, sortBy);
-
-        if (limit <= 0 || limit > 50) {
-            log.error("[실시간 같이 보기] 유효하지 않은 파라미터, 기본값으로 보정");
-            limit = 10;
-        }
 
         RawWatchingSessionPage page = redisWatchingSessionRepository.getWatchingSessionsByContentId(
                 contentId,
@@ -76,9 +71,7 @@ public class BasicWatchingService implements WatchingService {
             nextIdAfter = last.watchingId();
         }
 
-        log.info("[실시간 같이 보기] 실시간 시청자 조회 성공: " +
-                        "contentId = {}, watcherNameLike = {}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
-                contentId, watcherNameLike, cursor, idAfter, limit, sortDirection, sortBy);
+        log.info("[실시간 같이 보기] 실시간 시청자 조회 성공: watchingSessions={}", dtos);
 
         return new CursorResponseWatchingSessionDto(
                 dtos,

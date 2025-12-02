@@ -1,7 +1,7 @@
 package com.codeit.playlist.domain.watching.dto.response;
 
 import com.codeit.playlist.domain.base.SortDirection;
-import com.codeit.playlist.domain.watching.dto.data.SortBy;
+import com.codeit.playlist.domain.watching.dto.data.WatchingSortBy;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 
 import java.util.List;
@@ -13,7 +13,7 @@ public record CursorResponseWatchingSessionDto(
         UUID nextIdAfter,
         boolean hasNext,
         long totalCount,
-        SortBy sortBy,
+        WatchingSortBy sortBy,
         SortDirection sortDirection
 ) {
 }
