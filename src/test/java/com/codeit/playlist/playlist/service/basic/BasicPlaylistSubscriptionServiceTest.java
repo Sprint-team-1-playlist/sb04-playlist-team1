@@ -1,5 +1,12 @@
 package com.codeit.playlist.playlist.service.basic;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.entity.Subscribe;
 import com.codeit.playlist.domain.playlist.exception.AlreadySubscribedException;
@@ -13,22 +20,16 @@ import com.codeit.playlist.domain.playlist.service.basic.BasicPlaylistSubscripti
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
+import org.springframework.kafka.core.KafkaTemplate;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicPlaylistSubscriptionServiceTest {
@@ -40,6 +41,12 @@ public class BasicPlaylistSubscriptionServiceTest {
 
     @Mock
     UserRepository userRepository;
+
+    @Mock
+    ObjectMapper objectMapper;
+
+    @Mock
+    KafkaTemplate<String, Playlist> kafkaTemplate;
 
     @InjectMocks
     BasicPlaylistSubscriptionService service;

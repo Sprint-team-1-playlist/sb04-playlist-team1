@@ -27,6 +27,7 @@ public class RedisConfig {
                 .build();
 
         return new LettuceConnectionFactory(config, clientConfig);
+
     }
 
     @Bean

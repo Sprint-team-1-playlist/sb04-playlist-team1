@@ -1,5 +1,7 @@
 package com.codeit.playlist.review.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Type;
@@ -9,6 +11,8 @@ import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.global.config.QuerydslConfig;
 import jakarta.persistence.EntityManager;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,11 +20,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Slice;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @Import(QuerydslConfig.class)
@@ -163,7 +162,6 @@ public class ReviewRepositoryTest {
     }
 
     private User createTestUser(String email) {
-        // 실제 User 생성자에 맞게 수정해 사용하면 됨
         User user = new User(email, "password", "test-user", null, Role.USER);
 
         LocalDateTime now = LocalDateTime.now();
@@ -174,7 +172,6 @@ public class ReviewRepositoryTest {
     }
 
     private Content createTestContent(String title) {
-        // 실제 Content 생성자에 맞게 수정
         Content content = new Content(
                 Type.MOVIE,
                 title,

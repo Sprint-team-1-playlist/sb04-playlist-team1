@@ -8,7 +8,7 @@ import java.util.List;
 
 @Repository
 public interface ContentRepositoryCustom {
-    List<Content> searchContents(ContentCursorRequest request, boolean ascending, int limit);
+    List<Content> searchContents(ContentCursorRequest request, boolean ascending, int limit, String sortBy);
 
     long countContents(ContentCursorRequest request);
 }

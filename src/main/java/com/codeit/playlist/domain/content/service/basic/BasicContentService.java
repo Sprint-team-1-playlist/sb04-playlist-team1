@@ -21,7 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -168,24 +170,39 @@ public class BasicContentService implements ContentService {
                 break;
 
             default:
-                throw new IllegalArgumentException("sortDirection was something wrong" + sortDirection);
+                throw new IllegalArgumentException("sortDirection was something wrong : " + sortDirection);
         }
         log.info("after sortDirection : {}", sortDirection);
-
-        List<Content> contents = contentRepository.searchContents(request, ascending, limit);
-        List<ContentDto> data = new ArrayList<>();
-
-        for(int i=0; i < contents.size(); i++) {
-            Content content = contents.get(i);
-            List<Tag> tags = tagRepository.findByContentId(content.getId());
-            data.add(contentMapper.toDto(content, tags));
-        }
 
         String sortBy = request.sortBy();
         if(sortBy == null) {
             sortBy = "createdAt"; // 디폴트
         }
         log.info("sortBy : {}", sortBy);
+
+        List<Content> contents = contentRepository.searchContents(request, ascending, limit, sortBy);
+        // hasNext 판단용으로 limit + 1개를 가져왔으니 실제 반환할 데이터는 limit개까지만
+        int actualLimitSize = Math.min(contents.size(), limit);
+        List<ContentDto> data = new ArrayList<>();
+
+        /**
+         * N+1 쿼리 문제 및 반환 데이터 크기 오류, codeRabbit 참조
+         * 192 - 205
+         */
+        List<UUID> contentIds = contents.stream()
+                .limit(actualLimitSize)
+                .map(Content::getId)
+                .toList();
+
+        List<Tag> allTags = tagRepository.findByContentIdIn(contentIds);
+        Map<UUID, List<Tag>> tagsByContentId = allTags.stream()
+                .collect(Collectors.groupingBy(tag -> tag.getContent().getId()));
+
+        for(int i=0; i < actualLimitSize; i++) {
+            Content content = contents.get(i);
+            List<Tag> tags = tagsByContentId.getOrDefault(content.getId(), List.of());
+            data.add(contentMapper.toDto(content, tags));
+        }
 
         String nextCursor = null;
         String nextIdAfter = null;
@@ -212,7 +229,7 @@ public class BasicContentService implements ContentService {
                     break;
 
                 default:
-                    throw new IllegalArgumentException("sortBy was something wrong" + sortBy);
+                    throw new IllegalArgumentException("sortBy was something wrong : " + sortBy);
             }
 
             nextIdAfter = lastPage.getId().toString();

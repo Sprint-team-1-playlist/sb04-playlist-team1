@@ -23,6 +23,7 @@ public class RateLimitConfig {
                 .setRetryInterval(2000)
                 .setConnectionPoolSize(20)     // Redisson connection pool
                 .setConnectionMinimumIdleSize(5);
+
         return Redisson.create(config);
     }
 }

@@ -24,7 +24,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
     private final JPAQueryFactory query;
 
     @Override
-    public List<Content> searchContents(ContentCursorRequest request, boolean ascending, int limit) {
+    public List<Content> searchContents(ContentCursorRequest request, boolean ascending, int limit, String sortBy) {
         QContent qContent = QContent.content;
         BooleanBuilder builder = new BooleanBuilder(); // BooleanBuilder
         log.info("searchContents: ascending={}, sortBy={}, cursor={}, idAfter={}",
@@ -39,7 +39,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
         }
 
         // 정렬 기준, 정렬 방향
-        String sortBy = request.sortBy() == null ? "createdAt" : request.sortBy();
+//        String sortBy = request.sortBy() == null ? "createdAt" : request.sortBy();
         Order order = ascending ? Order.ASC : Order.DESC;
 
         // 커서를 여기에서 씀
@@ -47,7 +47,12 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
         String after = request.idAfter();
 
         if (cursor != null && after != null) {
-            UUID cursorId = UUID.fromString(after);
+            UUID cursorId;
+            try {
+                cursorId = UUID.fromString(after);
+            } catch(IllegalArgumentException e) {
+                throw new IllegalArgumentException("cursorId was something wrong" + after);
+            }
 
             switch (sortBy) {
                 case "createdAt":
