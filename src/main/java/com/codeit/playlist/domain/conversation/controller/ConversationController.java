@@ -1,13 +1,9 @@
 package com.codeit.playlist.domain.conversation.controller;
 
-import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
-import com.codeit.playlist.domain.conversation.dto.data.ConversationSortBy;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.service.ConversationService;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,20 +41,17 @@ public class ConversationController {
   public ResponseEntity<CursorResponseConversationDto> findAll(@RequestParam(required = false) String keywordLike,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) UUID idAfter,
-      @RequestParam @Min(1) @Max(100) int limit,
+      @RequestParam int limit,
       @RequestParam(defaultValue = "ASCENDING") String sortDirection,
       @RequestParam(defaultValue = "createdAt") String sortBy
   ){
-    ConversationSortBy conversationSortBy = ConversationSortBy.createdAt;
-    SortDirection direction = SortDirection.valueOf(sortDirection);
-
     log.debug("[Conversation] 대화 조회 요청");
     CursorResponseConversationDto cursorConversationDto = conversationService.findAll(keywordLike,
         cursor,
         idAfter,
         limit,
-        direction,
-        conversationSortBy);
+        sortDirection,
+        sortBy);
     log.info("[Conversation] 대화 조회 응답: {}", cursorConversationDto);
     return  ResponseEntity
         .status(HttpStatus.OK)

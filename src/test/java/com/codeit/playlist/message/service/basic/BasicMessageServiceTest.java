@@ -248,13 +248,7 @@ class BasicMessageServiceTest {
     int limit = 2;
 
     // when
-    CursorResponseDirectMessageDto result = messageService.findAll(
-        conversationId,
-        cursor,
-        idAfter,
-        limit,
-        SortDirection.DESCENDING,
-        MessageSortBy.createdAt);
+    CursorResponseDirectMessageDto result = messageService.findAll(conversationId, cursor, idAfter, limit, "desc", "createdAt");
 
     // then
     assertNotNull(result);
@@ -284,7 +278,7 @@ class BasicMessageServiceTest {
 
     // when & then
     assertThrows(ConversationNotFoundException.class, () ->
-        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt)
+        messageService.findAll(conversationId, null, null, 10, "desc", "createdAt")
     );
 
     verify(messageRepository, never())
@@ -317,7 +311,7 @@ class BasicMessageServiceTest {
 
     // when & then
     assertThrows(NotConversationParticipantException.class, () ->
-        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt)
+        messageService.findAll(conversationId, null, null, 10, "desc", "createdAt")
     );
 
     verify(messageRepository, never())
@@ -335,7 +329,7 @@ class BasicMessageServiceTest {
 
     // when & then
     assertThrows(InvalidCursorException.class, () ->
-        messageService.findAll(conversationId, invalidCursor, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt)
+        messageService.findAll(conversationId, invalidCursor, null, 10, "desc", "createdAt")
     );
 
     verify(messageRepository, never())

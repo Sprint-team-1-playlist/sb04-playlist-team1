@@ -85,12 +85,27 @@ public class BasicMessageService implements MessageService {
   @Transactional(readOnly = true)
   @Override
   public CursorResponseDirectMessageDto findAll(UUID conversationId, String cursor,
-      UUID idAfter, int limit, SortDirection sortDirection, MessageSortBy sortBy) {
+      UUID idAfter, int limit, String sortDirection, String sortBy) {
 
     log.debug("[Message] DM 목록 조회 시작: {}", conversationId);
 
-    sortBy = MessageSortBy.createdAt;
-    sortDirection = SortDirection.DESCENDING;
+    MessageSortBy messageSortBy;
+    try {
+      messageSortBy = MessageSortBy.valueOf(sortBy);
+    } catch (IllegalArgumentException e) {
+      messageSortBy = MessageSortBy.createdAt;
+    }
+
+    SortDirection direction;
+    try {
+      direction = SortDirection.valueOf(sortDirection);
+    } catch (IllegalArgumentException e) {
+      direction = SortDirection.DESCENDING;
+    }
+
+    if (limit > 30) {
+      limit = 30;
+    }
 
     Conversation conversation = conversationRepository.findById(conversationId)
         .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
@@ -140,8 +155,8 @@ public class BasicMessageService implements MessageService {
         nextIdAfter,
         hasNext,
         totalCount,
-        sortBy,
-        sortDirection
+        messageSortBy,
+        direction
     );
 
     log.info("[Message] DM 목록 조회 완료: conversationId={}, count={}", conversationId, content.size());
