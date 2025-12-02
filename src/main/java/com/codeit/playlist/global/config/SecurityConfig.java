@@ -5,7 +5,7 @@ import static org.springframework.http.HttpMethod.POST;
 
 import com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter;
 import com.codeit.playlist.domain.security.jwt.JwtLogoutSuccessHandler;
-import com.codeit.playlist.domain.user.service.OAuth2Service;
+import com.codeit.playlist.domain.user.service.CustomOAuth2Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -33,7 +33,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final OAuth2Service oAuth2Service;
+  private final CustomOAuth2Service oAuth2Service;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http,

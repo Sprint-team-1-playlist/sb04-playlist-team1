@@ -38,6 +38,10 @@ public class User extends BaseUpdatableEntity {
   @Column(name = "follow_count", nullable = false)
   private Long followCount;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private AuthProvider provider;
+
   public User(String email, String password, String name, String profileImageUrl, Role role) {
     this.email = email;
     this.password = password;
@@ -118,5 +122,17 @@ public class User extends BaseUpdatableEntity {
 
   public void setLocked(boolean locked) {
     this.locked = locked;
+  }
+
+  // Oauth 소셜 로그인을 위함 정적 팩토리 메서드
+  public static User createOAuthUser(String name, String email,  String imageUrl) {
+    User user = new User();
+    user.name = name;
+    user.email = email;
+    user.password = null;      // 소셜 유저는 패스워드 없음
+    user.provider = AuthProvider.GOOGLE;
+    user.role = Role.USER;
+    user.locked = false;
+    return user;
   }
 }
