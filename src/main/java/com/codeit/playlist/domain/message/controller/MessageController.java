@@ -32,9 +32,9 @@ public class MessageController {
   public ResponseEntity<CursorResponseDirectMessageDto> findAll(@PathVariable UUID conversationId,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) UUID idAfter,
-      @RequestParam @Min(1) @Max(50) int limit,
-      @RequestParam(defaultValue = "DESCENDING") String sortDirection,
-      @RequestParam(defaultValue = "createdAt") String sortBy) {
+      @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit,
+      @RequestParam(defaultValue = "DESCENDING") SortDirection sortDirection,
+      @RequestParam(defaultValue = "createdAt") MessageSortBy sortBy) {
 
     log.debug("[Message] DM 목록 조회 요청: {}", conversationId);
 
@@ -43,8 +43,8 @@ public class MessageController {
         cursor,
         idAfter,
         limit,
-        SortDirection.valueOf(sortDirection),
-        MessageSortBy.valueOf(sortBy));
+        sortDirection,
+        sortBy);
 
     log.info("[Message] DM 목록 조회 응답: {}", cursorMessageDto);
     return ResponseEntity

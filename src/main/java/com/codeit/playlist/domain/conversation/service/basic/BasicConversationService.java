@@ -94,20 +94,13 @@ public class BasicConversationService implements ConversationService {
   ) {
     log.debug("[Conversation] 대화 조회 시작");
 
-    boolean isAsc = sortDirection.equals(SortDirection.ASCENDING);
+    boolean isAsc = SortDirection.ASCENDING == sortDirection;
 
     Pageable pageable = PageRequest.of(0, limit + 1);
 
     UUID currentUserId = getCurrentUserId();
 
-    LocalDateTime cursorTime = null;
-    if (cursor != null) {
-      try {
-        cursorTime = LocalDateTime.parse(cursor);
-      } catch (DateTimeParseException e) {
-        throw InvalidCursorException.withCursor(cursor);
-      }
-    }
+    LocalDateTime cursorTime = parseCursor(cursor);
 
     List<Conversation> conversations = isAsc
         ? conversationRepository.findPageAsc(currentUserId, keywordLike, cursorTime, idAfter, pageable)
@@ -175,9 +168,7 @@ public class BasicConversationService implements ConversationService {
         .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
 
     UUID currentUserId = getCurrentUserId();
-    if (!currentUserId.equals(conversation.getUser1().getId()) && !currentUserId.equals(conversation.getUser2().getId())) {
-      throw NotConversationParticipantException.withId(currentUserId);
-    }
+    validateParticipant(conversation, currentUserId);
 
     ConversationDto conversationDto = toConversationDto(conversation);
 
@@ -194,9 +185,7 @@ public class BasicConversationService implements ConversationService {
     Conversation conversation = conversationRepository.findByUserIds(currentUserId, userId)
             .orElseThrow(() -> ConversationNotFoundException.withUserId(userId));
 
-    if (!currentUserId.equals(conversation.getUser1().getId()) && !currentUserId.equals(conversation.getUser2().getId())) {
-      throw NotConversationParticipantException.withId(currentUserId);
-    }
+    validateParticipant(conversation, currentUserId);
 
     ConversationDto conversationDto = toConversationDto(conversation);
 
@@ -222,5 +211,21 @@ public class BasicConversationService implements ConversationService {
 
     ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto);
     return conversationDto;
+  }
+
+  private LocalDateTime parseCursor(String cursor) {
+    if (cursor == null) return null;
+    try {
+      return LocalDateTime.parse(cursor);
+    } catch (DateTimeParseException e) {
+      throw InvalidCursorException.withCursor(cursor);
+    }
+  }
+
+  private void validateParticipant(Conversation conversation, UUID userId) {
+    if (!userId.equals(conversation.getUser1().getId()) &&
+        !userId.equals(conversation.getUser2().getId())) {
+      throw NotConversationParticipantException.withId(userId);
+    }
   }
 }

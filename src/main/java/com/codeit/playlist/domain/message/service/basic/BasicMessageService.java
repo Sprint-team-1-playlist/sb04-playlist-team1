@@ -97,15 +97,8 @@ public class BasicMessageService implements MessageService {
       throw NotConversationParticipantException.withId(currentUserId);
     }
 
-    LocalDateTime cursorTime = null;
-    if (cursor != null) {
-      try {
-        cursorTime = LocalDateTime.parse(cursor);
-      } catch (DateTimeParseException e) {
-        throw InvalidCursorException.withCursor(cursor);
-      }
+    LocalDateTime cursorTime = parseCursor(cursor);
 
-    }
     Pageable pageable = PageRequest.of(0, limit + 1);
     List<Message> messages = messageRepository.findMessagesByConversationWithCursor(
         conversationId, cursorTime, idAfter, pageable);
@@ -159,11 +152,7 @@ public class BasicMessageService implements MessageService {
     Message message = messageRepository.findById(directMessageId)
         .orElseThrow(() -> MessageNotFoundException.withId(directMessageId));
 
-    Optional<Message> latestMessageOpt = messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation);
-
-    if (latestMessageOpt.isEmpty() || !latestMessageOpt.get().getId().equals(message.getId())) {
-      throw InvalidMessageReadOperationException.withId(directMessageId);
-    }
+    validateReadMessage(message, conversation);
 
     conversation.markAsRead();
 
@@ -174,5 +163,21 @@ public class BasicMessageService implements MessageService {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     PlaylistUserDetails userDetails = (PlaylistUserDetails) authentication.getPrincipal();
     return userDetails.getUserDto().id();
+  }
+
+  private LocalDateTime parseCursor(String cursor) {
+    if (cursor == null) return null;
+    try {
+      return LocalDateTime.parse(cursor);
+    } catch (DateTimeParseException e) {
+      throw InvalidCursorException.withCursor(cursor);
+    }
+  }
+
+  private void validateReadMessage(Message message, Conversation conversation) {
+    Optional<Message> latest = messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation);
+    if (latest.isEmpty() || !latest.get().getId().equals(message.getId())) {
+      throw InvalidMessageReadOperationException.withId(message.getId());
+    }
   }
 }

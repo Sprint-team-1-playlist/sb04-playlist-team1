@@ -45,17 +45,17 @@ public class ConversationController {
   public ResponseEntity<CursorResponseConversationDto> findAll(@RequestParam(required = false) String keywordLike,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) UUID idAfter,
-      @RequestParam @Min(1) @Max(50) int limit,
-      @RequestParam(defaultValue = "ASCENDING") String sortDirection,
-      @RequestParam(defaultValue = "createdAt") String sortBy
+      @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit,
+      @RequestParam(defaultValue = "ASCENDING") SortDirection sortDirection,
+      @RequestParam(defaultValue = "createdAt") ConversationSortBy sortBy
   ){
     log.debug("[Conversation] 대화 조회 요청");
     CursorResponseConversationDto cursorConversationDto = conversationService.findAll(keywordLike,
         cursor,
         idAfter,
         limit,
-        SortDirection.valueOf(sortDirection),
-        ConversationSortBy.valueOf(sortBy));
+        sortDirection,
+        sortBy);
 
     log.info("[Conversation] 대화 조회 응답: {}", cursorConversationDto);
     return  ResponseEntity
