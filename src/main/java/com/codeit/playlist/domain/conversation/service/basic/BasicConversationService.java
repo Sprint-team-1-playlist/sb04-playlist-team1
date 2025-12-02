@@ -1,6 +1,8 @@
 package com.codeit.playlist.domain.conversation.service.basic;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
+import com.codeit.playlist.domain.conversation.dto.data.ConversationSortBy;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
@@ -87,25 +89,18 @@ public class BasicConversationService implements ConversationService {
       String cursor,
       UUID idAfter,
       int limit,
-      String sortDirection,
-      String sortBy
+      SortDirection sortDirection,
+      ConversationSortBy sortBy
   ) {
     log.debug("[Conversation] 대화 조회 시작");
 
-    boolean isAsc = sortDirection.equalsIgnoreCase("ASCENDING");
+    boolean isAsc = SortDirection.ASCENDING == sortDirection;
 
     Pageable pageable = PageRequest.of(0, limit + 1);
 
     UUID currentUserId = getCurrentUserId();
 
-    LocalDateTime cursorTime = null;
-    if (cursor != null) {
-      try {
-        cursorTime = LocalDateTime.parse(cursor);
-      } catch (DateTimeParseException e) {
-        throw InvalidCursorException.withCursor(cursor);
-      }
-    }
+    LocalDateTime cursorTime = parseCursor(cursor);
 
     List<Conversation> conversations = isAsc
         ? conversationRepository.findPageAsc(currentUserId, keywordLike, cursorTime, idAfter, pageable)
@@ -155,7 +150,7 @@ public class BasicConversationService implements ConversationService {
         nextIdAfter,
         hasNext,
         total,
-        "createdAt",
+        sortBy,
         sortDirection
     );
 
@@ -173,9 +168,7 @@ public class BasicConversationService implements ConversationService {
         .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
 
     UUID currentUserId = getCurrentUserId();
-    if (!currentUserId.equals(conversation.getUser1().getId()) && !currentUserId.equals(conversation.getUser2().getId())) {
-      throw NotConversationParticipantException.withId(currentUserId);
-    }
+    validateParticipant(conversation, currentUserId);
 
     ConversationDto conversationDto = toConversationDto(conversation);
 
@@ -192,9 +185,7 @@ public class BasicConversationService implements ConversationService {
     Conversation conversation = conversationRepository.findByUserIds(currentUserId, userId)
             .orElseThrow(() -> ConversationNotFoundException.withUserId(userId));
 
-    if (!currentUserId.equals(conversation.getUser1().getId()) && !currentUserId.equals(conversation.getUser2().getId())) {
-      throw NotConversationParticipantException.withId(currentUserId);
-    }
+    validateParticipant(conversation, currentUserId);
 
     ConversationDto conversationDto = toConversationDto(conversation);
 
@@ -220,5 +211,20 @@ public class BasicConversationService implements ConversationService {
 
     ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto);
     return conversationDto;
+  }
+
+  private LocalDateTime parseCursor(String cursor) {
+    if (cursor == null) return null;
+    try {
+      return LocalDateTime.parse(cursor);
+    } catch (DateTimeParseException e) {
+      throw InvalidCursorException.withCursor(cursor);
+    }
+  }
+
+  private void validateParticipant(Conversation conversation, UUID userId) {
+    if (!conversation.isParticipant(userId)) {
+      throw NotConversationParticipantException.withId(userId);
+    }
   }
 }
