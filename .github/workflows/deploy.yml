@@ -73,6 +73,11 @@ jobs:
             --arg SPORTSDB_BASE_URL "${{ secrets.SPORTSDB_BASE_URL }}" \
             --arg TMDB_API_KEY "${{ secrets.TMDB_API_KEY }}" \
             --arg TMDB_BASE_URL "${{ secrets.TMDB_BASE_URL }}" \
+            --arg ADMIN_USER "${{ secrets.ADMIN_USER }}" \
+            --arg ADMIN_EMAIL "${{ secrets.ADMIN_EMAIL }}" \
+            --arg ADMIN_PASSWORD "${{ secrets.ADMIN_PASSWORD }}" \
+            --arg GOOGLE_CLIENT_ID "${{ secrets.GOOGLE_CLIENT_ID }}" \
+            --arg GOOGLE_CLIENT_PASSWORD "${{ secrets.GOOGLE_CLIENT_PASSWORD }}" \
             '
             .containerDefinitions[0].image = $IMAGE
             | .containerDefinitions[0].environment = [
@@ -97,7 +102,12 @@ jobs:
                 {"name": "SPORTSDB_API_KEY", "value": $SPORTSDB_API_KEY},
                 {"name": "SPORTSDB_BASE_URL", "value": $SPORTSDB_BASE_URL},
                 {"name": "TMDB_API_KEY", "value": $TMDB_API_KEY},
-                {"name": "TMDB_BASE_URL", "value": $TMDB_BASE_URL}
+                {"name": "TMDB_BASE_URL", "value": $TMDB_BASE_URL},
+                {"name": "ADMIN_USER", "value": $ADMIN_USER},
+                {"name": "ADMIN_EMAIL", "value": $ADMIN_EMAIL},
+                {"name": "ADMIN_PASSWORD", "value": $ADMIN_PASSWORD},
+                {"name": "GOOGLE_CLIENT_ID", "value": $GOOGLE_CLIENT_ID},
+                {"name": "GOOGLE_CLIENT_PASSWORD", "value": $GOOGLE_CLIENT_PASSWORD}
               ]
             ' \
             task-definition.json > tmp.json && mv tmp.json task-definition.json
