@@ -19,9 +19,7 @@ public class ContentScheduler {
 
     @Scheduled(cron = "0/30 * * * * *")
     public void runContentJob() {
-        log.info("================================");
-        log.info("콘텐츠 데이터 API 배치 작업 시작");
-        log.info("================================");
+        log.info("[콘텐츠 데이터 관리] API 배치 작업 시작");
         JobParameters jobParameters = new JobParametersBuilder()
                 .addLong("time : ",System.currentTimeMillis())
                 .toJobParameters();
@@ -29,7 +27,7 @@ public class ContentScheduler {
         try {
             jobLauncher.run(contentJob, jobParameters);
         } catch(Exception e) {
-            log.error("콘텐츠 데이터 API 배치 작업 실패 : ", e);
+            log.error("[콘텐츠 데이터 관리] API 배치 작업 실패 : ", e);
         }
     }
 }

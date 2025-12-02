@@ -24,14 +24,14 @@ public class TheSportsApiService {
         List<TheSportsResponse> theSportsResponseList = theSportsDateHandler.getSportsEvent(localDate);
         for(int i = 0; i < theSportsResponseList.size(); i++) {
             TheSportsResponse theSportsResponse = theSportsResponseList.get(i);
-            log.debug("TheSportsResponse 확인: event = {}, thumb = {}",
+            log.debug("[콘텐츠 데이터 관리] TheSportsResponse 확인: event = {}, thumb = {}",
                     theSportsResponse.strEvent(), theSportsResponse.strThumb());
             Content content = Content.createSportsContent(
                     theSportsResponse.strEvent(),
                     theSportsResponse.strFilename(),
                     theSportsResponse.strThumb()
             );
-            log.debug("매핑된 Content 확인: title = {}, thumbnailUrl = {}",
+            log.debug("[콘텐츠 데이터 관리] 매핑된 Content 확인: title = {}, thumbnailUrl = {}",
                     content.getTitle(), content.getThumbnailUrl());
             contentRepository.save(content); // 여기에서 저장함
         }

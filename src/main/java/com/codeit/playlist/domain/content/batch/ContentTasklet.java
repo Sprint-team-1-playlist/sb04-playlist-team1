@@ -24,7 +24,7 @@ public class ContentTasklet implements Tasklet {
     private final ContentRepository contentRepository;
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-        log.info("TMDB The Movie API 데이터 배치 수집 시작");
+        log.info("[콘텐츠 데이터 관리] TMDB The Movie API 데이터 배치 수집 시작");
 
         String query = "Japan";
 
@@ -37,15 +37,15 @@ public class ContentTasklet implements Tasklet {
                     }
                     return content;
                 })
-                .doOnComplete(() -> log.info("The Movie 배치 Tasklet 스트림 동작 완료, API 데이터 수집"))
-                .doOnError(e -> log.error("The Movie 배치 Tasklet 스트림 에러 발생 : {}", e.getMessage(), e))
+                .doOnComplete(() -> log.info("[콘텐츠 데이터 관리] The Movie 배치 Tasklet 스트림 동작 완료, API 데이터 수집"))
+                .doOnError(e -> log.error("[콘텐츠 데이터 관리] The Movie 배치 Tasklet 스트림 에러 발생 : {}", e.getMessage(), e))
                 .collectList()
                 .block();
 
         if(contents != null && !contents.isEmpty()) {
             contentRepository.saveAll(contents);
         } else {
-            log.error("TMDB The Movie API contents가 없어요. query : {}", query);
+            log.error("[콘텐츠 데이터 관리] TMDB The Movie API contents가 없어요. query : {}", query);
             return RepeatStatus.FINISHED;
         }
 

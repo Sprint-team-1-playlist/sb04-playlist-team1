@@ -12,10 +12,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 @Slf4j
 @Configuration
-public class ContentConfig {
+public class BatchConfig {
     @Bean
     public Job contentJob(JobRepository jobRepository, Step contentStep) {
-        log.info("contentJob 시작, contentStep : {}", contentStep);
+        log.info("[콘텐츠 데이터 관리] contentJob 시작, contentStep : {}", contentStep);
         return new JobBuilder("contentJob",jobRepository)
                 .start(contentStep)
                 .build();

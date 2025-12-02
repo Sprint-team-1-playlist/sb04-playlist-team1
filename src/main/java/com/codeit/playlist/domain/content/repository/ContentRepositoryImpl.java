@@ -27,7 +27,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
     public List<Content> searchContents(ContentCursorRequest request, boolean ascending, int limit, String sortBy) {
         QContent qContent = QContent.content;
         BooleanBuilder builder = new BooleanBuilder(); // BooleanBuilder
-        log.info("searchContents: ascending={}, sortBy={}, cursor={}, idAfter={}",
+        log.info("[콘텐츠 데이터 관리] 콘텐츠 검색: ascending={}, sortBy={}, cursor={}, idAfter={}",
                 ascending, request.sortBy(), request.cursor(), request.idAfter());
         // 검색 조건
         if (request.typeEqual() != null) {
@@ -51,7 +51,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
             try {
                 cursorId = UUID.fromString(after);
             } catch(IllegalArgumentException e) {
-                throw new IllegalArgumentException("cursorId was something wrong" + after);
+                throw new IllegalArgumentException("[콘텐츠 데이터 관리] cursorId was something wrong" + after);
             }
 
             switch (sortBy) {
@@ -92,7 +92,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
                     break;
 
                 default:
-                    throw new IllegalArgumentException("Invalid sortBy=" + sortBy);
+                    throw new IllegalArgumentException("[콘텐츠 데이터 관리] sortBy was something wrong" + sortBy);
             }
         }
 
@@ -119,7 +119,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
                 return new OrderSpecifier<>(order, c.averageRating);
 
             default:
-                throw new IllegalArgumentException("Invalid sortBy=" + sortBy);
+                throw new IllegalArgumentException("[콘텐츠 데이터 관리] SortBy was something wrong =" + sortBy);
         }
     }
 
