@@ -4,7 +4,7 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
-import com.codeit.playlist.domain.review.dto.ReviewSortBy;
+import com.codeit.playlist.domain.review.dto.data.ReviewSortBy;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
 import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
@@ -129,12 +129,9 @@ public class BasicReviewService implements ReviewService {
                         "contentId= {}, cursor= {}, idAfter= {}, limit= {}, sortDirection= {}, sortBy= {}",
                 contentId, cursor, idAfter, limit, sortDirection, sortBy);
 
-        //파라미터 보정
-        if(limit <= 0 || limit > 50) {
-            limit = 10; //기본 페이지 크기(10개 가져옴)
-        }
+        int pageSize = Math.min(Math.max(limit, 1), 50);
 
-        String sortByValue = sortBy.getValue();  // "createdAt" 또는 "rating"
+        String sortByValue = sortBy.name();  // "createdAt" 또는 "rating"
 
         //커서 해석 (cursor가 메인)
         UUID effectiveIdAfter = null;
@@ -154,7 +151,7 @@ public class BasicReviewService implements ReviewService {
 
         Slice<Review> reviews = reviewRepository.findReviews(
                 contentId, cursor,
-                effectiveIdAfter, limit,
+                effectiveIdAfter, pageSize,
                 sortDirection, sortByValue
         );
 
