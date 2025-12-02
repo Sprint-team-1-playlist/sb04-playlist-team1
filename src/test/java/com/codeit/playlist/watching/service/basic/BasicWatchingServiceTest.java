@@ -11,7 +11,7 @@ import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
-import com.codeit.playlist.domain.watching.dto.data.SortBy;
+import com.codeit.playlist.domain.watching.dto.data.WatchingSortBy;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.dto.response.CursorResponseWatchingSessionDto;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
@@ -86,7 +86,7 @@ class BasicWatchingServiceTest {
                 null,
                 10,
                 SortDirection.ASCENDING,
-                SortBy.createdAt);
+                WatchingSortBy.createdAt);
 
         // then
         verify(redisWatchingSessionRepository, times(1))
@@ -141,7 +141,7 @@ class BasicWatchingServiceTest {
                 null,
                 0, // invalid
                 SortDirection.ASCENDING,
-                SortBy.createdAt
+                WatchingSortBy.createdAt
         );
 
         // then
