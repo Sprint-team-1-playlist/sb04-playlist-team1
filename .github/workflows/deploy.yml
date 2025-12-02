@@ -78,6 +78,7 @@ jobs:
             --arg ADMIN_PASSWORD "${{ secrets.ADMIN_PASSWORD }}" \
             --arg GOOGLE_CLIENT_ID "${{ secrets.GOOGLE_CLIENT_ID }}" \
             --arg GOOGLE_CLIENT_PASSWORD "${{ secrets.GOOGLE_CLIENT_PASSWORD }}" \
+            --arg KAFKA_BOOTSTRAP_SERVERS "${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}" \
             '
             .containerDefinitions[0].image = $IMAGE
             | .containerDefinitions[0].environment = [
@@ -107,7 +108,8 @@ jobs:
                 {"name": "ADMIN_EMAIL", "value": $ADMIN_EMAIL},
                 {"name": "ADMIN_PASSWORD", "value": $ADMIN_PASSWORD},
                 {"name": "GOOGLE_CLIENT_ID", "value": $GOOGLE_CLIENT_ID},
-                {"name": "GOOGLE_CLIENT_PASSWORD", "value": $GOOGLE_CLIENT_PASSWORD}
+                {"name": "GOOGLE_CLIENT_PASSWORD", "value": $GOOGLE_CLIENT_PASSWORD},
+                {"name": "KAFKA_BOOTSTRAP_SERVERS", "value": $KAFKA_BOOTSTRAP_SERVERS}
               ]
             ' \
             task-definition.json > tmp.json && mv tmp.json task-definition.json
