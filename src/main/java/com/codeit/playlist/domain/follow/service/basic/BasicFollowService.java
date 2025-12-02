@@ -50,14 +50,12 @@ public class BasicFollowService implements FollowService {
       throw FollowSelfNotAllowedException.withId(followRequest.followeeId());
     }
 
-    User followee = userRepository.findById(followRequest.followeeId())
-        .orElseThrow(() -> UserNotFoundException.withId(followRequest.followeeId()));
-
-    boolean alreadyFollowing = followRepository.existsByFollowerIdAndFolloweeId(
-        followerId, followRequest.followeeId());
-    if (alreadyFollowing) {
+    if (followRepository.existsByFollowerIdAndFolloweeId(followerId, followRequest.followeeId())) {
       throw FollowAlreadyExistsException.withId(followRequest.followeeId());
     }
+
+    User followee = userRepository.findById(followRequest.followeeId())
+        .orElseThrow(() -> UserNotFoundException.withId(followRequest.followeeId()));
 
     User follower = userRepository.findById(followerId)
         .orElseThrow(() -> UserNotFoundException.withId(followerId));
@@ -68,38 +66,18 @@ public class BasicFollowService implements FollowService {
     followee.increaseFollowCount();
 
     //팔로우 당한 사용자에게 알림
-    String title = "새로운 팔로워";
-    String contentMsg = String.format("%s 님이 사용자님을 팔로우하기 시작했습니다.", follower.getName());
-    NotificationDto notificationDto = new NotificationDto(null, null, followee.getId(),
-                                                          title, contentMsg, Level.INFO);
-
-    try{
-      String payload = objectMapper.writeValueAsString(notificationDto);
-      kafkaTemplate.send("playlist.NotificationDto", payload);
-      log.info("[Follow] 팔로우 알림 이벤트 발행 완료 : receiverId= {}, followerId= {}",
-              followee.getId(), followerId);
-    } catch (JsonProcessingException e) {
-      log.error("[Follow] 팔로우 알림 이벤트 직렬화 실패 : receiverId= {}, followerId= {}",
-              followee.getId(), followerId, e);
-    }
+    sendFollowNotification(follower, followee);
 
     log.info("[Follow] 팔로우 생성 완료: {} -> {}", follower.getId(), followee.getId());
     FollowDto followDto = followMapper.toDto(follow);
     return followDto;
   }
 
-  @Override
-  public Boolean followedByMe(UUID followeeId) {
+  @Override public Boolean followedByMe(UUID followeeId) {
     log.debug("[Follow] 특정 유저를 내가 팔로우하는지 여부 조회 시작: {}", followeeId);
 
     UUID followerId = getCurrentUserId();
-
-    if (followerId.equals(followeeId)) {
-      throw FollowSelfNotAllowedException.withId(followeeId);
-    }
-
     boolean isFollowing = followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId);
-
     log.info("[Follow] 특정 유저를 내가 팔로우하는지 여부 조회 완료: {} -> {}", followeeId, isFollowing);
     return isFollowing;
   }
@@ -124,6 +102,23 @@ public class BasicFollowService implements FollowService {
     follow.getFollowee().decreaseFollowCount();
     followRepository.deleteById(followId);
     log.info("[Follow] 팔로우 삭제 완료");
+  }
+
+  private void sendFollowNotification(User follower, User followee) {
+    NotificationDto notificationDto = new NotificationDto(
+        null, null, followee.getId(),
+        "새로운 팔로워",
+        String.format("%s 님이 사용자님을 팔로우하기 시작했습니다.", follower.getName()),
+        Level.INFO
+    );
+    try {
+      String payload = objectMapper.writeValueAsString(notificationDto);
+      kafkaTemplate.send("playlist.NotificationDto", payload);
+      log.info("[Follow] 팔로우 알림 발송: receiverId={}, followerId={}", followee.getId(), follower.getId());
+    } catch (JsonProcessingException e) {
+      log.error("[Follow] 팔로우 알림 직렬화 실패: receiverId={}, followerId={}",
+          followee.getId(), follower.getId(), e);
+    }
   }
 
   private UUID getCurrentUserId() {

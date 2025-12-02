@@ -1,6 +1,8 @@
 package com.codeit.playlist.domain.message.service;
 
+import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import java.util.UUID;
@@ -12,8 +14,8 @@ public interface MessageService {
       String cursor,
       UUID idAfter,
       int limit,
-      String sortDirection,
-      String sortBy);
+      SortDirection sortDirection,
+      MessageSortBy sortBy);
 
   void markMessageAsRead(UUID conversationId, UUID directMessageId);
 }

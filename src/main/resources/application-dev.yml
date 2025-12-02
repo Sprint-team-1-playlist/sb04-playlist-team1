@@ -26,13 +26,8 @@ spring:
           max-active: 20
           max-idle: 10
           min-idle: 5
-          max-wait: 10000
+          max-wait: 60000
 
-  batch:
-    jdbc:
-      initialize-schema: never
-    job:
-      enabled: false
 playlist:
   jwt:
     access-token:

@@ -26,7 +26,7 @@ public class TheMovieApiService {
     private String apikey; // tmdb API key
 
     private Mono<TheMovieListResponse> callTheMovieApi(String query, String path) {
-        log.info("TheMovie API 빌드 시작, callTheMovieApi query : {}, path : {}", query, path);
+        log.info("[콘텐츠 데이터 관리] TheMovie API 빌드 시작, callTheMovieApi query : {}, path : {}", query, path);
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .scheme("https")
@@ -45,11 +45,11 @@ public class TheMovieApiService {
                                 .transientErrors(true)
                 )
                 .doOnError(WebClientResponseException.class,
-                        e -> log.error("TheMovie API {} 수집 오류 : status = {}, body = {}", query, e.getStatusCode(), e.getResponseBodyAsString()));
+                        e -> log.error("[콘텐츠 데이터 관리] TheMovie API {} 수집 오류 : status = {}, body = {}", query, e.getStatusCode(), e.getResponseBodyAsString()));
     }
 
     private Flux<TheMovieResponse> fluxingTheMovieApi(String query, String path) {
-        log.info("TheMovie API 빌드 시작, fluxingTheMovieApi query : {}, path : {}", query, path);
+        log.info("[콘텐츠 데이터 관리] TheMovie API 빌드 시작, fluxingTheMovieApi query : {}, path : {}", query, path);
         return callTheMovieApi(query, path)
                     .flatMapMany(res -> {
                        if(res.results() == null || res.results().isEmpty()) {
