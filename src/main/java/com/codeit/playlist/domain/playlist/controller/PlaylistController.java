@@ -2,6 +2,7 @@ package com.codeit.playlist.domain.playlist.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
+import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
 import com.codeit.playlist.domain.playlist.dto.response.CursorResponsePlaylistDto;
@@ -10,11 +11,14 @@ import com.codeit.playlist.domain.playlist.service.PlaylistService;
 import com.codeit.playlist.domain.playlist.service.PlaylistSubscriptionService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -31,6 +35,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/playlists")
 @RequiredArgsConstructor
+@Validated
 public class PlaylistController {
 
     private final PlaylistService playlistService;
@@ -92,9 +97,9 @@ public class PlaylistController {
             @RequestParam(required = false) UUID subscriberIdEqual,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) UUID idAfter,
-            @RequestParam int limit,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit,
             @RequestParam(defaultValue = "DESCENDING") SortDirection sortDirection,  //DESENDING, ASCENDING
-            @RequestParam String sortBy  //updatedAt, subscribeCount
+            @RequestParam(defaultValue = "updatedAt") PlaylistSortBy sortBy  //updatedAt, subscribeCount
             ) {
         log.debug("[플레이리스트] 플레이리스트 목록 조회 요청: " +
                 "keywordLike = {}, ownerIdEqual = {}, subscriberIdEqual = {}, cursor = {}, idAfter = {}, limit = {}, sortBy = {}, sortDirection = {}",
