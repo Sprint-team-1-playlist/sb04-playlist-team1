@@ -4,13 +4,13 @@ import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.watching.dto.data.ChangeType;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
-import com.codeit.playlist.domain.watching.dto.response.UserSummary;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 
 import java.time.LocalDateTime;
