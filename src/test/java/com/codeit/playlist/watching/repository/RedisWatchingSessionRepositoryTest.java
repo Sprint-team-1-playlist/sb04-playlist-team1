@@ -7,6 +7,7 @@ import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
 import com.codeit.playlist.domain.watching.exception.WatchingNotFoundException;
 import com.codeit.playlist.domain.watching.exception.WatchingSessionMismatch;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
+import com.codeit.playlist.global.error.InvalidCursorException;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.redis.DataRedisTest;
@@ -216,7 +217,7 @@ class RedisWatchingSessionRepositoryTest {
                 "invalidCursor",
                 5,
                 SortDirection.ASCENDING
-        )).isInstanceOf(Exception.class); // InvalidCursorException
+        )).isInstanceOf(InvalidCursorException.class);
     }
 
     @Test
