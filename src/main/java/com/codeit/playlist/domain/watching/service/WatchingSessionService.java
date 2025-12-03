@@ -1,5 +1,7 @@
 package com.codeit.playlist.domain.watching.service;
 
+import com.codeit.playlist.domain.watching.dto.request.ContentChatSendRequest;
+
 import java.util.UUID;
 
 public interface WatchingSessionService {
@@ -9,4 +11,6 @@ public interface WatchingSessionService {
     void leave(UUID contentId, UUID userId);
 
     long count(UUID contentId);
+
+    void sendChat(UUID contentId, UUID userId, ContentChatSendRequest request);
 }
