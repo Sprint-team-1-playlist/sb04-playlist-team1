@@ -33,7 +33,7 @@ import java.util.*;
  *
  * 4. List: 콘텐츠별 채팅 내역 보관
  * content:{contentId}:chat:list
- * value: JSON(sender, content)
+ * value: String(senderId:content)
  * */
 
 @Repository
