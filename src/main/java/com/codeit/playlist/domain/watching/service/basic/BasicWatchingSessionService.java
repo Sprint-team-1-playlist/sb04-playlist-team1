@@ -84,14 +84,13 @@ public class BasicWatchingSessionService implements WatchingSessionService {
     }
 
     @Override
-    public void sendChat(UUID contentId, UUID userId, ContentChatSendRequest request) {
-        log.debug("[실시간 같이 보기] 채팅 수신 비즈니스 로직 시작:  contentId={}, userId={}, request={}", contentId, userId, request);
+    public void sendChat(UUID contentId, UUID senderId, ContentChatSendRequest request) {
+        log.debug("[실시간 같이 보기] 채팅 수신 비즈니스 로직 시작:  contentId={}, senderId={}, request={}", contentId, senderId, request);
 
-        String chatData = userId + ":" + request.content();
-        RawContentChat raw = redisWatchingSessionRepository.addChat(contentId, chatData);
+        RawContentChat raw = redisWatchingSessionRepository.addChat(contentId, senderId, request.content());
         if (raw == null) {
-            log.error("[실시간 같이 보기] 채팅 관련 Redis 오류: contentId={}, userId={}, request={}", contentId, userId, request);
-            throw WatchingSessionUpdateException.withContentIdUserId(contentId, userId);
+            log.error("[실시간 같이 보기] 채팅 관련 Redis 오류: contentId={}, senderId={}, request={}", contentId, senderId, request);
+            throw WatchingSessionUpdateException.withContentIdUserId(contentId, senderId);
         }
 
         broadcastChatEvent(contentId, createContentChatDto(raw));

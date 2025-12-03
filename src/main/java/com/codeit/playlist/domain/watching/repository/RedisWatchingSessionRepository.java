@@ -195,7 +195,8 @@ public class RedisWatchingSessionRepository {
     }
 
     // 채팅
-    public RawContentChat addChat(UUID contentId, String chatData) {
+    public RawContentChat addChat(UUID contentId, UUID senderId, String content) {
+        String chatData = senderId.toString() + ":" + content;
         Long raw = redisTemplate.opsForList()
                 .rightPush(chatKey(contentId), chatData);
         if (raw == null) {
@@ -204,10 +205,9 @@ public class RedisWatchingSessionRepository {
 
         redisTemplate.expire(chatKey(contentId), Duration.ofMinutes(30));
 
-        String[] parts = chatData.split(":", 2);
         return new RawContentChat(
-                UUID.fromString(parts[0]),
-                parts[1]
+                senderId,
+                content
         );
     }
 
