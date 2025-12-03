@@ -23,5 +23,5 @@ public interface PlaylistService {
                                             UUID idAfter, int limit, PlaylistSortBy sortBy,
                                             SortDirection sortDirection);
 
-    PlaylistDto getPlaylist(UUID playlistId);
+    PlaylistDto getPlaylist(UUID playlistId, UUID currentUserId);
 }
