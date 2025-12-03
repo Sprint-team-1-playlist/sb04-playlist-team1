@@ -133,7 +133,7 @@ class BasicWatchingSessionServiceTest {
         // when
         watchingSessionService.leave(contentId, userId);
 
-        // given
+        // then
         verify(redisWatchingSessionRepository).removeWatchingSession(userId);
         verify(redisWatchingSessionRepository).countWatchingSessionByContentId(contentId);
         verify(userRepository).findById(userId);
