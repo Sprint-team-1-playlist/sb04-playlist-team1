@@ -4,6 +4,7 @@ import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.watching.dto.data.ChangeType;
@@ -58,6 +59,14 @@ public class WatchingSessionFixtures {
         );
     }
 
+    public static UserSummary userSummary() {
+        return new UserSummary(
+                FIXED_ID,
+                userDto().name(),
+                userDto().profileImageUrl()
+        );
+    }
+
     public static List<String> tags() {
         return List.of("tag1", "tag2");
     }
@@ -83,7 +92,7 @@ public class WatchingSessionFixtures {
         );
     }
 
-    public static RawWatchingSession  rawWatchingSession() {
+    public static RawWatchingSession rawWatchingSession() {
         return new RawWatchingSession(
                 FIXED_ID,
                 FIXED_ID,

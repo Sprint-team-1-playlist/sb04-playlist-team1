@@ -1,5 +1,6 @@
 package com.codeit.playlist.domain.watching.event.impl;
 
+import com.codeit.playlist.domain.watching.dto.response.ContentChatDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,12 @@ public class SimpWatchingSessionPublisher implements WatchingSessionPublisher { 
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
-    public void publish(UUID contentId, WatchingSessionChange event) {
+    public void publishWatching(UUID contentId, WatchingSessionChange event) {
         messagingTemplate.convertAndSend("/sub/contents/" + contentId + "/watch", event);
+    }
+
+    @Override
+    public void publishChat(UUID contentId, ContentChatDto contentChatDto) {
+        messagingTemplate.convertAndSend("/sub/contents/" + contentId + "/chat", contentChatDto);
     }
 }

@@ -2,6 +2,7 @@ package com.codeit.playlist.playlist.service.basic;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.dto.data.ContentSummary;
+import com.codeit.playlist.domain.content.repository.TagRepository;
 import com.codeit.playlist.domain.follow.repository.FollowRepository;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
@@ -13,6 +14,7 @@ import com.codeit.playlist.domain.playlist.exception.PlaylistAccessDeniedExcepti
 import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
 import com.codeit.playlist.domain.playlist.mapper.PlaylistMapper;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
+import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.playlist.service.basic.BasicPlaylistService;
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.User;
@@ -35,6 +37,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.lang.reflect.Constructor;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -45,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
@@ -75,6 +79,12 @@ public class BasicPlaylistServiceTest {
     private FollowRepository followRepository;
 
     @Mock
+    private TagRepository tagRepository;
+
+    @Mock
+    private SubscribeRepository subscribeRepository;
+
+    @Mock
     private ObjectMapper objectMapper;
 
     @Mock
@@ -85,8 +95,8 @@ public class BasicPlaylistServiceTest {
 
     @BeforeEach
     void setUp() {
-        basicPlaylistService = new BasicPlaylistService(playlistRepository, userRepository, playlistMapper,
-                                                        followRepository, objectMapper, kafkaTemplate);
+        basicPlaylistService = new BasicPlaylistService(playlistRepository, subscribeRepository, userRepository, playlistMapper,
+                                                        followRepository, objectMapper, kafkaTemplate, tagRepository);
     }
 
     @Test
@@ -426,11 +436,25 @@ public class BasicPlaylistServiceTest {
     void getPlaylistSuccess() {
         //given
         UUID playlistId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
 
         Playlist playlist = mock(Playlist.class);
 
+
+        // 플레이리스트 + 연관 객체 로딩
         given(playlistRepository.findWithDetailsById(playlistId))
                 .willReturn(Optional.of(playlist));
+
+        // 플레이리스트에 담긴 콘텐츠가 없다고 가정 (태그 맵은 emptyMap)
+        given(playlist.getPlaylistContents()).willReturn(List.of());
+
+        // 태그 맵 조회 (빈 리스트 → 빈 맵)
+        given(tagRepository.findTagsByContentIds(List.of()))
+                .willReturn(Map.of());
+
+        // 현재 유저는 구독 안 한 상태라고 가정
+        given(subscribeRepository.existsBySubscriber_IdAndPlaylist_Id(currentUserId, playlistId))
+                .willReturn(false);
 
         UserSummary ownerSummary = new UserSummary(UUID.randomUUID(), "이름", "profile.png");
 
@@ -443,10 +467,10 @@ public class BasicPlaylistServiceTest {
         PlaylistDto mappedDto = new PlaylistDto(playlistId, ownerSummary, "테스트 플리", "테스트용",
                 LocalDateTime.now(), 2L, false, List.of(content1, content2));
 
-        given(playlistMapper.toDto(playlist)).willReturn(mappedDto);
+        given(playlistMapper.toDto(eq(playlist), anyMap())).willReturn(mappedDto);
 
         //when
-        PlaylistDto result = basicPlaylistService.getPlaylist(playlistId);
+        PlaylistDto result = basicPlaylistService.getPlaylist(playlistId, currentUserId);
 
         //then
         assertThat(result.id()).isEqualTo(mappedDto.id());
@@ -462,7 +486,7 @@ public class BasicPlaylistServiceTest {
         assertThat(result.subscribedByMe()).isFalse();
 
         then(playlistRepository).should().findWithDetailsById(playlistId);
-        then(playlistMapper).should().toDto(playlist);
+        then(playlistMapper).should().toDto(eq(playlist), anyMap());
     }
 
     @Test
@@ -470,15 +494,18 @@ public class BasicPlaylistServiceTest {
     void getPlaylistFailWhenNotFound() {
         // given
         UUID playlistId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
 
         given(playlistRepository.findWithDetailsById(playlistId))
                 .willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> basicPlaylistService.getPlaylist(playlistId))
+        assertThatThrownBy(() -> basicPlaylistService.getPlaylist(playlistId, currentUserId))
                 .isInstanceOf(PlaylistNotFoundException.class);
 
         then(playlistRepository).should().findWithDetailsById(playlistId);
+        then(tagRepository).shouldHaveNoInteractions();
+        then(subscribeRepository).shouldHaveNoInteractions();
         // 매퍼는 호출되면 안 됨
         then(playlistMapper).shouldHaveNoInteractions();
     }

@@ -25,14 +25,14 @@ class SimpWatchingSessionPublisherTest {
 
     @Test
     @DisplayName("publish 호출 시 contentId와 WatchingSessionChange 전달 수행")
-    void publishShouldCallConverterAndSend() {
+    void publishWatchingShouldCallConverterAndSend() {
         // given
         String destinationPattern = "/sub/contents/%s/watch";
         UUID contentId = WatchingSessionFixtures.FIXED_ID;
         WatchingSessionChange event = WatchingSessionFixtures.watchingSessionChange();
 
         // when
-        publisher.publish(contentId, event);
+        publisher.publishWatching(contentId, event);
 
         // then
         verify(messagingTemplate)
