@@ -249,7 +249,8 @@ public class BasicContentService implements ContentService {
         log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 시작, contentId : {}",contentId);
         Content searchContent = contentRepository.findById(contentId)
                 .orElseThrow(() -> ContentNotFoundException.withId(contentId));
-        List<Tag> tags = tagRepository.findByContentId(contentId);
+        List<Tag> tags = tagRepository.findByContentId(searchContent.getId());
+        log.info("[콘텐츠 데이터] 확인용 Tag : {} ", tags);
         log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 완료, searchContent : {}", searchContent);
         return contentMapper.toDto(searchContent,tags);
     }
