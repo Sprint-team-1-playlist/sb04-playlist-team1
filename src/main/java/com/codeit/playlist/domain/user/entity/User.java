@@ -126,12 +126,12 @@ public class User extends BaseUpdatableEntity {
   }
 
   // Oauth 소셜 로그인을 위함 정적 팩토리 메서드
-  public static User createOAuthUser(String name, String email,  String imageUrl) {
+  public static User createOAuthUser(String name, String email,  String imageUrl, AuthProvider provider) {
     User user = new User();
     user.name = name;
     user.email = email;
     user.password = "";      // 소셜 유저는 패스워드 없음
-    user.provider = AuthProvider.GOOGLE;
+    user.provider = provider;
     user.role = Role.USER;
     user.locked = false;
     user.followCount = 0L;
