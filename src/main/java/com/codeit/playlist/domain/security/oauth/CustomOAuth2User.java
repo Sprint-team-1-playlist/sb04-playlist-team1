@@ -1,5 +1,6 @@
 package com.codeit.playlist.domain.security.oauth;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +11,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 @RequiredArgsConstructor
-public class CustomOAuth2User implements OAuth2User {
+public class CustomOAuth2User implements OAuth2User, Serializable {
+
+  private static final long serialVersionUID = 1L;
 
   private final Map<String, Object> attributes;
   private final UUID userId;
