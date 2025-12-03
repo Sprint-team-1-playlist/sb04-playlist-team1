@@ -44,6 +44,7 @@ public class CustomOAuth2Service extends DefaultOAuth2UserService {
 
     Map<String, Object> merged = new HashMap<>(oAuth2User.getAttributes());
 
+    merged.put("email", profile.get("email"));
     merged.put("name", profile.get("nickname"));
     merged.put("picture", profile.get("profile_image_url"));
 
