@@ -19,6 +19,7 @@ import com.codeit.playlist.domain.watching.dto.request.ContentChatSendRequest;
 import com.codeit.playlist.domain.watching.dto.response.ContentChatDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
+import com.codeit.playlist.domain.watching.exception.EventBroadcastFailedException;
 import com.codeit.playlist.domain.watching.exception.WatchingSessionMismatch;
 import com.codeit.playlist.domain.watching.exception.WatchingSessionUpdateException;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
@@ -155,6 +156,7 @@ public class BasicWatchingSessionService implements WatchingSessionService {
             log.info("[실시간 같이 보기] 채팅 이벤트 발송 성공: {}", contentChatDto);
         } catch (Exception e) {
             log.error("[실시간 같이 보기] 채팅 이벤트 발송 실패: contentChatDto={}, errorMsg={}", contentChatDto, e.getMessage());
+            throw EventBroadcastFailedException.withContentId(contentId);
         }
     }
 }
