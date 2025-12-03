@@ -37,6 +37,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     String uri = request.getRequestURI();
 
+    if (uri.startsWith("/login/oauth2/") ||
+        uri.startsWith("/oauth2/authorization/") ||
+        uri.startsWith("/oauth2/")) {
+      log.debug("Skipping JWT filter for OAuth2 URL: {}", uri);
+      filterChain.doFilter(request, response);
+      return;
+    }
+
     if (isExcludedPath(uri)) {
       filterChain.doFilter(request, response);
       return;

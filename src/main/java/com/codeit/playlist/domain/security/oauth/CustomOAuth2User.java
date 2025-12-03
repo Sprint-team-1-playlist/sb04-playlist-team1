@@ -15,8 +15,12 @@ public class CustomOAuth2User implements OAuth2User, Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private final Map<String, Object> attributes;
   private final UUID userId;
+  private final String email;
+  private final String name;
+  private final String profileImageUrl;
+  private final String provider;
+  private final Map<String, Object> attributes;
 
   @Override
   public Map<String, Object> getAttributes() {
@@ -30,25 +34,28 @@ public class CustomOAuth2User implements OAuth2User, Serializable {
 
   @Override
   public String getName() {
-    return getNameFromAttributes();
+    // OAuth2 스펙상 null이면 안 됨
+    if (name != null && !name.isBlank()) {
+      return name;
+    }
+    if (email != null) return email;
+    return userId.toString();
   }
 
   public UUID getUserId() {
     return userId;
   }
 
-
   public String getEmail() {
-    return (String) attributes.get("email");
-  }
-
-  public String getNameFromAttributes() {
-    return (String) attributes.get("name");
+    return email;
   }
 
   public String getProfileImageUrl() {
-    return (String) attributes.get("picture"); // 구글은 picture 필드
+    return profileImageUrl;
   }
 
+  public String getProvider() {
+    return provider;
+  }
 
 }

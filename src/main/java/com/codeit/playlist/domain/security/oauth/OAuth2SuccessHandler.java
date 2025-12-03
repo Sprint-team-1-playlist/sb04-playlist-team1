@@ -5,6 +5,7 @@ import com.codeit.playlist.domain.security.jwt.DbJwtRegistry;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.user.entity.AuthProvider;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
@@ -40,12 +41,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     String email = oAuth2User.getEmail();
     String name = oAuth2User.getName();
     String imageUrl = oAuth2User.getProfileImageUrl();
+    String provider = oAuth2User.getProvider();
 
     // 사용자 조회 또는 OAuth 전용 신규 생성
     User user = userRepository.findByEmail(email)
         .orElseGet(() -> {
           log.debug("[소셜 로그인 ] : 신규 소셜 사용자 생성 = {}", email);
-          return userRepository.save(User.createOAuthUser(name, email, imageUrl));
+          return userRepository.save(User.createOAuthUser(name, email, imageUrl,
+              AuthProvider.valueOf(provider.toUpperCase())));
         });
 
     // User → UserDto 변환 (MapStruct 사용)

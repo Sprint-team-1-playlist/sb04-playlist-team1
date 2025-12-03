@@ -1,7 +1,6 @@
 package com.codeit.playlist.domain.security.oauth;
 
 import com.codeit.playlist.domain.user.repository.UserRepository;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +23,7 @@ public class CustomOAuth2Service extends DefaultOAuth2UserService {
 
     OAuth2User oAuth2User = super.loadUser(userRequest);
 
-    String registrationId = userRequest.getClientRegistration().getRegistrationId();
+    String registrationId = userRequest.getClientRegistration().getRegistrationId().toLowerCase();
     log.info("[소셜 로그인] OAuth2 로그인 시도 Provider = {}", registrationId);
 
     // 실제 User 엔티티 ID는 OAuth2SuccessHandler에서 생성/조회하기 때문에
@@ -39,33 +38,47 @@ public class CustomOAuth2Service extends DefaultOAuth2UserService {
   }
 
   private CustomOAuth2User mapKakaoUser(OAuth2User oAuth2User, UUID userId) {
-    Map<String, Object> kakaoAccount = (Map<String, Object>) oAuth2User.getAttributes().get("kakao_account");
-    Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
+    Map<String, Object> attributes = oAuth2User.getAttributes();
 
-    Map<String, Object> merged = new HashMap<>(oAuth2User.getAttributes());
+    Map<String, Object> account =
+        (Map<String, Object>) attributes.get("kakao_account");
 
-    merged.put("email", profile.get("email"));
-    merged.put("name", profile.get("nickname"));
-    merged.put("picture", profile.get("profile_image_url"));
+    String email = account != null ? (String) account.get("email") : null;
 
-    return new CustomOAuth2User(merged, userId);
+    if (email == null || email.isBlank()) {
+      throw new OAuth2AuthenticationException("카카오 로그인 시 이메일 제공이 필요합니다.");
+    }
+
+    Map<String, Object> profile = (Map<String, Object>) account.get("profile");
+
+    String name = profile != null ? (String) profile.get("nickname") : null;
+    String picture = profile != null ? (String) profile.get("profile_image_url") : null;
+
+    return new CustomOAuth2User(
+        userId,
+        email,
+        name,
+        picture,
+        "kakao",
+        oAuth2User.getAttributes()
+    );
   }
 
   private CustomOAuth2User mapGoogleUser(OAuth2User oAuth2User, UUID userId) {
 
-    // 구글 attributes는 평평(flat)한 구조
-    Map<String, Object> original = oAuth2User.getAttributes();
+    Map<String, Object> attributes = oAuth2User.getAttributes();
 
-    String email = (String) original.get("email");
-    String name = (String) original.get("name");
-    String picture = (String) original.get("picture");
+    String email = (String) attributes.get("email");
+    String name = (String) attributes.get("name");
+    String picture = (String) attributes.get("picture");
 
-    // attributes 통합 (표준 필드 강제 세팅)
-    Map<String, Object> merged = new HashMap<>(original);
-    merged.put("email", email);
-    merged.put("name", name);
-    merged.put("picture", picture);
-
-    return new CustomOAuth2User(merged, userId);
+    return new CustomOAuth2User(
+        userId,
+        email,
+        name,
+        picture,
+        "google",
+        attributes
+    );
   }
 }
