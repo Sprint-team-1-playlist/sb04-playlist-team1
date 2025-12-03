@@ -1,10 +1,14 @@
 package com.codeit.playlist.watching.service.basic;
 
+import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
+import com.codeit.playlist.domain.content.mapper.ContentMapper;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.content.repository.TagRepository;
+import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.entity.User;
+import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.watching.dto.data.ChangeType;
 import com.codeit.playlist.domain.watching.dto.data.RawContentChat;
@@ -43,9 +47,13 @@ class BasicWatchingSessionServiceTest {
     @Mock
     private WatchingSessionPublisher publisher;
     @Mock
+    private UserMapper userMapper;
+    @Mock
     private UserRepository userRepository;
     @Mock
     private ContentRepository contentRepository;
+    @Mock
+    private ContentMapper contentMapper;
     @Mock
     private TagRepository tagRepository;
 
@@ -60,10 +68,16 @@ class BasicWatchingSessionServiceTest {
     @Test
     @DisplayName("join() 호출 시 addWatchingSession, countWatchingSession, publish 순서대로 호출")
     void joinShouldPerformAllSteps() {
+        // given
         User user = WatchingSessionFixtures.user();
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
 
+        UserDto userDto = WatchingSessionFixtures.userDto();
+        when(userMapper.toDto(any())).thenReturn(userDto);
+
         Content content = WatchingSessionFixtures.content();
+        ContentDto contentDto = WatchingSessionFixtures.contentDto();
+        when(contentMapper.toDto(any(), any())).thenReturn(contentDto);
         List<Tag> tags = WatchingSessionFixtures.tagList();
 
         when(contentRepository.findById(any())).thenReturn(Optional.of(content));
@@ -75,8 +89,10 @@ class BasicWatchingSessionServiceTest {
         when(redisWatchingSessionRepository.addWatchingSession(any(), any(), any()))
                 .thenReturn(raw);
 
+        // when
         watchingSessionService.join(contentId, userId);
 
+        // then
         verify(redisWatchingSessionRepository).addWatchingSession(any(), eq(contentId), eq(userId));
         verify(redisWatchingSessionRepository).countWatchingSessionByContentId(contentId);
         verify(userRepository).findById(userId);
@@ -93,10 +109,16 @@ class BasicWatchingSessionServiceTest {
     @Test
     @DisplayName("leave() 호출 시 removeWatchingSession, countWatchingSession, publish 순서대로 호출")
     void leaveShouldPerformAllSteps() {
+        // given
         User user = WatchingSessionFixtures.user();
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
 
+        UserDto userDto = WatchingSessionFixtures.userDto();
+        when(userMapper.toDto(any())).thenReturn(userDto);
+
         Content content = WatchingSessionFixtures.content();
+        ContentDto contentDto = WatchingSessionFixtures.contentDto();
+        when(contentMapper.toDto(any(), any())).thenReturn(contentDto);
         List<Tag> tags = WatchingSessionFixtures.tagList();
 
         when(contentRepository.findById(any())).thenReturn(Optional.of(content));
@@ -108,8 +130,10 @@ class BasicWatchingSessionServiceTest {
         when(redisWatchingSessionRepository.removeWatchingSession(eq(userId)))
                 .thenReturn(raw);
 
+        // when
         watchingSessionService.leave(contentId, userId);
 
+        // given
         verify(redisWatchingSessionRepository).removeWatchingSession(userId);
         verify(redisWatchingSessionRepository).countWatchingSessionByContentId(contentId);
         verify(userRepository).findById(userId);
@@ -127,7 +151,7 @@ class BasicWatchingSessionServiceTest {
     @DisplayName("sendChat 호출 시 Redis 저장 후 Chat publish 호출")
     void sendChatShouldPublishChatEvent() {
         RawContentChat raw = new RawContentChat(userId, "hello");
-        when(redisWatchingSessionRepository.addChat(eq(contentId), anyString()))
+        when(redisWatchingSessionRepository.addChat(eq(contentId), eq(userId), anyString()))
                 .thenReturn(raw);
 
         User user = mock(User.class);
@@ -141,7 +165,7 @@ class BasicWatchingSessionServiceTest {
         watchingSessionService.sendChat(contentId, userId, request);
 
         // then
-        verify(redisWatchingSessionRepository).addChat(eq(contentId), anyString());
+        verify(redisWatchingSessionRepository).addChat(eq(contentId), eq(userId), anyString());
         verify(publisher).publishChat(eq(contentId), contentChatCaptor.capture());
 
         ContentChatDto publishedDto = contentChatCaptor.getValue();

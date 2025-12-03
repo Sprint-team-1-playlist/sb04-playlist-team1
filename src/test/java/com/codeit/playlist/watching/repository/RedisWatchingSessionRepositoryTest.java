@@ -264,10 +264,11 @@ class RedisWatchingSessionRepositoryTest {
     @DisplayName("addChat 정상 동작 및 리스트에 저장")
     void testAddChat() {
         // given
-        String chatData = userId + ":content";
+        String content = "cotent";
+        String chatData = userId.toString() + ":" + content;
 
         // when
-        RawContentChat rawChat = repository.addChat(contentId, chatData);
+        RawContentChat rawChat = repository.addChat(contentId, userId, content);
 
         // then
         assertThat(rawChat.userId()).isEqualTo(userId);
@@ -282,9 +283,12 @@ class RedisWatchingSessionRepositoryTest {
     @Test
     @DisplayName("addChat 호출 시 expire 30분 설정")
     void testAddChatExpire() {
-        String chatData = userId + ":hello expire";
+        // given
+        String content = "cotent";
+        String chatData = userId.toString() + ":" + content;
 
-        repository.addChat(contentId, chatData);
+        // when
+        RawContentChat rawChat = repository.addChat(contentId, userId, content);
 
         Long ttl = redisTemplate.getExpire("content:" + contentId + ":chat:list");
         assertThat(ttl).isNotNull();
