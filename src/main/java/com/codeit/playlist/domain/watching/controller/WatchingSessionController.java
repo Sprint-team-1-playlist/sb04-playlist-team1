@@ -41,9 +41,9 @@ public class WatchingSessionController {
                          Principal principal,
                          ContentChatSendRequest request) {
         UUID userId = getUserId(principal);
-        log.debug("[실시간 같이 보기] chat 수신 시작: contentId={}, userId={}, request={}", contentId, userId, request);
+        log.debug("[실시간 같이 보기] chat 수신 시작: contentId={}, userId={}", contentId, userId);
         watchingSessionService.sendChat(contentId, userId, request);
-        log.info("[실시간 같이 보기] chat 수신 완료:  contentId={}, userId={}, request={}", contentId, userId, request);
+        log.info("[실시간 같이 보기] chat 수신 완료:  contentId={}, userId={}", contentId, userId);
     }
 
     private UUID getUserId(Principal principal) {
