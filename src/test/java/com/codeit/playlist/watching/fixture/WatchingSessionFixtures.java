@@ -10,6 +10,7 @@ import com.codeit.playlist.domain.watching.dto.data.ChangeType;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
+import com.codeit.playlist.domain.watching.dto.response.UserSummary;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 
 import java.time.LocalDateTime;
@@ -58,6 +59,14 @@ public class WatchingSessionFixtures {
         );
     }
 
+    public static UserSummary userSummary() {
+        return new UserSummary(
+                FIXED_ID,
+                userDto().name(),
+                userDto().profileImageUrl()
+        );
+    }
+
     public static List<String> tags() {
         return List.of("tag1", "tag2");
     }
@@ -83,7 +92,7 @@ public class WatchingSessionFixtures {
         );
     }
 
-    public static RawWatchingSession  rawWatchingSession() {
+    public static RawWatchingSession rawWatchingSession() {
         return new RawWatchingSession(
                 FIXED_ID,
                 FIXED_ID,

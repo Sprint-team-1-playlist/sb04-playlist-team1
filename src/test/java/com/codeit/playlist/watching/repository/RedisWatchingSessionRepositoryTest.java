@@ -1,6 +1,7 @@
 package com.codeit.playlist.watching.repository;
 
 import com.codeit.playlist.domain.base.SortDirection;
+import com.codeit.playlist.domain.watching.dto.data.RawContentChat;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
 import com.codeit.playlist.domain.watching.exception.WatchingNotFoundException;
@@ -84,6 +85,13 @@ class RedisWatchingSessionRepositoryTest {
                 .isEmpty();
         assertThat(redisTemplate.opsForZSet().size("content:" + contentId + ":sessions"))
                 .isZero();
+    }
+
+    @Test
+    @DisplayName("removeWatchingSession, 세션 없으면 null 반환")
+    void testRemoveWatchingSessionNull() {
+        RawWatchingSession result = repository.removeWatchingSession(userId);
+        assertThat(result).isNull();
     }
 
     @Test
@@ -201,6 +209,17 @@ class RedisWatchingSessionRepositoryTest {
     }
 
     @Test
+    @DisplayName("getWatchingSessionsByContentId: 유효하지 않은 커서 예외 발생")
+    void testGetWatchingSessionsInvalidCursor() {
+        assertThatThrownBy(() -> repository.getWatchingSessionsByContentId(
+                contentId,
+                "invalidCursor",
+                5,
+                SortDirection.ASCENDING
+        )).isInstanceOf(Exception.class); // InvalidCursorException
+    }
+
+    @Test
     @DisplayName("사용자의 시청 세션 조회, 세션이 없으면 null 반환")
     void getWatchingSessionByUserReturnNullIfNotExists() {
         RawWatchingSession result = repository.getWatchingSessionByUser(userId);
@@ -238,5 +257,36 @@ class RedisWatchingSessionRepositoryTest {
         assertThat(raw.watchingId()).isEqualTo(watchingId);
         assertThat(raw.userId()).isEqualTo(userId);
         assertThat(raw.contentId()).isEqualTo(contentId);
+    }
+
+    @Test
+    @DisplayName("addChat 정상 동작 및 리스트에 저장")
+    void testAddChat() {
+        // given
+        String chatData = userId + ":content";
+
+        // when
+        RawContentChat rawChat = repository.addChat(contentId, chatData);
+
+        // then
+        assertThat(rawChat.userId()).isEqualTo(userId);
+        assertThat(rawChat.content()).isEqualTo("content");
+
+        List<String> chatList = redisTemplate.opsForList()
+                .range("content:" + contentId + ":chat:list", 0, -1);
+        assertThat(chatList).hasSize(1);
+        assertThat(chatList.get(0)).isEqualTo(chatData);
+    }
+
+    @Test
+    @DisplayName("addChat 호출 시 expire 30분 설정")
+    void testAddChatExpire() {
+        String chatData = userId + ":hello expire";
+
+        repository.addChat(contentId, chatData);
+
+        Long ttl = redisTemplate.getExpire("content:" + contentId + ":chat:list");
+        assertThat(ttl).isNotNull();
+        assertThat(ttl).isGreaterThan(0);
     }
 }
