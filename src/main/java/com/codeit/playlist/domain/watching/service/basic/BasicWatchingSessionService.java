@@ -95,7 +95,7 @@ public class BasicWatchingSessionService implements WatchingSessionService {
 
         broadcastChatEvent(contentId, createContentChatDto(raw));
 
-        log.info("[실시간 같이 보기] 채팅 수신 비즈니스 로직 성공: 발송된 이벤트={}", createContentChatDto(raw));
+        log.info("[실시간 같이 보기] 채팅 수신 비즈니스 로직 성공");
     }
 
     private WatchingSessionDto createWatchingSessionDto(RawWatchingSession raw) {
