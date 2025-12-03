@@ -1,6 +1,7 @@
 package com.codeit.playlist.domain.watching.repository;
 
 import com.codeit.playlist.domain.base.SortDirection;
+import com.codeit.playlist.domain.watching.dto.data.RawContentChat;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
 import com.codeit.playlist.domain.watching.exception.WatchingNotFoundException;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.Duration;
 import java.util.*;
 
 /*
@@ -28,6 +30,10 @@ import java.util.*;
  * contentId
  * userId
  * createdAt
+ *
+ * 4. List: 콘텐츠별 채팅 내역 보관
+ * content:{contentId}:chat:list
+ * value: String(senderId:content)
  * */
 
 @Repository
@@ -46,6 +52,10 @@ public class RedisWatchingSessionRepository {
 
     private String watchingKey(UUID watchingId) {
         return "watching:" + watchingId;
+    }
+
+    private String chatKey(UUID contentId) {
+        return "content:" + contentId + ":chat:list";
     }
 
     // 입장
@@ -184,6 +194,24 @@ public class RedisWatchingSessionRepository {
         );
     }
 
+    // 채팅
+    public RawContentChat addChat(UUID contentId, UUID senderId, String content) {
+        String chatData = senderId.toString() + ":" + content;
+        Long raw = redisTemplate.opsForList()
+                .rightPush(chatKey(contentId), chatData);
+        if (raw == null) {
+            return null;
+        }
+
+        redisTemplate.expire(chatKey(contentId), Duration.ofMinutes(30));
+
+        return new RawContentChat(
+                senderId,
+                content
+        );
+    }
+
+    // 헬퍼 메서드
     private Set<String> getFirstPage(UUID contentId,
                                      int limit,
                                      SortDirection sortDirection) {

@@ -11,13 +11,15 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.watching.dto.data.ChangeType;
+import com.codeit.playlist.domain.watching.dto.data.RawContentChat;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
+import com.codeit.playlist.domain.watching.dto.request.ContentChatSendRequest;
+import com.codeit.playlist.domain.watching.dto.response.ContentChatDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.domain.watching.service.basic.BasicWatchingSessionService;
 import com.codeit.playlist.watching.fixture.WatchingSessionFixtures;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,31 +59,32 @@ class BasicWatchingSessionServiceTest {
 
     @Captor
     private ArgumentCaptor<WatchingSessionChange> eventCaptor;
+    @Captor
+    private ArgumentCaptor<ContentChatDto> contentChatCaptor;
 
     private final UUID contentId = WatchingSessionFixtures.FIXED_ID;
     private final UUID userId = WatchingSessionFixtures.FIXED_ID;
-
-    @BeforeEach
-    void setUp() {
-        User user = WatchingSessionFixtures.user();
-        UserDto userDto = WatchingSessionFixtures.userDto();
-        Content content = WatchingSessionFixtures.content();
-        ContentDto contentDto = WatchingSessionFixtures.contentDto();
-        List<Tag> tags = WatchingSessionFixtures.tagList();
-
-        when(userRepository.findById(any())).thenReturn(Optional.of(user));
-        when(contentRepository.findById(any())).thenReturn(Optional.of(content));
-        when(tagRepository.findByContentId(any())).thenReturn(tags);
-        when(userMapper.toDto(any())).thenReturn(userDto);
-        when(contentMapper.toDto(any(), any())).thenReturn(contentDto);
-        when(redisWatchingSessionRepository.countWatchingSessionByContentId(any()))
-                .thenReturn(3L);
-    }
 
     @Test
     @DisplayName("join() 호출 시 addWatchingSession, countWatchingSession, publish 순서대로 호출")
     void joinShouldPerformAllSteps() {
         // given
+        User user = WatchingSessionFixtures.user();
+        when(userRepository.findById(any())).thenReturn(Optional.of(user));
+
+        UserDto userDto = WatchingSessionFixtures.userDto();
+        when(userMapper.toDto(any())).thenReturn(userDto);
+
+        Content content = WatchingSessionFixtures.content();
+        ContentDto contentDto = WatchingSessionFixtures.contentDto();
+        when(contentMapper.toDto(any(), any())).thenReturn(contentDto);
+        List<Tag> tags = WatchingSessionFixtures.tagList();
+
+        when(contentRepository.findById(any())).thenReturn(Optional.of(content));
+        when(tagRepository.findByContentId(any())).thenReturn(tags);
+        when(redisWatchingSessionRepository.countWatchingSessionByContentId(any()))
+                .thenReturn(3L);
+
         RawWatchingSession raw = WatchingSessionFixtures.rawWatchingSession();
         when(redisWatchingSessionRepository.addWatchingSession(any(), any(), any()))
                 .thenReturn(raw);
@@ -90,18 +93,12 @@ class BasicWatchingSessionServiceTest {
         watchingSessionService.join(contentId, userId);
 
         // then
-        verify(redisWatchingSessionRepository, times(1))
-                .addWatchingSession(any(), eq(contentId), eq(userId));
-
-        verify(redisWatchingSessionRepository, times(1))
-                .countWatchingSessionByContentId(contentId);
-
-        verify(userRepository, times(1)).findById(userId);
-        verify(contentRepository, times(1)).findById(contentId);
-        verify(tagRepository, times(1)).findByContentId(contentId);
-
-        verify(publisher, times(1))
-                .publish(eq(contentId), eventCaptor.capture());
+        verify(redisWatchingSessionRepository).addWatchingSession(any(), eq(contentId), eq(userId));
+        verify(redisWatchingSessionRepository).countWatchingSessionByContentId(contentId);
+        verify(userRepository).findById(userId);
+        verify(contentRepository).findById(contentId);
+        verify(tagRepository).findByContentId(contentId);
+        verify(publisher).publishWatching(eq(contentId), eventCaptor.capture());
 
         WatchingSessionChange event = eventCaptor.getValue();
         assertThat(event.type()).isEqualTo(ChangeType.JOIN);
@@ -113,6 +110,22 @@ class BasicWatchingSessionServiceTest {
     @DisplayName("leave() 호출 시 removeWatchingSession, countWatchingSession, publish 순서대로 호출")
     void leaveShouldPerformAllSteps() {
         // given
+        User user = WatchingSessionFixtures.user();
+        when(userRepository.findById(any())).thenReturn(Optional.of(user));
+
+        UserDto userDto = WatchingSessionFixtures.userDto();
+        when(userMapper.toDto(any())).thenReturn(userDto);
+
+        Content content = WatchingSessionFixtures.content();
+        ContentDto contentDto = WatchingSessionFixtures.contentDto();
+        when(contentMapper.toDto(any(), any())).thenReturn(contentDto);
+        List<Tag> tags = WatchingSessionFixtures.tagList();
+
+        when(contentRepository.findById(any())).thenReturn(Optional.of(content));
+        when(tagRepository.findByContentId(any())).thenReturn(tags);
+        when(redisWatchingSessionRepository.countWatchingSessionByContentId(any()))
+                .thenReturn(3L);
+
         RawWatchingSession raw = WatchingSessionFixtures.rawWatchingSession();
         when(redisWatchingSessionRepository.removeWatchingSession(eq(userId)))
                 .thenReturn(raw);
@@ -121,22 +134,44 @@ class BasicWatchingSessionServiceTest {
         watchingSessionService.leave(contentId, userId);
 
         // then
-        verify(redisWatchingSessionRepository, times(1))
-                .removeWatchingSession(userId);
-
-        verify(redisWatchingSessionRepository, times(1))
-                .countWatchingSessionByContentId(contentId);
-
-        verify(userRepository, times(1)).findById(userId);
-        verify(contentRepository, times(1)).findById(contentId);
-        verify(tagRepository, times(1)).findByContentId(contentId);
-
-        verify(publisher, times(1))
-                .publish(eq(contentId), eventCaptor.capture());
+        verify(redisWatchingSessionRepository).removeWatchingSession(userId);
+        verify(redisWatchingSessionRepository).countWatchingSessionByContentId(contentId);
+        verify(userRepository).findById(userId);
+        verify(contentRepository).findById(contentId);
+        verify(tagRepository).findByContentId(contentId);
+        verify(publisher).publishWatching(eq(contentId), eventCaptor.capture());
 
         WatchingSessionChange event = eventCaptor.getValue();
         assertThat(event.type()).isEqualTo(ChangeType.LEAVE);
         assertThat(event.watcherCount()).isEqualTo(3L);
         assertThat(event.watchingSession()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("sendChat 호출 시 Redis 저장 후 Chat publish 호출")
+    void sendChatShouldPublishChatEvent() {
+        RawContentChat raw = new RawContentChat(userId, "hello");
+        when(redisWatchingSessionRepository.addChat(eq(contentId), eq(userId), anyString()))
+                .thenReturn(raw);
+
+        User user = mock(User.class);
+        when(user.getId()).thenReturn(userId);
+        when(user.getName()).thenReturn("name");
+        when(user.getProfileImageUrl()).thenReturn("profileImageUrl");
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        // when
+        ContentChatSendRequest request = new ContentChatSendRequest("hello");
+        watchingSessionService.sendChat(contentId, userId, request);
+
+        // then
+        verify(redisWatchingSessionRepository).addChat(eq(contentId), eq(userId), anyString());
+        verify(publisher).publishChat(eq(contentId), contentChatCaptor.capture());
+
+        ContentChatDto publishedDto = contentChatCaptor.getValue();
+        assertThat(publishedDto.sender().userId()).isEqualTo(userId);
+        assertThat(publishedDto.sender().name()).isEqualTo("name");
+        assertThat(publishedDto.sender().profileImageUrl()).isEqualTo("profileImageUrl");
+        assertThat(publishedDto.content()).isEqualTo("hello");
     }
 }

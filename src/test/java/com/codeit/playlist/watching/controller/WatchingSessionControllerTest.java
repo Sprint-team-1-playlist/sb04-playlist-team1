@@ -3,6 +3,7 @@ package com.codeit.playlist.watching.controller;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.watching.controller.WatchingSessionController;
+import com.codeit.playlist.domain.watching.dto.request.ContentChatSendRequest;
 import com.codeit.playlist.domain.watching.service.WatchingSessionService;
 import com.codeit.playlist.watching.fixture.WatchingSessionFixtures;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +20,7 @@ import java.util.UUID;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class WebSocketControllerTest {
+class WatchingSessionControllerTest {
     @InjectMocks
     private WatchingSessionController webSocketController;
 
@@ -64,5 +65,20 @@ class WebSocketControllerTest {
 
         // then
         verify(watchingSessionService, times(1)).leave(contentId, userId);
+    }
+
+    @Test
+    @DisplayName("sendChat 호출 시 watchingSessionService.sendChat()이 호출됨")
+    void sendChatShouldCallService() {
+        // given
+        UUID userId = userDto.id();
+        ContentChatSendRequest request = new ContentChatSendRequest("hello");
+
+        // when
+        webSocketController.sendChat(contentId, authentication, request);
+
+        // then
+        verify(watchingSessionService, times(1))
+                .sendChat(contentId, userId, request);
     }
 }
