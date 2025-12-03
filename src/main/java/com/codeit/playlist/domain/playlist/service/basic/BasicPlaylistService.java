@@ -1,6 +1,7 @@
 package com.codeit.playlist.domain.playlist.service.basic;
 
 import com.codeit.playlist.domain.base.SortDirection;
+import com.codeit.playlist.domain.content.repository.TagRepository;
 import com.codeit.playlist.domain.follow.repository.FollowRepository;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.codeit.playlist.domain.notification.entity.Level;
@@ -14,6 +15,7 @@ import com.codeit.playlist.domain.playlist.exception.PlaylistAccessDeniedExcepti
 import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
 import com.codeit.playlist.domain.playlist.mapper.PlaylistMapper;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
+import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.playlist.service.PlaylistService;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
@@ -30,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -39,11 +42,13 @@ import java.util.UUID;
 public class BasicPlaylistService implements PlaylistService {
 
     private final PlaylistRepository playlistRepository;
+    private final SubscribeRepository subscribeRepository;
     private final UserRepository userRepository;
     private final PlaylistMapper playlistMapper;
     private final FollowRepository followRepository;
     private final ObjectMapper objectMapper;                       // Kafka payload 직렬화
     private final KafkaTemplate<String, String> kafkaTemplate;    //  Kafka 발행
+    private final TagRepository tagRepository;
 
     //플레이리스트 생성
     @Override
@@ -241,18 +246,27 @@ public class BasicPlaylistService implements PlaylistService {
     //플레이리스트 단건 조회
     @Transactional(readOnly = true)
     @Override
-    public PlaylistDto getPlaylist(UUID playlistId) {
+    public PlaylistDto getPlaylist(UUID playlistId, UUID currentUserId) {
         log.debug("[플레이리스트] 단건 조회 시작: playlistId= {}", playlistId);
 
         //플레이리스트와 연관 객체 로딩
         Playlist playlist = playlistRepository.findWithDetailsById(playlistId)
                 .orElseThrow(() -> PlaylistNotFoundException.withId(playlistId));
 
-        //로그인 사용자의 구독 여부(임시) -> 구독 구현 시 변경 예정
-        boolean subscribedByMe = false;
+        List<UUID> contentIds = playlist.getPlaylistContents().stream()
+                .map(pc -> pc.getContent().getId())
+                .toList();
+
+        Map<UUID, List<String>> tagMap = tagRepository.findTagsByContentIds(contentIds);
+
+        //로그인한 유저가 해당 플레이리스트를 구독하고 있는지
+        boolean subscribedByMe = currentUserId != null &&
+                subscribeRepository.existsBySubscriber_IdAndPlaylist_Id(currentUserId, playlistId);
+
+
 
         //Entity -> DTO
-        PlaylistDto dto = playlistMapper.toDto(playlist);
+        PlaylistDto dto = playlistMapper.toDto(playlist, tagMap);
 
         PlaylistDto result = new PlaylistDto(
                 dto.id(),

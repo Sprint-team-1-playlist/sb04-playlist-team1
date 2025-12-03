@@ -2,12 +2,12 @@ package com.codeit.playlist.notification.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.notification.controller.NotificationController;
+import com.codeit.playlist.domain.notification.dto.data.NotificationSortBy;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
 import com.codeit.playlist.domain.notification.service.NotificationService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.global.config.JpaConfig;
-import com.codeit.playlist.global.error.InvalidSortByException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,6 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
@@ -99,7 +98,7 @@ public class NotificationControllerTest {
                 isNull(),
                 eq(10),
                 eq(SortDirection.DESCENDING),
-                eq("createdAt")
+                eq(NotificationSortBy.createdAt)
         )).willReturn(responseDto);
 
         // when & then
@@ -119,7 +118,7 @@ public class NotificationControllerTest {
                 isNull(),
                 eq(10),
                 eq(SortDirection.DESCENDING),
-                eq("createdAt")
+                eq(NotificationSortBy.createdAt)
         );
     }
 
@@ -130,15 +129,6 @@ public class NotificationControllerTest {
         UUID userId = UUID.randomUUID();
         Authentication authentication = createAuthentication(userId);
 
-        given(notificationService.getAllNotifications(
-                eq(userId),
-                any(),              // cursor
-                any(),              // idAfter
-                anyInt(),           // limit
-                any(),              // sortDirection
-                eq("wrongField")    // sortBy
-        )).willThrow(InvalidSortByException.withSortBy("wrongField"));
-
         // when & then
         mockMvc.perform(get("/api/notifications")
                         .param("limit", "10")
@@ -147,14 +137,7 @@ public class NotificationControllerTest {
                         .with(authentication(authentication)))
                 .andExpect(status().isBadRequest());
 
-        then(notificationService).should().getAllNotifications(
-                eq(userId),
-                any(),
-                any(),
-                anyInt(),
-                any(),
-                eq("wrongField")
-        );
+        then(notificationService).shouldHaveNoInteractions();
 
     }
 
@@ -187,7 +170,7 @@ public class NotificationControllerTest {
                 any(),
                 anyInt(),
                 any(),
-                anyString()
+                any(NotificationSortBy.class)
         )).willThrow(new RuntimeException("테스트 예외"));
 
         // when & then
@@ -204,7 +187,7 @@ public class NotificationControllerTest {
                 any(),
                 anyInt(),
                 any(),
-                anyString()
+                any(NotificationSortBy.class)
         );
     }
 

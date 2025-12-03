@@ -124,10 +124,13 @@ public class PlaylistController {
 
     //플레이리스트 단건 조회
     @GetMapping("/{playlistId}")
-    public ResponseEntity<PlaylistDto> getPlaylist(@PathVariable UUID playlistId) {
+    public ResponseEntity<PlaylistDto> getPlaylist(@PathVariable UUID playlistId,
+                                                   @AuthenticationPrincipal PlaylistUserDetails userDetails) {
         log.debug("[플레이리스트] 플레이리스트 단건 조회 시작: id = {}", playlistId);
 
-        PlaylistDto response = playlistService.getPlaylist(playlistId);
+        UUID currentUserId = userDetails.getUserDto().id();
+
+        PlaylistDto response = playlistService.getPlaylist(playlistId, currentUserId);
 
         log.info("[플레이리스트] 플레이리스트 단건 조회 성공: id = {}", playlistId);
         return ResponseEntity.ok(response);

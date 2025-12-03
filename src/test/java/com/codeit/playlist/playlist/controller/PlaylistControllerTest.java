@@ -355,7 +355,7 @@ public class PlaylistControllerTest {
                 List.of()
         );
 
-        given(playlistService.getPlaylist(eq(playlistId)))
+        given(playlistService.getPlaylist(eq(playlistId), eq(userId)))
                 .willReturn(dto);
 
         // when & then
@@ -366,7 +366,7 @@ public class PlaylistControllerTest {
                 .andExpect(jsonPath("$.title").value("단건제목"));
 
         then(playlistService).should()
-                .getPlaylist(eq(playlistId));
+                .getPlaylist(eq(playlistId), eq(userId));
     }
 
     @Test
