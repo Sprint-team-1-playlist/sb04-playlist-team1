@@ -148,7 +148,8 @@ public class BasicContentServiceTest {
         assertThat(content.getThumbnailUrl()).isEqualTo(thumbnail);
     }
 
-    @Test void deleteContentSuccess() {
+    @Test
+    void deleteContentSuccess() {
         // given
         UUID contentId = UUID.randomUUID();
         Content content = new Content(
@@ -176,52 +177,44 @@ public class BasicContentServiceTest {
         verify(tagRepository).deleteAllByContentId(contentId);
         verify(contentRepository).deleteById(contentId);
     }
-}
 
-//    @Mock
-//    private ContentRepository contentRepository;
-//
-//    @Mock
-//    private ContentMapper contentMapper;
-//
-//    @Mock
-//    private TagRepository tagRepository;
-//
-//    @InjectMocks
-//    private BasicContentService contentService;
-//
-//
-//    ContentDto contentDto = new ContentDto(
-//            UUID.randomUUID(),
-//            "MOVIE",
-//            "미소된장국으로 건배",
-//            "재밌음",
-//            "exampleUrl",
-//            List.of("러브코미디"),
-//            2.0,
-//            3,
-//            4
-//    );
-//
-//    Tag tag1 = new Tag(content, "러브코미디");
-//    Tag tag2 = new Tag(content, "순정만화");
-//    List<Tag> tags = List.of(tag1, tag2);
-//
-//    @Test
-//    void createContentsSuccess() {
-//        // given
-//        ContentCreateRequest request = new ContentCreateRequest(
-//                "MOVIE",
-//                "미소된장국으로 건배",
-//                "재밌음",
-//                List.of("러브코미디", "순정만화"));
-//        String thumbnail = "thumbnail";
-//        given(contentMapper.toDto(content, tags)).willReturn(contentDto);
-//
-//        // when
-//        ContentDto result = contentService.create(request, thumbnail);
-//
-//        // then
-//        assertThat(result).isEqualTo(contentDto);
-//        verify(contentRepository).save(any(Content.class));
-//    }
+    @Test
+    void searchContentSuccess() {
+        UUID contentId = UUID.randomUUID();
+        String thumbnail = "testThumbnail.jpg";
+        List<String> tags = List.of();
+        // given
+        Content content = new Content(
+                Type.MOVIE,
+                "오가미 츠미키와 기일상",
+                "매우 재밌는 만화",
+                "exampleUrl",
+                3.0,
+                2,
+                3
+        );
+
+        ContentDto contentDto = new ContentDto(
+                contentId,
+                "MOVIE",
+                "오가미 츠미키와 기일상",
+                "매우 재밌는 만화",
+                thumbnail,
+                tags,
+                3.0,
+                2,
+                3
+        );
+
+        given(contentRepository.findById(contentId)).willReturn(Optional.of(content));
+        given(contentMapper.toDto(content)).willReturn(contentDto);
+
+        // when
+        ContentDto result = contentService.search(contentId);
+
+        // then
+        verify(contentRepository).findById(contentId);
+        verify(contentMapper).toDto(content);
+        assertThat(result).usingRecursiveComparison().isEqualTo(contentDto);
+    }
+}
