@@ -1,14 +1,14 @@
 package com.codeit.playlist.domain.user.repository;
 
+import com.codeit.playlist.domain.user.entity.AuthProvider;
 import com.codeit.playlist.domain.user.entity.User;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
-import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
@@ -29,4 +29,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   @Transactional
   @Query("update User u set u.locked = :locked where u.id = :userId")
   void updateUserLocked(@Param("userId") UUID userId, @Param("locked") boolean locked);
+
+  Optional<User> findByEmailAndProvider(String email, AuthProvider provider);
 }
