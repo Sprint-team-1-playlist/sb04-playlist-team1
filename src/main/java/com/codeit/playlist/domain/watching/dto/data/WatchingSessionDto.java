@@ -1,7 +1,7 @@
 package com.codeit.playlist.domain.watching.dto.data;
 
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
-import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.user.dto.data.UserSummary;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -9,7 +9,7 @@ import java.util.UUID;
 public record WatchingSessionDto(
         UUID watchingId,
         LocalDateTime createdAt,
-        UserDto watcher,
+        UserSummary watcher,
         ContentDto content
 ) {
 }
