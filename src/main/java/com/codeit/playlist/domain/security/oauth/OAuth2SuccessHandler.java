@@ -7,6 +7,7 @@ import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.entity.AuthProvider;
 import com.codeit.playlist.domain.user.entity.User;
+import com.codeit.playlist.domain.user.exception.AuthenticationOAuthJwtException;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
@@ -57,7 +58,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         .orElseGet(() -> {
           // 기존 로컬 계정 존재 여부 확인
           if (userRepository.findByEmail(email).isPresent()) {
-            throw new EmailAlreadyExistsException();
+            throw EmailAlreadyExistsException.withEmail(email);
           }
           log.debug("[소셜 로그인] : 신규 소셜 사용자 생성 = {}", email);
           return userRepository.save(User.createOAuthUser(name, email, imageUrl, authProvider));
@@ -78,7 +79,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
       accessToken = tokenProvider.generateAccessToken(userDetails, now);
       refreshToken = tokenProvider.generateRefreshToken(userDetails, now);
     } catch (Exception e) {
-      throw new RuntimeException("[소셜 로그인] : OAuth2 로그인 JWT 생성 실패", e);
+      log.error("[소셜 로그인] : OAuth2 로그인 JWT 생성 실패", e);
+      throw AuthenticationOAuthJwtException.withException("JWT 토큰 생성 실패");
     }
 
     // JWT 저장 정보 생성

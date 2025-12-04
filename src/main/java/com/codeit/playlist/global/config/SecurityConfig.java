@@ -94,7 +94,7 @@ public class SecurityConfig {
             .requestMatchers("/assets/**").permitAll()
 
 
-            //카카오 Oauth
+            //카카오, 구글 Oauth2
             .requestMatchers("/oauth2/**").permitAll()
             .requestMatchers("/login/oauth2/**").permitAll()
             .anyRequest().authenticated()

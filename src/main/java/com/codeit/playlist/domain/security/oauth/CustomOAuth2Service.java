@@ -28,10 +28,10 @@ public class CustomOAuth2Service extends DefaultOAuth2UserService {
     // 여기선 임시 UUID 사용
     UUID tempUserId = UUID.randomUUID();
 
-    return switch (registrationId.toLowerCase()) {
+    return switch (registrationId) {
       case "google" -> mapGoogleUser(oAuth2User, tempUserId);
       case "kakao"  -> mapKakaoUser(oAuth2User, tempUserId);
-      default       -> throw new IllegalArgumentException("지원하지 않는 OAuth Provider: " + registrationId);
+      default       -> throw new IllegalArgumentException("[소셜 로그인] : 지원하지 않는 OAuth Provider: " + registrationId);
     };
   }
 

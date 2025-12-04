@@ -5,12 +5,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 @RequiredArgsConstructor
+@Getter
 public class CustomOAuth2User implements OAuth2User, Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -40,22 +42,6 @@ public class CustomOAuth2User implements OAuth2User, Serializable {
     }
     if (email != null) return email;
     return userId.toString();
-  }
-
-  public UUID getUserId() {
-    return userId;
-  }
-
-  public String getEmail() {
-    return email;
-  }
-
-  public String getProfileImageUrl() {
-    return profileImageUrl;
-  }
-
-  public String getProvider() {
-    return provider;
   }
 
 }
