@@ -291,7 +291,7 @@ public class BasicPlaylistServiceTest {
         assertThat(result.nextCursor()).isEqualTo(lastId.toString());
         assertThat(result.nextIdAfter()).isEqualTo(lastId);
         assertThat(result.totalCount()).isEqualTo(10L);
-        assertThat(result.sortBy()).isEqualTo(sortBy);
+        assertThat(result.sortBy()).isEqualTo(sortBy.name());
         assertThat(result.sortDirection()).isEqualTo(SortDirection.DESCENDING);
 
         verify(playlistRepository).searchPlaylists(
@@ -301,7 +301,7 @@ public class BasicPlaylistServiceTest {
                 eq(false),       // cursor/idAfter 없으므로 hasCursor=false
                 isNull(),        // cursorId=null
                 eq(false),       // DESCENDING → asc=false
-                eq(sortBy),
+                eq(sortBy.name()),
                 any()
         );
         verify(playlistRepository).countPlaylists(keywordLike, ownerId, subscriberId);
@@ -349,7 +349,7 @@ public class BasicPlaylistServiceTest {
                 eq(false),
                 isNull(),
                 eq(true),
-                eq(PlaylistSortBy.updatedAt),
+                eq(PlaylistSortBy.updatedAt.name()),
                 any()
         );
     }
