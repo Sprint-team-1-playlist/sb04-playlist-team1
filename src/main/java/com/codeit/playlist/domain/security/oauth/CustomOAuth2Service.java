@@ -1,6 +1,5 @@
 package com.codeit.playlist.domain.security.oauth;
 
-import com.codeit.playlist.domain.user.repository.UserRepository;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -39,8 +38,12 @@ public class CustomOAuth2Service extends DefaultOAuth2UserService {
   private CustomOAuth2User mapKakaoUser(OAuth2User oAuth2User, UUID userId) {
     Map<String, Object> attributes = oAuth2User.getAttributes();
 
-    Map<String, Object> account =
-        (Map<String, Object>) attributes.get("kakao_account");
+    Object accountObj = attributes.get("kakao_account");
+    if (!(accountObj instanceof Map)) {
+      throw new OAuth2AuthenticationException("카카오 계정 정보를 가져올 수 없습니다.");
+    }
+    @SuppressWarnings("unchecked")
+    Map<String, Object> account = (Map<String, Object>) accountObj;
 
     String email = account != null ? (String) account.get("email") : null;
 
@@ -48,7 +51,9 @@ public class CustomOAuth2Service extends DefaultOAuth2UserService {
       throw new OAuth2AuthenticationException("카카오 로그인 시 이메일 제공이 필요합니다.");
     }
 
-    Map<String, Object> profile = (Map<String, Object>) account.get("profile");
+    Object profileObj = account.get("profile");
+    @SuppressWarnings("unchecked")
+        Map<String, Object> profile = profileObj instanceof Map ? (Map<String, Object>) profileObj : null;
 
     String name = profile != null ? (String) profile.get("nickname") : null;
     String picture = profile != null ? (String) profile.get("profile_image_url") : null;
