@@ -243,4 +243,15 @@ public class BasicContentService implements ContentService {
         log.debug("[콘텐츠 데이터 관리] 커서 페이지네이션 컨텐츠 수집 완료, response = {}", responseDto);
         return responseDto;
     }
+
+    @Transactional
+    public ContentDto search(UUID contentId) {
+        log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 시작, contentId : {}",contentId);
+        Content searchContent = contentRepository.findById(contentId)
+                .orElseThrow(() -> ContentNotFoundException.withId(contentId));
+        List<Tag> tags = tagRepository.findByContentId(searchContent.getId());
+        log.info("[콘텐츠 데이터] 확인용 Tag : {} ", tags);
+        log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 완료, searchContent : {}", searchContent);
+        return contentMapper.toDto(searchContent,tags);
+    }
 }
