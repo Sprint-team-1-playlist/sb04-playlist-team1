@@ -21,7 +21,7 @@ public enum UserErrorCode implements ErrorCode {
   PASSWORD_MUST_8_CHARACTERS(HttpStatus.BAD_REQUEST.value(), "비밀번호는 최소 8자리 이상이여야합니다."),
   LOCK_STATE_UNCHANGED(HttpStatus.CONFLICT.value(), "잠금 상태가 이전과 같습니다."),
   AUTHENTICATION_OAUTH2_JWT_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR.value(), "OAuth2 로그인 JWT 생성 실패"),
-  OAUTH2_NOT_EMAIL_EXCEPTION(HttpStatus.UNAUTHORIZED.value(), "소셜 로그인시 이메일은 필수입니다."),
+  OAUTH2_NOT_EMAIL_EXCEPTION(HttpStatus.BAD_REQUEST.value(), "소셜 로그인시 이메일은 필수입니다."),
 
   USER_NAME_REQUIRED(HttpStatus.BAD_REQUEST.value(), "사용자 이름은 필수 입력값입니다.");
   private final int status;
