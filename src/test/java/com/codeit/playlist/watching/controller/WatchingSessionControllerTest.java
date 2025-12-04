@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 
+import java.security.Principal;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;
@@ -36,35 +37,23 @@ class WatchingSessionControllerTest {
 
     @BeforeEach
     void setUp() {
-        // principal → authentication → playlistUserDetails → userDto
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUserDto()).thenReturn(userDto);
     }
 
     @Test
     @DisplayName("joinWatching 호출 시 watchingSessionService.join()이 호출됨")
-    void joinWatchingShouldCallService() {
+    void watchingShouldCallService() {
         // given
         UUID userId = userDto.id();
+        Principal principal = authentication;
 
         // when
-        webSocketController.joinWatching(contentId, authentication);
+        webSocketController.watching(contentId, principal);
 
         // then
-        verify(watchingSessionService, times(1)).join(contentId, userId);
-    }
-
-    @Test
-    @DisplayName("leaveWatching 호출 시 watchingSessionService.leave()이 호출됨")
-    void leaveWatchingShouldCallService() {
-        // given
-        UUID userId = userDto.id();
-
-        // when
-        webSocketController.leaveWatching(contentId, authentication);
-
-        // then
-        verify(watchingSessionService, times(1)).leave(contentId, userId);
+        verify(watchingSessionService, times(1))
+                .watching(contentId, userId);
     }
 
     @Test
@@ -72,10 +61,11 @@ class WatchingSessionControllerTest {
     void sendChatShouldCallService() {
         // given
         UUID userId = userDto.id();
+        Principal principal = authentication;
         ContentChatSendRequest request = new ContentChatSendRequest("hello");
 
         // when
-        webSocketController.sendChat(contentId, authentication, request);
+        webSocketController.sendChat(contentId, principal, request);
 
         // then
         verify(watchingSessionService, times(1))

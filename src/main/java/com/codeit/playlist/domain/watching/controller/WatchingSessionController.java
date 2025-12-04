@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
@@ -20,20 +21,14 @@ import java.util.UUID;
 public class WatchingSessionController {
     private final WatchingSessionService watchingSessionService;
 
-    @MessageMapping("/watch/join")
-    public void joinWatching(@DestinationVariable UUID contentId, Principal principal) {
+    @SubscribeMapping("/watch")
+    public void watching(@DestinationVariable UUID contentId,
+                                          Principal principal) {
         UUID userId = getUserId(principal);
-        log.debug("[실시간 같이 보기] 시청자 join 요청 시작: contentId={}, userId={}", contentId, userId);
-        watchingSessionService.join(contentId, userId);
-        log.info("[실시간 같이 보기] 시청자 join 요청 성공: contentId={}, userId={}", contentId, userId);
-    }
+        log.debug("[실시간 같이 보기] 콘텐츠 시청 세션 시작: contentId={}, userId={}", contentId, userId);
+        watchingSessionService.watching(contentId, userId);
 
-    @MessageMapping("/watch/leave")
-    public void leaveWatching(@DestinationVariable UUID contentId, Principal principal) {
-        UUID userId = getUserId(principal);
-        log.debug("[실시간 같이 보기] 시청자 leave 요청 시작: contentId={}, userId={}", contentId, userId);
-        watchingSessionService.leave(contentId, userId);
-        log.info("[실시간 같이 보기] 시청자 leave 요청 성공: contentId={}, userId={}", contentId, userId);
+        log.info("[실시간 같이 보기] 콘텐츠 시청 세션 성공: contentId={}, userId={}", contentId, userId);
     }
 
     @MessageMapping("/chat")

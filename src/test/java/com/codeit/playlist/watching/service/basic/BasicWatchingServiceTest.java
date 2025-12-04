@@ -11,8 +11,8 @@ import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
-import com.codeit.playlist.domain.watching.dto.data.WatchingSortBy;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
+import com.codeit.playlist.domain.watching.dto.data.WatchingSortBy;
 import com.codeit.playlist.domain.watching.dto.response.CursorResponseWatchingSessionDto;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.domain.watching.service.basic.BasicWatchingService;
@@ -75,7 +75,6 @@ class BasicWatchingServiceTest {
         when(tagRepository.findByContentId(raw.contentId())).thenReturn(tags);
 
         WatchingSessionDto watchingSessionDto = WatchingSessionFixtures.watchingSessionDto();
-        when(userMapper.toDto(user)).thenReturn(WatchingSessionFixtures.userDto());
         when(contentMapper.toDto(content, tags)).thenReturn(watchingSessionDto.content());
 
         // when
@@ -102,7 +101,7 @@ class BasicWatchingServiceTest {
         verify(contentRepository, times(1)).findById(raw.contentId());
         verify(tagRepository, times(1)).findByContentId(raw.contentId());
 
-        assertThat(response.watchingSessions()).hasSize(1);
+        assertThat(response.data()).hasSize(1);
         assertThat(response.totalCount()).isEqualTo(10L);
         assertThat(response.nextCursor()).isNotNull();
         assertThat(response.nextIdAfter()).isNotNull();
@@ -126,38 +125,42 @@ class BasicWatchingServiceTest {
     }
 
     @Test
-    @DisplayName("사용자의 시청 세션 조회, 세션이 있으면 DTO 반환")
+    @DisplayName("사용자의 시청 세션 조회 성공")
     void getWatchingSessionByUserSuccess() {
         // given
-        UUID userId = WatchingSessionFixtures.FIXED_ID;
-        RawWatchingSession raw = WatchingSessionFixtures.rawWatchingSession();
-
-        when(redisWatchingSessionRepository.getWatchingSessionByUser(userId)).thenReturn(raw);
-
+        UUID userId = raw.userId();
         User user = WatchingSessionFixtures.user();
         Content content = WatchingSessionFixtures.content();
         List<Tag> tags = WatchingSessionFixtures.tagList();
 
-        when(userRepository.findById(raw.userId())).thenReturn(Optional.of(user));
-        when(contentRepository.findById(raw.contentId())).thenReturn(Optional.of(content));
-        when(tagRepository.findByContentId(raw.contentId())).thenReturn(tags);
-        when(userMapper.toDto(user)).thenReturn(WatchingSessionFixtures.userDto());
-        when(contentMapper.toDto(content, tags)).thenReturn(WatchingSessionFixtures.contentDto());
+        when(redisWatchingSessionRepository.getWatchingSessionByUser(userId))
+                .thenReturn(raw);
+        when(userRepository.findById(raw.userId()))
+                .thenReturn(Optional.of(user));
+        when(contentRepository.findById(raw.contentId()))
+                .thenReturn(Optional.of(content));
+        when(tagRepository.findByContentId(raw.contentId()))
+                .thenReturn(tags);
+        when(userMapper.toUserSummary(user))
+                .thenReturn(WatchingSessionFixtures.userSummary());
+        when(contentMapper.toDto(content, tags))
+                .thenReturn(WatchingSessionFixtures.contentDto());
 
         // when
-        WatchingSessionDto dto = watchingService.getWatchingSessionByUser(userId);
+        WatchingSessionDto result = watchingService.getWatchingSessionByUser(userId);
 
         // then
-        assertThat(dto).isNotNull();
-        assertThat(dto.watcher().id()).isEqualTo(WatchingSessionFixtures.userDto().id());
-        assertThat(dto.content().id()).isEqualTo(WatchingSessionFixtures.contentDto().id());
-        assertThat(dto.watchingId()).isEqualTo(raw.watchingId());
+        assertThat(result).isNotNull();
+        assertThat(result.watcher()).isNotNull();
+        assertThat(result.content()).isNotNull();
 
-        verify(redisWatchingSessionRepository, times(1)).getWatchingSessionByUser(userId);
+        verify(redisWatchingSessionRepository, times(1))
+                .getWatchingSessionByUser(userId);
         verify(userRepository, times(1)).findById(raw.userId());
         verify(contentRepository, times(1)).findById(raw.contentId());
         verify(tagRepository, times(1)).findByContentId(raw.contentId());
-        verify(userMapper, times(1)).toDto(user);
+        verify(userMapper, times(1)).toUserSummary(user);
         verify(contentMapper, times(1)).toDto(content, tags);
     }
+
 }

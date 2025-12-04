@@ -20,7 +20,6 @@ import com.codeit.playlist.domain.watching.dto.response.ContentChatDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
 import com.codeit.playlist.domain.watching.exception.EventBroadcastFailedException;
-import com.codeit.playlist.domain.watching.exception.WatchingSessionMismatch;
 import com.codeit.playlist.domain.watching.exception.WatchingSessionUpdateException;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.domain.watching.service.WatchingSessionService;
@@ -48,9 +47,10 @@ public class BasicWatchingSessionService implements WatchingSessionService {
     private final TagRepository tagRepository;
 
     @Override
-    public void join(UUID contentId, UUID userId) {
+    public void watching(UUID contentId, UUID userId) {
         UUID watchingId = UUID.randomUUID();
-        log.debug("[실시간 같이 보기] join 시작: watchingId={}, contentId={}, userId={}", watchingId, contentId, userId);
+        log.debug("[실시간 같이 보기] 콘텐츠 시청 세션 시작: " +
+                "watchingId={}, contentId={}, userId={}", watchingId, contentId, userId);
 
         RawWatchingSession raw = redisWatchingSessionRepository.addWatchingSession(watchingId, contentId, userId);
         if (raw == null) {
@@ -59,23 +59,6 @@ public class BasicWatchingSessionService implements WatchingSessionService {
         }
 
         broadcastWatchingEvent(raw, ChangeType.JOIN);
-    }
-
-    @Override
-    public void leave(UUID contentId, UUID userId) {
-        log.debug("[실시간 같이 보기] leave 시작: contentId={}, userId={}", contentId, userId);
-
-        RawWatchingSession raw = redisWatchingSessionRepository.removeWatchingSession(userId);
-        if (raw == null) {
-            log.error("[실시간 같이 보기] Redis 오류: contentId={}, userId={}", contentId, userId);
-            throw new WatchingSessionUpdateException();
-        }
-        if (!contentId.equals(raw.contentId())) {
-            log.error("[실시간 같이 보기] 세션 정보 불일치");
-            throw WatchingSessionMismatch.withWatchingIdAndContentId(raw.watchingId(), raw.contentId());
-        }
-
-        broadcastWatchingEvent(raw, ChangeType.LEAVE);
     }
 
     @Override
@@ -113,7 +96,7 @@ public class BasicWatchingSessionService implements WatchingSessionService {
         return new WatchingSessionDto(
                 raw.watchingId(),
                 createdAt,
-                userMapper.toDto(user),
+                userMapper.toUserSummary(user),
                 contentMapper.toDto(content, tags)
         );
     }
@@ -143,7 +126,7 @@ public class BasicWatchingSessionService implements WatchingSessionService {
             log.info("[실시간 같이 보기] {} 이벤트 생성 완료: watcherCount={}", type, watcherCount);
         } catch (UserNotFoundException | ContentNotFoundException e) {
             log.warn("[실시간 같이 보기] {} 이벤트 생성 실패, count({})만 브로드캐스트:{}", type, watcherCount, e.getMessage());
-            WatchingSessionChange event = new WatchingSessionChange(type, null, watcherCount); // TODO: FE 에서 null 받는지 체크
+            WatchingSessionChange event = new WatchingSessionChange(type, null, watcherCount);
             publisher.publishWatching(raw.contentId(), event);
         }
     }
