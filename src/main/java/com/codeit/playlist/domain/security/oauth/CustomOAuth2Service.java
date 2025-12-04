@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
@@ -31,8 +32,10 @@ public class CustomOAuth2Service extends DefaultOAuth2UserService {
 
     return switch (registrationId) {
       case "google" -> mapGoogleUser(oAuth2User, tempUserId);
-      case "kakao"  -> mapKakaoUser(oAuth2User, tempUserId);
-      default       -> throw new IllegalArgumentException("[소셜 로그인] : 지원하지 않는 OAuth Provider: " + registrationId);
+      case "kakao" -> mapKakaoUser(oAuth2User, tempUserId);
+      default -> throw new OAuth2AuthenticationException(
+          "[소셜 로그인] : 지원하지 않는 OAuth Provider: " + registrationId
+      );
     };
   }
 
@@ -41,8 +44,9 @@ public class CustomOAuth2Service extends DefaultOAuth2UserService {
 
     Object accountObj = attributes.get("kakao_account");
     if (!(accountObj instanceof Map)) {
-      throw new OAuth2AuthenticationException("카카오 계정 정보를 가져올 수 없습니다.");
-    }
+        OAuth2Error error = new OAuth2Error("invalid_response", "카카오 계정 정보를 가져올 수 없습니다.", null);
+        throw new OAuth2AuthenticationException(error);
+        }
     @SuppressWarnings("unchecked")
     Map<String, Object> account = (Map<String, Object>) accountObj;
 

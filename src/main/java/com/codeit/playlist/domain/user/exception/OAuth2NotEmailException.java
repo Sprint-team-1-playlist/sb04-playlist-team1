@@ -8,8 +8,8 @@ public class OAuth2NotEmailException extends UserException {
     super(UserErrorCode.OAUTH2_NOT_EMAIL_EXCEPTION);
   }
 
-  public static AuthenticationOAuthJwtException withId(UUID userId) {
-    AuthenticationOAuthJwtException exception = new AuthenticationOAuthJwtException();
+  public static OAuth2NotEmailException withId(UUID userId) {
+    OAuth2NotEmailException exception = new OAuth2NotEmailException();
     exception.addDetail("userId", userId);
     return exception;
   }

@@ -93,6 +93,7 @@ public class User extends BaseUpdatableEntity {
 
   // Oauth 소셜 로그인을 위함 정적 팩토리 메서드
   public static User createOAuthUser(String name, String email,  String imageUrl, AuthProvider provider) {
+    java.util.Objects.requireNonNull(provider, "AuthProvider must not be null for OAuth user");
     User user = new User();
     user.name = name;
     user.email = email;
