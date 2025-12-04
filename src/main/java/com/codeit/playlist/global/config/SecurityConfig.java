@@ -1,8 +1,5 @@
 package com.codeit.playlist.global.config;
 
-import static org.springframework.http.HttpMethod.PATCH;
-import static org.springframework.http.HttpMethod.POST;
-
 import com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter;
 import com.codeit.playlist.domain.security.jwt.JwtLogoutSuccessHandler;
 import com.codeit.playlist.domain.security.oauth.CustomOAuth2Service;
@@ -23,8 +20,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -41,26 +36,7 @@ public class SecurityConfig {
       JwtAuthenticationFilter jwtAuthenticationFilter,
       JwtLogoutSuccessHandler jwtLogoutSuccessHandler) throws Exception {
     return http
-        .csrf(csrf -> csrf
-            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-            .ignoringRequestMatchers(
-                new AntPathRequestMatcher("/"),
-                new AntPathRequestMatcher("/error"),
-                new AntPathRequestMatcher("/index.html"),
-                new AntPathRequestMatcher("/vite.svg"),
-                new AntPathRequestMatcher("/assets/**"),
-                new AntPathRequestMatcher("/api/auth/sign-in"),
-                new AntPathRequestMatcher("/api/auth/sign-up"),
-                new AntPathRequestMatcher("/api/auth/reset-password"),
-                new AntPathRequestMatcher("/api/auth/sign-out"),
-                new AntPathRequestMatcher("/api/users/*/password"),
-                new AntPathRequestMatcher("/api/users", POST.name()),
-                new AntPathRequestMatcher("/api/users/*/role"),
-                new AntPathRequestMatcher("/api/users/*/locked"),
-                new AntPathRequestMatcher("/api/users/*", PATCH.name()),
-                new AntPathRequestMatcher("/api/auth/refresh")
-            )
-        )
+        .csrf(AbstractHttpConfigurer::disable)
 
         .formLogin(AbstractHttpConfigurer::disable)
 
