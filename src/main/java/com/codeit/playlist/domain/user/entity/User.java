@@ -96,7 +96,7 @@ public class User extends BaseUpdatableEntity {
     User user = new User();
     user.name = name;
     user.email = email;
-    user.password = "";      // 소셜 유저는 패스워드 없음
+    user.password = java.util.UUID.randomUUID().toString();      // 소셜 유저는 로그인 불가능한 랜덤 패스워드
     user.provider = provider;
     user.role = Role.USER;
     user.locked = false;
