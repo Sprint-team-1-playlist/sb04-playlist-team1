@@ -3,6 +3,7 @@ package com.codeit.playlist.domain.security.jwt;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -35,6 +36,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       FilterChain filterChain) throws ServletException, IOException {
 
     String uri = request.getRequestURI();
+    String method = request.getMethod();
+
+    // POST /api/users (회원가입)만 제외
+    if ("POST".equals(method) && uri.equals("/api/users")
+        || uri.startsWith("/login/oauth2/")
+        || uri.startsWith("/oauth2/")) {
+      filterChain.doFilter(request, response);
+      return;
+    }
 
     if (isExcludedPath(uri)) {
       filterChain.doFilter(request, response);
@@ -85,6 +95,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     String bearerToken = request.getHeader("Authorization");
     if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
       return bearerToken.substring(7);
+    }
+
+    if (request.getCookies() != null) {
+      for (Cookie cookie : request.getCookies()) {
+        if (cookie.getName().equals("ACCESS_TOKEN")) {
+          return cookie.getValue();
+        }
+      }
     }
     return null;
   }

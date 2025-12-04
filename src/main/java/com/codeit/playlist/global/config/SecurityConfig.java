@@ -1,7 +1,12 @@
 package com.codeit.playlist.global.config;
 
+import static org.springframework.http.HttpMethod.PATCH;
+import static org.springframework.http.HttpMethod.POST;
+
 import com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter;
 import com.codeit.playlist.domain.security.jwt.JwtLogoutSuccessHandler;
+import com.codeit.playlist.domain.security.oauth.CustomOAuth2Service;
+import com.codeit.playlist.domain.security.oauth.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -16,13 +21,10 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
-import static org.springframework.http.HttpMethod.PATCH;
-import static org.springframework.http.HttpMethod.POST;
 
 @Configuration
 @EnableWebSecurity
@@ -30,6 +32,9 @@ import static org.springframework.http.HttpMethod.POST;
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+  private final CustomOAuth2Service customOAuth2Service;
+  private final OAuth2SuccessHandler  oAuth2SuccessHandler;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http,
@@ -52,7 +57,8 @@ public class SecurityConfig {
                 new AntPathRequestMatcher("/api/users", POST.name()),
                 new AntPathRequestMatcher("/api/users/*/role"),
                 new AntPathRequestMatcher("/api/users/*/locked"),
-                new AntPathRequestMatcher("/api/users/*", PATCH.name())
+                new AntPathRequestMatcher("/api/users/*", PATCH.name()),
+                new AntPathRequestMatcher("/api/auth/refresh")
             )
         )
 
@@ -64,7 +70,7 @@ public class SecurityConfig {
         )
 
         .sessionManagement(session ->
-            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
 
         )
         .authorizeHttpRequests((authorize) -> authorize
@@ -86,9 +92,23 @@ public class SecurityConfig {
             .requestMatchers("/index.html").permitAll()
             .requestMatchers("/vite.svg").permitAll()
             .requestMatchers("/assets/**").permitAll()
+
+
+            //카카오, 구글 Oauth2
+            .requestMatchers("/oauth2/**").permitAll()
+            .requestMatchers("/login/oauth2/**").permitAll()
             .anyRequest().authenticated()
+
+
         )
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+
+        .oauth2Login(oauth -> oauth
+            .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2Service))
+            .successHandler(oAuth2SuccessHandler)
+        )
+
+        .addFilterAfter(jwtAuthenticationFilter, OAuth2LoginAuthenticationFilter.class)
 
         .build();
   }
