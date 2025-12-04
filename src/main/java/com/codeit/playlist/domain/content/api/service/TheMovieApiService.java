@@ -25,15 +25,18 @@ public class TheMovieApiService {
     @Value("${TMDB_API_KEY}")
     private String apikey; // tmdb API key
 
-    private Mono<TheMovieListResponse> callTheMovieApi(String query, String path) {
-        log.info("[콘텐츠 데이터 관리] TheMovie API 빌드 시작, callTheMovieApi query : {}, path : {}", query, path);
+    private final int firstPage = 1;
+    private final int maxPage = 3;
+
+    private Mono<TheMovieListResponse> callTheMovieApi(String query, String path, int page) {
+        log.info("[콘텐츠 데이터 관리] TheMovie API Mono 빌드 시작, callTheMovieApi query : {}, path : {}", query, path);
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .scheme("https")
                         .host("api.themoviedb.org")
                         .path(path)
                         .queryParam("api_key", apikey)
-                        .query(query)
+                        .query(query + "&page=" + page)
                         .build())
                 .retrieve()
                 .onStatus(s -> s.value() == 429, clientResponse -> clientResponse.createException().flatMap(Mono::error))
@@ -44,17 +47,36 @@ public class TheMovieApiService {
                                 .transientErrors(true)
                 )
                 .doOnError(WebClientResponseException.class,
-                        e -> log.error("[콘텐츠 데이터 관리] TheMovie API {} 수집 오류 : status = {}, body = {}", query, e.getStatusCode(), e.getResponseBodyAsString()));
+                        e -> log.error("[콘텐츠 데이터 관리] TheMovie API Mono {} 수집 오류 : status = {}, body = {}", query, e.getStatusCode(), e.getResponseBodyAsString()));
     }
 
     private Flux<TheMovieResponse> fluxingTheMovieApi(String query, String path) {
-        log.info("[콘텐츠 데이터 관리] TheMovie API 빌드 시작, fluxingTheMovieApi query : {}, path : {}", query, path);
-        return callTheMovieApi(query, path)
-                    .flatMapMany(res -> {
-                       if(res.results() == null || res.results().isEmpty()) {
+        log.info("[콘텐츠 데이터 관리] TheMovie API Flux 빌드 시작, fluxingTheMovieApi query : {}, path : {}", query, path);
+        return callTheMovieApi(query, path, firstPage)
+                    .flatMapMany(firstPageResponse -> {
+                       if(firstPageResponse.results() == null || firstPageResponse.results().isEmpty()) {
                            return Flux.empty();
                        }
-                       return Flux.fromIterable(res.results());
+
+                       int totalPages = firstPageResponse.totalPages();
+                        int maxPages = Math.min(totalPages, maxPage);
+
+                       Flux<TheMovieResponse> firstFluxResult = Flux.fromIterable(firstPageResponse.results());
+                       if(totalPages <= 1) { // 만약 totalPages가 1보다 작거나 같다면, firstPage를 그대로 내보냄
+                           return firstFluxResult;
+                       }
+
+                       Flux<TheMovieResponse> afterFluxResult = Flux.range(2, maxPages - 1) // 2부터 maxPage까지
+                               .concatMap(page ->
+                                       callTheMovieApi(query, path, page)
+                                               .flatMapMany(afterResponse -> {
+                                                   if(afterResponse.results() == null || afterResponse.results().isEmpty()) {
+                                                       return Flux.empty();
+                                                   }
+                                                   return Flux.fromIterable(afterResponse.results());
+                                               })
+                               );
+                       return Flux.concat(firstFluxResult, afterFluxResult);
                     });
     }
 

@@ -33,7 +33,7 @@ public class ContentTasklet implements Tasklet {
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
         log.info("[콘텐츠 데이터 관리] TMDB The Movie API 데이터 배치 수집 시작");
 
-        String query = "&language=ko-KR&year=2025";
+        String query = "language=ko-KR&year=2025";
 
         List<TheMovieResponse> movieResponseList = theMovieApiService.getApiMovie(query)
                 .doOnError(e -> log.error("[콘텐츠 데이터 관리] The Movie 배치 Tasklet 스트림 에러 발생 : {}", e.getMessage(), e))
