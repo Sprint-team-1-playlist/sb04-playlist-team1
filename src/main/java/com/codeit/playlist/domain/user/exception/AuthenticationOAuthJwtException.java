@@ -6,9 +6,9 @@ public class AuthenticationOAuthJwtException extends UserException {
     super(UserErrorCode.AUTHENTICATION_OAUTH2_JWT_EXCEPTION);
   }
 
-  public static AuthenticationOAuthJwtException withException(String e) {
+  public static AuthenticationOAuthJwtException withException(String message, String e) {
     AuthenticationOAuthJwtException exception = new AuthenticationOAuthJwtException();
-    exception.addDetail("exception", e);
+    exception.addDetail(message, e);
     return exception;
   }
 }

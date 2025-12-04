@@ -80,7 +80,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
       refreshToken = tokenProvider.generateRefreshToken(userDetails, now);
     } catch (Exception e) {
       log.error("[소셜 로그인] : OAuth2 로그인 JWT 생성 실패", e);
-      throw AuthenticationOAuthJwtException.withException("JWT 토큰 생성 실패");
+      throw AuthenticationOAuthJwtException.withException("JWT 토큰 생성 실패", e.getMessage());
     }
 
     // JWT 저장 정보 생성

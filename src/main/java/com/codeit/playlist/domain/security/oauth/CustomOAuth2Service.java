@@ -1,5 +1,6 @@
 package com.codeit.playlist.domain.security.oauth;
 
+import com.codeit.playlist.domain.user.exception.OAuth2NotEmailException;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +49,7 @@ public class CustomOAuth2Service extends DefaultOAuth2UserService {
     String email = account != null ? (String) account.get("email") : null;
 
     if (email == null || email.isBlank()) {
-      throw new OAuth2AuthenticationException("카카오 로그인 시 이메일 제공이 필요합니다.");
+      throw OAuth2NotEmailException.withId(userId);
     }
 
     Object profileObj = account.get("profile");
@@ -72,7 +73,12 @@ public class CustomOAuth2Service extends DefaultOAuth2UserService {
 
     Map<String, Object> attributes = oAuth2User.getAttributes();
 
+
     String email = (String) attributes.get("email");
+    if (email == null || email.isBlank()) {
+      throw OAuth2NotEmailException.withId(userId);
+    }
+
     String name = (String) attributes.get("name");
     String picture = (String) attributes.get("picture");
 
