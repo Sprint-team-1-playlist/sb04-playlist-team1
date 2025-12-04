@@ -131,10 +131,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         uri.startsWith("/api/auth/sign-out") ||
         uri.startsWith("/api/auth/csrf-token") ||
 
-        uri.startsWith("/api/users") ||
-        uri.startsWith("/oauth2/") ||
-        uri.startsWith("/login/oauth2/") ||
-
         uri.equals("/") ||
         uri.equals("/index.html") ||
         uri.equals("/vite.svg") ||
