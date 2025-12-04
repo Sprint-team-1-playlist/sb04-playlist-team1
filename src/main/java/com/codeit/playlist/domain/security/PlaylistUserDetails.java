@@ -1,6 +1,7 @@
 package com.codeit.playlist.domain.security;
 
 import com.codeit.playlist.domain.user.dto.data.UserDto;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import lombok.EqualsAndHashCode;
@@ -13,7 +14,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 @EqualsAndHashCode
 @Getter
 @RequiredArgsConstructor
-public class PlaylistUserDetails implements UserDetails {
+public class PlaylistUserDetails implements UserDetails, Serializable {
+  private static final long serialVersionUID = 1L;
 
   private final UserDto userDto;
   private final String password;
