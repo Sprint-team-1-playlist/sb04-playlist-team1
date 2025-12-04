@@ -20,4 +20,11 @@ public class WatchingSessionMismatch extends WatchingException {
         exception.addDetail("userId", userId);
         return exception;
     }
+
+    public static WatchingSessionMismatch withPrincipalUserIdAndUserId(UUID userId, UUID principalUserId) {
+        WatchingSessionMismatch exception = new WatchingSessionMismatch();
+        exception.addDetail("userId", userId);
+        exception.addDetail("principalUserId", principalUserId);
+        return exception;
+    }
 }
