@@ -7,6 +7,7 @@ import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.entity.AuthProvider;
 import com.codeit.playlist.domain.user.entity.User;
+import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -28,7 +30,13 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
   private final JwtTokenProvider tokenProvider;
   private final UserRepository userRepository;
   private final UserMapper userMapper;
-  private final DbJwtRegistry  jwtRegistry;
+  private final DbJwtRegistry jwtRegistry;
+
+  @Value("${management.cookie.secure}")
+  private boolean cookieSecure;
+
+  @Value("${oauth2.redirect.base-url:http://localhost:8080}")
+  private String frontendBaseUrl;
 
   @Override
   public void onAuthenticationSuccess(
@@ -44,11 +52,15 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     String provider = oAuth2User.getProvider();
 
     // 사용자 조회 또는 OAuth 전용 신규 생성
-    User user = userRepository.findByEmail(email)
+    AuthProvider authProvider = AuthProvider.valueOf(provider.toUpperCase());
+    User user = userRepository.findByEmailAndProvider(email, authProvider)
         .orElseGet(() -> {
-          log.debug("[소셜 로그인 ] : 신규 소셜 사용자 생성 = {}", email);
-          return userRepository.save(User.createOAuthUser(name, email, imageUrl,
-              AuthProvider.valueOf(provider.toUpperCase())));
+          // 기존 로컬 계정 존재 여부 확인
+          if (userRepository.findByEmail(email).isPresent()) {
+            throw new EmailAlreadyExistsException();
+          }
+          log.debug("[소셜 로그인] : 신규 소셜 사용자 생성 = {}", email);
+          return userRepository.save(User.createOAuthUser(name, email, imageUrl, authProvider));
         });
 
     // User → UserDto 변환 (MapStruct 사용)
@@ -85,7 +97,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     // Refresh Token Cookie 생성
     ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
         .httpOnly(true)
-        .secure(false) // localhost 환경이므로 false, 배포에서는 true 필수
+        .secure(cookieSecure) // localhost 환경이므로 false, 배포에서는 true 필수
         .path("/")
         .sameSite("Lax") // <-- 프론트가 같은 도메인(localhost:8080)이므로 Lax가 안정적
         .maxAge(60 * 60 * 24 * 14) // 14일
@@ -96,7 +108,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     // Access Token Cookie 생성
     ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", accessToken)
         .httpOnly(true)
-        .secure(false)
+        .secure(cookieSecure)
         .path("/")
         .sameSite("Lax")
         .maxAge(60 * 30) // 30분
@@ -106,7 +118,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     //프론트로 Redirect (AccessToken 전달 X)
 
-    String redirect = "http://localhost:8080/#/contents";
+    String redirect = frontendBaseUrl + "/#/contents";
 
     log.info("[소셜 로그인] : OAuth2 로그인 성공 -> 사용자 = {}", email);
 
