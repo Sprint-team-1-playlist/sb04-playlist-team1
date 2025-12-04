@@ -36,16 +36,6 @@ public class ContentTasklet implements Tasklet {
         String query = "&language=ko-KR&year=2025";
 
         List<TheMovieResponse> movieResponseList = theMovieApiService.getApiMovie(query)
-                // 이 부분 바꿔야됨
-//                .map(response -> {
-//                    Content content = theMovieMapper.toContent(response, Type.MOVIE);
-//                    String thumbnailUrl = response.thumbnailUrl();
-//                    if(thumbnailUrl != null && !thumbnailUrl.isBlank()) {
-//                        content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
-//                    }
-//                    return content;
-//                })
-                // 이 부분 바꿔야됨 end
                 .doOnError(e -> log.error("[콘텐츠 데이터 관리] The Movie 배치 Tasklet 스트림 에러 발생 : {}", e.getMessage(), e))
                 .doOnComplete(() -> log.info("[콘텐츠 데이터 관리] The Movie 배치 Tasklet 스트림 동작 완료, API 데이터 수집"))
                 .collectList()
@@ -66,11 +56,13 @@ public class ContentTasklet implements Tasklet {
             Content resultContent = contentRepository.save(content); // 썸네일까지 set된 content
 
             // 조건문 추가해줘야됨
-            for(int j = 0; j < movieResponse.genreIds().size(); j++) {
-                Integer genreId = movieResponse.genreIds().get(j);
-                String tagName = changeString(genreId);
-                Tag tag = new Tag(resultContent, tagName);
-                tagRepository.save(tag);
+            if(movieResponse.genreIds() != null && !movieResponse.genreIds().isEmpty()) {
+                for(int j = 0; j < movieResponse.genreIds().size(); j++) {
+                    Integer genreId = movieResponse.genreIds().get(j);
+                    String tagName = changeString(genreId);
+                    Tag tag = new Tag(resultContent, tagName);
+                    tagRepository.save(tag);
+                }
             }
         }
         log.info("[콘텐츠 데이터 관리] The Movie API 콘텐츠와 태그 수집 완료");
