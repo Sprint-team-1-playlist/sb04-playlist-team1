@@ -97,7 +97,7 @@ public class PlaylistController {
             @RequestParam(required = false) UUID subscriberIdEqual,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) UUID idAfter,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit,
             @RequestParam(defaultValue = "DESCENDING") SortDirection sortDirection,  //DESENDING, ASCENDING
             @RequestParam(defaultValue = "updatedAt") PlaylistSortBy sortBy  //updatedAt, subscribeCount
             ) {
