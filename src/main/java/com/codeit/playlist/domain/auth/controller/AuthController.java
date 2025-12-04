@@ -14,11 +14,11 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,16 +37,14 @@ public class AuthController {
   private final PasswordResetService passwordResetService;
   private final RateLimitService rateLimitService;
 
+  @Value("${management.cookie.secure}")
+  private boolean cookieSecure;
+
   @GetMapping("/csrf-token")
   public ResponseEntity<Void> getCsrfToken(HttpServletResponse response) {
     String fakeToken = UUID.randomUUID().toString();
 
-    ResponseCookie cookie = ResponseCookie.from("XSRF-TOKEN", fakeToken)
-        .httpOnly(false)
-        .secure(false)
-        .path("/")
-        .sameSite("Lax")
-        .build();
+    ResponseCookie cookie = generateFakeCsrfTokenCookie();
 
     response.addHeader("Set-Cookie", cookie.toString());
 
@@ -79,24 +77,19 @@ public class AuthController {
       consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE}
   )
   public ResponseEntity<JwtDto> signIn(@Valid SignInRequest signInRequest,
-      HttpServletResponse response, CsrfToken csrfToken) throws JOSEException {
+      HttpServletResponse response) throws JOSEException {
     log.debug("[인증 관리] : 로그인 요청 시작");
 
     JwtInformation info = authService.signIn(signInRequest.username(), signInRequest.password());
 
     // refresh 쿠키 설정
     ResponseCookie cookie = jwtTokenProvider.generateRefreshTokenCookie(info.refreshToken());
-    response.addHeader("Set-cookie", cookie.toString());
+    response.addHeader("Set-Cookie", cookie.toString());
 
     // 로그인 시에도 XSRF-TOKEN 갱신
     String fakeToken = UUID.randomUUID().toString();
 
-    ResponseCookie csrf = ResponseCookie.from("XSRF-TOKEN", fakeToken)
-        .httpOnly(false)
-        .secure(false)
-        .path("/")
-        .sameSite("Lax")
-        .build();
+    ResponseCookie csrf = generateFakeCsrfTokenCookie();
 
     response.addHeader("Set-Cookie", csrf.toString());
 
@@ -120,7 +113,7 @@ public class AuthController {
     }
 
     ResponseCookie deleteCookie = jwtTokenProvider.generateRefreshTokenExpirationCookie();
-    response.addHeader("Set-cookie", deleteCookie.toString());
+    response.addHeader("Set-Cookie", deleteCookie.toString());
 
     log.info("[인증 관리] : 로그아웃 요청 완료");
     return ResponseEntity.noContent().build();
@@ -140,5 +133,17 @@ public class AuthController {
     passwordResetService.sendTemporaryPassword(request);
     log.info("[인증 관리] : 비밀번호 초기화 요청 완료");
     return ResponseEntity.noContent().build();
+  }
+
+  //중복 호출 편의성을 위한 헬퍼 메서드
+  private ResponseCookie generateFakeCsrfTokenCookie() {
+    String fakeToken = UUID.randomUUID().toString();
+
+    return ResponseCookie.from("XSRF-TOKEN", fakeToken)
+        .httpOnly(false)
+        .secure(cookieSecure)
+        .path("/")
+        .sameSite("Lax")
+        .build();
   }
 }
