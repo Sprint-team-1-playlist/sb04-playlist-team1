@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
@@ -21,7 +20,7 @@ import java.util.UUID;
 public class WatchingSessionController {
     private final WatchingSessionService watchingSessionService;
 
-    @SubscribeMapping("/watch")
+    @MessageMapping("/watch")
     public void watching(@DestinationVariable UUID contentId,
                                           Principal principal) {
         UUID userId = getUserId(principal);
