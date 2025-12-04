@@ -12,7 +12,7 @@ import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.request.ContentChatSendRequest;
 import com.codeit.playlist.domain.watching.dto.response.ContentChatDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
-import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
+import com.codeit.playlist.domain.watching.event.publisher.WatchingSessionPublisher;
 import com.codeit.playlist.domain.watching.exception.WatchingSessionUpdateException;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.domain.watching.service.basic.BasicWatchingSessionService;

@@ -1,8 +1,7 @@
-package com.codeit.playlist.domain.watching.event.impl;
+package com.codeit.playlist.domain.watching.event.publisher;
 
 import com.codeit.playlist.domain.watching.dto.response.ContentChatDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
-import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;

@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.watching.event;
+package com.codeit.playlist.domain.watching.event.subscriber;
 
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.watching.service.WatchingSessionService;
