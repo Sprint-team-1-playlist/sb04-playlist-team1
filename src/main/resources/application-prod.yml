@@ -61,6 +61,9 @@ management:
     health:
       show-details: always
 
+  cookie:
+    secure: ${COOKIE_SECURE:true}
+
 # api
 api:
   tmdb:
