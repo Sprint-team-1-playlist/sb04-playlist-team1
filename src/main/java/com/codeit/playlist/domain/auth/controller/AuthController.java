@@ -11,12 +11,14 @@ import com.codeit.playlist.domain.user.service.PasswordResetService;
 import com.nimbusds.jose.JOSEException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,19 +39,19 @@ public class AuthController {
   private final RateLimitService rateLimitService;
 
   @GetMapping("/csrf-token")
-  public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
-    log.debug("[인증 관리] : CSRF 토큰 요청 시작");
+  public ResponseEntity<Void> getCsrfToken(HttpServletResponse response) {
+    String fakeToken = UUID.randomUUID().toString();
 
-    if (csrfToken != null) {
-      log.debug("[인증 관리] CSRF 토큰이 존재합니다.");
-    } else {
-      log.trace("[인증 관리] : CSRF 토큰이 존재하지 않습니다.");
-    }
-
-    log.info(("[인증 관리] : CSRF 토큰 요청 완료"));
-    return ResponseEntity
-        .status(HttpStatus.NO_CONTENT)
+    ResponseCookie cookie = ResponseCookie.from("XSRF-TOKEN", fakeToken)
+        .httpOnly(false)
+        .secure(false)
+        .path("/")
+        .sameSite("Lax")
         .build();
+
+    response.addHeader("Set-Cookie", cookie.toString());
+
+    return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/refresh")
@@ -78,7 +80,7 @@ public class AuthController {
       consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE}
   )
   public ResponseEntity<JwtDto> signIn(@Valid SignInRequest signInRequest,
-      HttpServletResponse response) throws JOSEException {
+      HttpServletResponse response, CsrfToken csrfToken) throws JOSEException {
     log.debug("[인증 관리] : 로그인 요청 시작");
 
     JwtInformation info = authService.signIn(signInRequest.username(), signInRequest.password());
@@ -86,6 +88,19 @@ public class AuthController {
     // refresh 쿠키 설정
     ResponseCookie cookie = jwtTokenProvider.generateRefreshTokenCookie(info.refreshToken());
     response.addHeader("Set-cookie", cookie.toString());
+
+    // 로그인 시에도 XSRF-TOKEN 갱신
+    String fakeToken = UUID.randomUUID().toString();
+
+    ResponseCookie csrf = ResponseCookie.from("XSRF-TOKEN", fakeToken)
+        .httpOnly(false)
+        .secure(false)
+        .path("/")
+        .sameSite("Lax")
+        .build();
+
+    response.addHeader("Set-Cookie", csrf.toString());
+
 
     // FE 로는 access token + user 정보만 보냄
     JwtDto body = new JwtDto(info.userDto(), info.accessToken());
