@@ -111,7 +111,7 @@ public class BasicWatchingService implements WatchingService {
         return new WatchingSessionDto(
                 raw.watchingId(),
                 createdAt,
-                userMapper.toDto(user),
+                userMapper.toUserSummary(user),
                 contentMapper.toDto(content, tags)
         );
     }

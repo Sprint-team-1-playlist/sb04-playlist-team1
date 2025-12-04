@@ -264,7 +264,7 @@ class RedisWatchingSessionRepositoryTest {
     @DisplayName("addChat 정상 동작 및 리스트에 저장")
     void testAddChat() {
         // given
-        String content = "cotent";
+        String content = "content";
         String chatData = userId.toString() + ":" + content;
 
         // when
@@ -284,7 +284,7 @@ class RedisWatchingSessionRepositoryTest {
     @DisplayName("addChat 호출 시 expire 30분 설정")
     void testAddChatExpire() {
         // given
-        String content = "cotent";
+        String content = "content";
         String chatData = userId.toString() + ":" + content;
 
         // when

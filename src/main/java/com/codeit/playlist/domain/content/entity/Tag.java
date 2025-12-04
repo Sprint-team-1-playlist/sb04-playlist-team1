@@ -16,7 +16,6 @@ import lombok.Setter;
 @Entity
 @Table(name = "tags")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Tag extends BaseEntity {
@@ -32,4 +31,8 @@ public class Tag extends BaseEntity {
      */
     @Column(nullable = false, length = 50)
     private String items;
+
+    public static Tag withContent(Content content, String items) {
+        return new Tag(content, items);
+    }
 }

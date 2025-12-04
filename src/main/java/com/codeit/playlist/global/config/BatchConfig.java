@@ -1,5 +1,6 @@
-package com.codeit.playlist.domain.content.batch;
+package com.codeit.playlist.global.config;
 
+import com.codeit.playlist.domain.content.batch.ContentTasklet;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
