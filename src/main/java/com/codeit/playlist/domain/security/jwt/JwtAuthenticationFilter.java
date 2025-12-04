@@ -36,6 +36,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       FilterChain filterChain) throws ServletException, IOException {
 
     String uri = request.getRequestURI();
+    String method = request.getMethod();
+
+    // POST /api/users (회원가입)만 제외
+    if ("POST".equals(method) && uri.equals("/api/users")
+        || uri.startsWith("/login/oauth2/")
+        || uri.startsWith("/oauth2/")) {
+      filterChain.doFilter(request, response);
+      return;
+    }
 
     if (isExcludedPath(uri)) {
       filterChain.doFilter(request, response);
@@ -121,8 +130,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         uri.startsWith("/api/auth/refresh") ||
         uri.startsWith("/api/auth/sign-out") ||
         uri.startsWith("/api/auth/csrf-token") ||
-
-        uri.startsWith("/api/users") ||
 
         uri.equals("/") ||
         uri.equals("/index.html") ||
