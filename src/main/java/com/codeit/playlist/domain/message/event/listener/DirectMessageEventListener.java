@@ -1,6 +1,6 @@
-package com.codeit.playlist.domain.event.listener;
+package com.codeit.playlist.domain.message.event.listener;
 
-import com.codeit.playlist.domain.event.message.DirectMessageSentEvent;
+import com.codeit.playlist.domain.message.event.message.DirectMessageSentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

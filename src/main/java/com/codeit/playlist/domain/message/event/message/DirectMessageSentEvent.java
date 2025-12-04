@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.event.message;
+package com.codeit.playlist.domain.message.event.message;
 
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import java.util.UUID;

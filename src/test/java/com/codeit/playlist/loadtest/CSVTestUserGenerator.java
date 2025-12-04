@@ -1,4 +1,4 @@
-package com.codeit.playlist.global.init;
+package com.codeit.playlist.loadtest;
 
 import java.io.FileWriter;
 import java.io.IOException;
