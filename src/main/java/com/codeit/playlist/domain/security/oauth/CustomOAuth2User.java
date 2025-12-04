@@ -40,7 +40,7 @@ public class CustomOAuth2User implements OAuth2User, Serializable {
     if (name != null && !name.isBlank()) {
       return name;
     }
-    if (email != null) return email;
+    if (email != null && !email.isBlank()) return email;
     return userId.toString();
   }
 
