@@ -37,10 +37,6 @@ public class SseService {
 
     SseEmitter sseEmitter = new SseEmitter(timeout);
 
-    sseEmitter.onCompletion(() -> sseEmitterRepository.delete(receiverId, sseEmitter));
-    sseEmitter.onTimeout(() -> sseEmitterRepository.delete(receiverId, sseEmitter));
-    sseEmitter.onError(ex -> sseEmitterRepository.delete(receiverId, sseEmitter));
-
     Optional.ofNullable(lastEventId)
         .ifPresentOrElse(
             id -> {
@@ -56,6 +52,7 @@ public class SseService {
             () -> {
               if (!ping(sseEmitter)) {
                 log.error("Initial ping failed for receiverId={}", receiverId);
+                sseEmitter.complete();
                 throw SseReconnectFailedException.withId(receiverId, null);
               }
             }
@@ -129,7 +126,7 @@ public class SseService {
 
   private boolean ping(SseEmitter sseEmitter) {
     try {
-      sseEmitter.send(SseEmitter.event().name("ping").build());
+      sseEmitter.send(SseEmitter.event().name("ping").data("").build());
       return true;
     } catch (Exception e) {
       log.error("SSE ping 실패", e);
