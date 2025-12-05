@@ -2,6 +2,7 @@ package com.codeit.playlist.domain.sse.repository;
 
 import com.codeit.playlist.domain.sse.exception.InvalidSseEmitterException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,13 +22,7 @@ public class SseEmitterRepository {
       throw InvalidSseEmitterException.withId(receiverId, sseEmitter);
     }
     SseEmitter old = data.put(receiverId, sseEmitter);
-    if (old != null) {
-      try {
-        old.complete();
-      } catch (Exception e) {
-        // 이미 완료되었거나 닫힌 emitter일 수 있으므로 무시
-      }
-    }
+    completeSafely(old);
 
     sseEmitter.onCompletion(() -> data.remove(receiverId, sseEmitter));
     sseEmitter.onTimeout(() -> data.remove(receiverId, sseEmitter));
@@ -53,17 +48,22 @@ public class SseEmitterRepository {
   }
 
   public Collection<SseEmitter> findAll(){
-    return data.values();
+    return Collections.unmodifiableCollection(data.values());
   }
 
   public void delete(UUID receiverId) {
     SseEmitter emitter = data.remove(receiverId);
-    if (emitter != null) {
-      try {
-        emitter.complete();
-      } catch (Exception e) {
-        // 이미 완료되었거나 닫힌 emitter일 수 있으므로 무시
-      }
+    completeSafely(emitter);
+  }
+
+  private void completeSafely(SseEmitter emitter) {
+    if (emitter == null) {
+      return;
+    }
+    try {
+      emitter.complete();
+    } catch (Exception e) {
+      // 이미 완료되었거나 닫힌 emitter일 수 있으므로 무시
     }
   }
 }
