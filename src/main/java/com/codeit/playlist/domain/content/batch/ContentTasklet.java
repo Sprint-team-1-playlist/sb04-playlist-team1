@@ -6,8 +6,6 @@ import com.codeit.playlist.domain.content.api.service.TheMovieApiService;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.content.entity.Type;
-import com.codeit.playlist.domain.content.exception.ContentBadRequestException;
-import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.content.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
@@ -56,7 +54,7 @@ public class ContentTasklet implements Tasklet {
                 content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
             }
 
-            if(movieResponse.description().isEmpty()) {
+            if(movieResponse.description() == null || movieResponse.description().isBlank()) {
                 log.warn("[콘텐츠 데이터 관리] 콘텐츠 데이터 설명이 존재하지 않습니다. title : {}", movieResponse.title());
                 continue;
             }
@@ -72,7 +70,7 @@ public class ContentTasklet implements Tasklet {
                 continue;
             }
 
-            if(!isKorean(movieResponse.title())) { // false
+            if(movieResponse.title() == null || !isKorean(movieResponse.title())) { // false
                 log.warn("[콘텐츠 데이터 관리] 콘텐츠 데이터의 title에 한글이 한 글자도 포함되지 않았습니다. title : {}", movieResponse.title());
                 continue;
             }
