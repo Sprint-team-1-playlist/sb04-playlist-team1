@@ -78,26 +78,14 @@ public class BasicAuthService implements AuthService {
 
       // 역할 변경 시 해당 사용자의 모든 JWT 토큰 무효화
       jwtRegistry.invalidateJwtInformationByUserId(userId);
+
+      sendRoleChangedNotification(userId, oldRole, newRole);
+
+      log.info("[사용자 관리] 사용자 권한 변경 완료 : userId={} , {} -> {}", userId, oldRole, newRole);
+
+    } else {
+      log.info("[사용자 관리] 권한 변경 없음 (동일 권한 요청 무시): userId={}, role={}", userId, newRole);
     }
-
-    //권한 변경 알림 생성
-    String title = "내 권한이 변경되었어요.";
-    String contentMsg = String.format("내 권한이 [%s]에서 [%s](으)로 변경되었습니다.",oldRole, newRole);
-
-    NotificationDto notificationDto = new NotificationDto(null, null, userId,
-                                                          title, contentMsg, Level.INFO);
-
-    try {
-      String payload = objectMapper.writeValueAsString(notificationDto);
-      kafkaTemplate.send("playlist.NotificationDto", payload);
-
-      log.info("[사용자 관리] 권한 변경 알림 이벤트 발행 완료 : userId={}", userId);
-    } catch (JsonProcessingException e) {
-      //권한 변경 자체는 막지 않도록 로그만 남김
-      log.error("[사용자 관리] 권한 변경 알림 이벤트 직렬화 실패 : userId={}", userId, e);
-    }
-
-    log.info("[사용자 관리] 사용자 권한 변경 완료 : userId={} , {} -> {}", userId, oldRole, newRole);
 
     return userMapper.toDto(user);
   }
@@ -222,4 +210,24 @@ public class BasicAuthService implements AuthService {
         refresh, refreshExp, refreshIssuedAt
     );
   }
+
+  private void sendRoleChangedNotification(UUID userId, Role oldRole, Role newRole) {
+    //권한 변경 알림 생성
+    String title = "내 권한이 변경되었어요.";
+    String contentMsg = String.format("내 권한이 [%s]에서 [%s](으)로 변경되었습니다.",oldRole, newRole);
+
+    NotificationDto notificationDto = new NotificationDto(null, null, userId,
+            title, contentMsg, Level.INFO);
+
+    try {
+      String payload = objectMapper.writeValueAsString(notificationDto);
+      kafkaTemplate.send("playlist.NotificationDto", payload);
+
+      log.info("[사용자 관리] 권한 변경 알림 이벤트 발행 완료 : userId={}", userId);
+    } catch (JsonProcessingException e) {
+      //권한 변경 자체는 막지 않도록 로그만 남김
+      log.error("[사용자 관리] 권한 변경 알림 이벤트 직렬화 실패 : userId={}", userId, e);
+    }
+  }
+
 }
