@@ -65,11 +65,18 @@ public class ContentTasklet implements Tasklet {
                 log.warn("[콘텐츠 데이터 관리] 콘텐츠가 존재하지 않습니다. tmdbId가 null입니다.");
                 continue;
             }
+
             Long tmdbId = movieResponse.tmdbId();
             if(contentRepository.existsByTmdbId(tmdbId)) {
                 log.warn("[콘텐츠 데이터 관리] 콘텐츠 데이터가 이미 존재합니다. tmdbId : {}", movieResponse.tmdbId());
                 continue;
             }
+
+            if(!isKorean(movieResponse.title())) { // false
+                log.warn("[콘텐츠 데이터 관리] 콘텐츠 데이터의 title에 한글이 한 글자도 포함되지 않았습니다. title : {}", movieResponse.title());
+                continue;
+            }
+
             Content resultContent = contentRepository.save(content); // 썸네일까지 set된 content
 
             // 조건문 추가해줘야됨
@@ -88,5 +95,10 @@ public class ContentTasklet implements Tasklet {
 
     public String changeString(Integer genreId) {
         return genreId.toString();
+    }
+
+    private boolean isKorean(String title) {
+        boolean result = title.matches(".*[가-힣].*"); // true
+        return result;
     }
 }
