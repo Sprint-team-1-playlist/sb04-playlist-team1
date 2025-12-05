@@ -18,7 +18,7 @@ import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.dto.request.ContentChatSendRequest;
 import com.codeit.playlist.domain.watching.dto.response.ContentChatDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
-import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
+import com.codeit.playlist.domain.watching.event.publisher.WatchingSessionPublisher;
 import com.codeit.playlist.domain.watching.exception.EventBroadcastFailedException;
 import com.codeit.playlist.domain.watching.exception.WatchingSessionUpdateException;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
@@ -47,16 +47,17 @@ public class BasicWatchingSessionService implements WatchingSessionService {
     private final TagRepository tagRepository;
 
     @Override
-    public void watching(UUID contentId, UUID userId) {
+    public void joinWatching(String sessionId, UUID contentId, UUID userId) {
         UUID watchingId = UUID.randomUUID();
         log.debug("[실시간 같이 보기] 콘텐츠 시청 세션 시작: " +
                 "watchingId={}, contentId={}, userId={}", watchingId, contentId, userId);
 
         RawWatchingSession raw = redisWatchingSessionRepository.addWatchingSession(watchingId, contentId, userId);
         if (raw == null) {
-            log.error("[실시간 같이 보기] Redis 오류: watchingId={}, contentId={}, userId={}", watchingId, contentId, userId);
+            log.error("[실시간 같이 보기] Redis 사용자 입장 처리 오류(NPE): watchingId={}, contentId={}, userId={}", watchingId, contentId, userId);
             throw new WatchingSessionUpdateException();
         }
+        redisWatchingSessionRepository.addWebSocketSession(sessionId, userId);
 
         broadcastWatchingEvent(raw, ChangeType.JOIN);
     }

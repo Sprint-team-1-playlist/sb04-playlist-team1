@@ -44,6 +44,7 @@ class RedisWatchingSessionRepositoryTest {
         userId = UUID.randomUUID();
         watchingId = UUID.randomUUID();
 
+
         // Redis flush
         redisTemplate.execute((RedisCallback<Object>) connection -> {
             connection.serverCommands().flushDb();
@@ -57,11 +58,11 @@ class RedisWatchingSessionRepositoryTest {
         RawWatchingSession raw = repository.addWatchingSession(watchingId, contentId, userId);
 
         String storedWatchingId = redisTemplate.opsForValue()
-                .get("user:" + userId + ":session");
+                .get("user:" + userId + ":watching");
         assertThat(storedWatchingId).isEqualTo(watchingId.toString());
 
         Long zsetSize = redisTemplate.opsForZSet()
-                .size("content:" + contentId + ":sessions");
+                .size("content:" + contentId + ":watching");
         assertThat(zsetSize).isEqualTo(1L);
 
         assertThat(raw.userId()).isEqualTo(userId);
@@ -80,11 +81,11 @@ class RedisWatchingSessionRepositoryTest {
         assertThat(removed.userId()).isEqualTo(userId);
         assertThat(removed.contentId()).isEqualTo(contentId);
 
-        assertThat(redisTemplate.opsForValue().get("user:" + userId + ":session"))
+        assertThat(redisTemplate.opsForValue().get("user:" + userId + ":watching"))
                 .isNull();
         assertThat(redisTemplate.opsForHash().entries("watching:" + watchingId))
                 .isEmpty();
-        assertThat(redisTemplate.opsForZSet().size("content:" + contentId + ":sessions"))
+        assertThat(redisTemplate.opsForZSet().size("content:" + contentId + ":watching"))
                 .isZero();
     }
 
@@ -231,7 +232,7 @@ class RedisWatchingSessionRepositoryTest {
     @DisplayName("사용자의 시청 세션 조회, HASH 정보 없으면 WatchingNotFoundException 발생")
     void getWatchingSessionByUser_hashNotFound() {
         // given: user -> watchingId 는 존재하지만 hash 는 삭제된 상태
-        redisTemplate.opsForValue().set("user:" + userId + ":session", watchingId.toString());
+        redisTemplate.opsForValue().set("user:" + userId + ":watching", watchingId.toString());
 
         assertThatThrownBy(() -> repository.getWatchingSessionByUser(userId))
                 .isInstanceOf(WatchingNotFoundException.class);

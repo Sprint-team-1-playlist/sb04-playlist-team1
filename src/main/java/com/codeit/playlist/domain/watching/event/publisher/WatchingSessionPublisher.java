@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.watching.event;
+package com.codeit.playlist.domain.watching.event.publisher;
 
 import com.codeit.playlist.domain.watching.dto.response.ContentChatDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;

@@ -20,6 +20,7 @@ public class WatchingSessionFixtures {
     public static final UUID FIXED_ID = UUID.randomUUID();
     public static final LocalDateTime FIXED_TIME = LocalDateTime.now();
     public static final long FIXED_LONG_TIME = System.currentTimeMillis();
+    public static final String FIXED_SESSION_ID = "session-id";
 
 
     public static Content content() {
