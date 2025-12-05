@@ -55,6 +55,12 @@ public class ContentTasklet implements Tasklet {
             if(thumbnailUrl != null && !thumbnailUrl.isBlank()) {
                 content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
             }
+
+            if(movieResponse.description().isEmpty()) {
+                log.warn("[콘텐츠 데이터 관리] 콘텐츠 데이터 설명이 존재하지 않습니다. title : {}", movieResponse.title());
+                continue;
+            }
+
             if(movieResponse.tmdbId() == null) {
                 log.warn("[콘텐츠 데이터 관리] 콘텐츠가 존재하지 않습니다. tmdbId가 null입니다.");
                 continue;
