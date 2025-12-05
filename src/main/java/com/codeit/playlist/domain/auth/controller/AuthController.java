@@ -12,6 +12,7 @@ import com.nimbusds.jose.JOSEException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -86,9 +87,6 @@ public class AuthController {
     ResponseCookie cookie = jwtTokenProvider.generateRefreshTokenCookie(info.refreshToken());
     response.addHeader("Set-Cookie", cookie.toString());
 
-    // 로그인 시에도 XSRF-TOKEN 갱신
-    String fakeToken = UUID.randomUUID().toString();
-
     ResponseCookie csrf = generateFakeCsrfTokenCookie();
 
     response.addHeader("Set-Cookie", csrf.toString());
@@ -112,8 +110,20 @@ public class AuthController {
       authService.logout(refreshToken);
     }
 
-    ResponseCookie deleteCookie = jwtTokenProvider.generateRefreshTokenExpirationCookie();
-    response.addHeader("Set-Cookie", deleteCookie.toString());
+    Consumer<String> delete = (name) -> {
+      ResponseCookie expired = ResponseCookie.from(name, "")
+          .path("/")
+          .maxAge(0)
+          .httpOnly(true)
+          .sameSite("Lax")
+          .secure(cookieSecure)
+          .build();
+      response.addHeader("Set-Cookie", expired.toString());
+    };
+
+    delete.accept("REFRESH_TOKEN");
+    delete.accept("ACCESS_TOKEN");
+    delete.accept("XSRF-TOKEN");
 
     log.info("[인증 관리] : 로그아웃 요청 완료");
     return ResponseEntity.noContent().build();

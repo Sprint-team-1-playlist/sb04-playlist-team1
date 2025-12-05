@@ -99,26 +99,13 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     // Refresh Token Cookie 생성
     ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
         .httpOnly(true)
-        .secure(cookieSecure) // localhost 환경이므로 false, 배포에서는 true 필수
+        .secure(cookieSecure)
         .path("/")
-        .sameSite("Lax") // <-- 프론트가 같은 도메인(localhost:8080)이므로 Lax가 안정적
+        .sameSite("Lax")
         .maxAge(60 * 60 * 24 * 14) // 14일
         .build();
 
     response.addHeader("Set-Cookie", refreshCookie.toString());
-
-    // Access Token Cookie 생성
-    ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", accessToken)
-        .httpOnly(true)
-        .secure(cookieSecure)
-        .path("/")
-        .sameSite("Lax")
-        .maxAge(60 * 30) // 30분
-        .build();
-
-    response.addHeader("Set-Cookie", accessCookie.toString());
-
-    //프론트로 Redirect (AccessToken 전달 X)
 
     String redirect = frontendBaseUrl + "/#/contents";
 
