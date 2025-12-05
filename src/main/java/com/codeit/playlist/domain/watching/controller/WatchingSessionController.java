@@ -20,16 +20,6 @@ import java.util.UUID;
 public class WatchingSessionController {
     private final WatchingSessionService watchingSessionService;
 
-    @MessageMapping("/watch")
-    public void watching(@DestinationVariable UUID contentId,
-                                          Principal principal) {
-        UUID userId = getUserId(principal);
-        log.debug("[실시간 같이 보기] 콘텐츠 시청 세션 시작: contentId={}, userId={}", contentId, userId);
-        watchingSessionService.watching(contentId, userId);
-
-        log.info("[실시간 같이 보기] 콘텐츠 시청 세션 성공: contentId={}, userId={}", contentId, userId);
-    }
-
     @MessageMapping("/chat")
     public void sendChat(@DestinationVariable UUID contentId,
                          Principal principal,
