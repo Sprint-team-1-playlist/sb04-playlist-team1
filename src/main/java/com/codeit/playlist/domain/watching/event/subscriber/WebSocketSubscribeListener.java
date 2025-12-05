@@ -32,7 +32,7 @@ public class WebSocketSubscribeListener implements ApplicationListener<SessionSu
         String sessionId = accessor.getSessionId();
         Principal principal = accessor.getUser();
 
-        if (destination == null || principal == null) {
+        if (destination == null || sessionId == null || principal == null) {
             return;
         }
 
