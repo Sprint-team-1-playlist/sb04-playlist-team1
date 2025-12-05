@@ -6,6 +6,8 @@ import com.codeit.playlist.domain.content.api.service.TheMovieApiService;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.content.entity.Type;
+import com.codeit.playlist.domain.content.exception.ContentBadRequestException;
+import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.content.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +54,15 @@ public class ContentTasklet implements Tasklet {
             String thumbnailUrl = movieResponse.thumbnailUrl();
             if(thumbnailUrl != null && !thumbnailUrl.isBlank()) {
                 content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
+            }
+            if(movieResponse.tmdbId() == null) {
+                log.warn("[콘텐츠 데이터 관리] 콘텐츠가 존재하지 않습니다. tmdbId가 null입니다.");
+                continue;
+            }
+            Long tmdbId = movieResponse.tmdbId();
+            if(contentRepository.existsByTmdbId(tmdbId)) {
+                log.warn("[콘텐츠 데이터 관리] 콘텐츠 데이터가 이미 존재합니다. tmdbId : {}", movieResponse.tmdbId());
+                continue;
             }
             Content resultContent = contentRepository.save(content); // 썸네일까지 set된 content
 

@@ -26,7 +26,7 @@ public class TheMovieApiService {
     private String apikey; // tmdb API key
 
     private final int firstPage = 1;
-    private final int maxPage = 3;
+    private final int maxPage = 2;
 
     private Mono<TheMovieListResponse> callTheMovieApi(String query, String path, int page) {
         log.info("[콘텐츠 데이터 관리] TheMovie API Mono 빌드 시작, callTheMovieApi query : {}, path : {}", query, path);
