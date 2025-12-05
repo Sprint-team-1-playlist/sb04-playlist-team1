@@ -19,6 +19,12 @@ import lombok.NoArgsConstructor;
 public class Content extends BaseUpdatableEntity {
 
     /**
+     * TMDB ID
+     */
+    @Column(unique = true)
+    private Long tmdbId;
+
+    /**
      * 컨텐츠 타입
      */
     @Enumerated(EnumType.STRING)
