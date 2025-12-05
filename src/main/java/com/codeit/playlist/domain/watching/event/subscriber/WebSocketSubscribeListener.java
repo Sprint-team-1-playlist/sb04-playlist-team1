@@ -24,28 +24,35 @@ public class WebSocketSubscribeListener implements ApplicationListener<SessionSu
     @Override
     public void onApplicationEvent(SessionSubscribeEvent event) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-
-        if (accessor.getCommand() != StompCommand.SUBSCRIBE) return;
+        if (accessor.getCommand() != StompCommand.SUBSCRIBE) {
+            return;
+        }
 
         String destination = accessor.getDestination();
+        String sessionId = accessor.getSessionId();
         Principal principal = accessor.getUser();
 
-        if (destination == null || principal == null) return;
+        if (destination == null || principal == null) {
+            return;
+        }
 
         // /sub/contents/{contentId}/watch 패턴만 처리
         if (destination.matches("/sub/contents/.*/watch")) {
             try {
                 String[] parts = destination.split("/");
                 UUID contentId = UUID.fromString(parts[3]); // {contentId} 추출
-                UUID userId = ((PlaylistUserDetails) ((Authentication) principal).getPrincipal())
-                        .getUserDto().id();
+                UUID userId = getUserId(principal);
 
-                log.debug("[실시간 같이 보기] SUBSCRIBE 감지: contentId={}, userId={}", contentId, userId);
-                watchingSessionService.watching(contentId, userId);
-                log.info("[실시간 같이 보기] 시청 세션 처리 완료: contentId={}, userId={}", contentId, userId);
+                log.debug("[실시간 같이 보기] SUBSCRIBE 감지: sessionId={}, contentId={}, userId={}", sessionId, contentId, userId);
+                watchingSessionService.joinWatching(sessionId, contentId, userId);
+                log.info("[실시간 같이 보기] SUBSCRIBE 시청 세션 처리 완료: sessionId={}", sessionId);
             } catch (Exception e) {
                 log.error("[실시간 같이 보기] SUBSCRIBE 처리 실패: destination={}, error={}", destination, e.getMessage(), e);
             }
         }
+    }
+
+    private UUID getUserId(Principal principal) {
+        return ((PlaylistUserDetails) ((Authentication) principal).getPrincipal()).getUserDto().id();
     }
 }
