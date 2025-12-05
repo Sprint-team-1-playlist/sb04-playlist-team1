@@ -1,6 +1,5 @@
 package com.codeit.playlist.domain.playlist.repository.custom;
 
-import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.entity.QPlaylist;
 import com.codeit.playlist.domain.playlist.entity.QSubscribe;
@@ -35,7 +34,7 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
             @Param("hasCursor") boolean hasCursor,
             @Param("cursorId") UUID cursorId,
             @Param("asc") boolean asc,
-            PlaylistSortBy sortBy,
+            String sortBy,
             Pageable pageable
     ) {
         BooleanBuilder builder = buildFilterConditions(keywordLike, ownerIdEqual, subscriberIdEqual);
@@ -114,12 +113,12 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
         return builder;
     }
 
-    private OrderSpecifier<?>[] createOrderSpecifiers(PlaylistSortBy sortBy, boolean asc) {
+    private OrderSpecifier<?>[] createOrderSpecifiers(String sortBy, boolean asc) {
 
         OrderSpecifier<?> primary;
         OrderSpecifier<?> secondary;
 
-        if (sortBy == PlaylistSortBy.subscribeCount) {
+        if ("subscribeCount".equals(sortBy)) {
             primary = asc ? playlist.subscriberCount.asc() : playlist.subscriberCount.desc();
         } else { // updatedAt (기본값)
             primary = asc ? playlist.updatedAt.asc() : playlist.updatedAt.desc();
@@ -136,7 +135,7 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
             boolean hasCursor,
             UUID cursorId,
             boolean asc,
-            PlaylistSortBy sortBy
+            String sortBy
     ) {
         if (!hasCursor || cursorId == null) {
             return null;
@@ -157,7 +156,7 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
         BooleanExpression primaryCompare;
         BooleanExpression tieBreakerCompare;
 
-        if (sortBy == PlaylistSortBy.subscribeCount) {
+        if ("subscribeCount".equals(sortBy)) {
             Long cursorCount = cursorPlaylist.getSubscriberCount();
 
             if (asc) {

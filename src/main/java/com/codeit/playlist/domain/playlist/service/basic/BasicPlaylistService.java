@@ -165,10 +165,9 @@ public class BasicPlaylistService implements PlaylistService {
                         "cursor= {}, idAfter= {}, limit= {}, sortBy= {}, sortDirection= {}",
                 keywordLike, ownerIdEqual, subscriberIdEqual, cursor, idAfter, limit, sortBy, sortDirection);
 
-        // 1. limit 보정 (컨트롤러에서도 @Min/@Max 있지만 방어용)
-        int pageSize = Math.min(Math.max(limit, 1), 50);
-
         boolean asc = (sortDirection == SortDirection.ASCENDING);
+
+        String sortByValue = (sortBy != null ? sortBy.name() : PlaylistSortBy.updatedAt.name());
 
         //커서 해석 (cursor가 메인)
         UUID effectiveIdAfter = null;
@@ -189,7 +188,7 @@ public class BasicPlaylistService implements PlaylistService {
         boolean hasCursor = (effectiveIdAfter != null);
 
 
-        Pageable pageable = PageRequest.of(0, pageSize);
+        Pageable pageable = PageRequest.of(0, limit);
 
         Slice<Playlist> playlists = playlistRepository.searchPlaylists(
                 keywordLike,
@@ -198,7 +197,7 @@ public class BasicPlaylistService implements PlaylistService {
                 hasCursor,
                 effectiveIdAfter,
                 asc,
-                sortBy,
+                sortByValue,
                 pageable
         );
 
@@ -232,7 +231,7 @@ public class BasicPlaylistService implements PlaylistService {
                 nextIdAfter,
                 hasNext,
                 totalCount,
-                sortBy,
+                sortByValue,
                 sortDirection
         );
 

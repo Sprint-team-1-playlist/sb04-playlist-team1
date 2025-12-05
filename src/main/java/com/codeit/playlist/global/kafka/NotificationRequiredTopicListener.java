@@ -1,4 +1,4 @@
-package com.codeit.playlist.domain.event.kafka;
+package com.codeit.playlist.global.kafka;
 
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;

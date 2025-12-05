@@ -79,7 +79,7 @@ public class PlaylistRepositoryTest {
                 false,               // hasCursor
                 null,                // cursorId
                 true,                // asc
-                PlaylistSortBy.updatedAt,
+                PlaylistSortBy.updatedAt.name(),
                 pageable
         );
 
@@ -132,7 +132,7 @@ public class PlaylistRepositoryTest {
                 null, null, null,
                 false, null,
                 false,                 // DESC
-                PlaylistSortBy.updatedAt,           //정렬 기준
+                PlaylistSortBy.updatedAt.name(),           //정렬 기준
                 pageable
         );
 
@@ -167,7 +167,7 @@ public class PlaylistRepositoryTest {
                 false,
                 null,
                 true,
-                PlaylistSortBy.updatedAt,
+                PlaylistSortBy.updatedAt.name(),
                 pageable
         );
 
