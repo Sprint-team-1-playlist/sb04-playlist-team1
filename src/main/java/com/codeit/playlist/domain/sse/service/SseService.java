@@ -37,10 +37,6 @@ public class SseService {
 
     SseEmitter sseEmitter = new SseEmitter(timeout);
 
-    sseEmitter.onCompletion(() -> sseEmitterRepository.delete(receiverId));
-    sseEmitter.onTimeout(() -> sseEmitterRepository.delete(receiverId));
-    sseEmitter.onError(ex -> sseEmitterRepository.delete(receiverId));
-
     Optional.ofNullable(lastEventId)
         .ifPresentOrElse(
             id -> {

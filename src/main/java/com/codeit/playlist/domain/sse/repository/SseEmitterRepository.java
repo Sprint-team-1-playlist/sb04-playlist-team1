@@ -24,7 +24,9 @@ public class SseEmitterRepository {
     if (old != null) {
       try {
         old.complete();
-      } catch (Exception ignored) {}
+      } catch (Exception e) {
+        // 이미 완료되었거나 닫힌 emitter일 수 있으므로 무시
+      }
     }
 
     sseEmitter.onCompletion(() -> data.remove(receiverId, sseEmitter));
@@ -59,7 +61,9 @@ public class SseEmitterRepository {
     if (emitter != null) {
       try {
         emitter.complete();
-      } catch (Exception ignored) {}
+      } catch (Exception e) {
+        // 이미 완료되었거나 닫힌 emitter일 수 있으므로 무시
+      }
     }
   }
 }
