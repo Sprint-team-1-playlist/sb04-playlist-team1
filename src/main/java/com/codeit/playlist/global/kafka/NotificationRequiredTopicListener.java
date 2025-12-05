@@ -8,13 +8,13 @@ import com.codeit.playlist.domain.sse.entity.SseMessage;
 import com.codeit.playlist.domain.sse.service.SseService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-
-import java.util.Set;
-import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -63,12 +63,23 @@ public class NotificationRequiredTopicListener {
 
       UUID receiverId = event.receiverId();
 
-      notificationService.saveNotification(receiverId, event.title(), event.content(), event.level());
+      NotificationDto notification = notificationService.saveNotification(receiverId, event.title(), event.content(), event.level());
+
+      LinkedHashMap<String, Object> ssePayloadData = new LinkedHashMap<>();
+
+      ssePayloadData.put("id", notification.id());
+      ssePayloadData.put("createdAt", notification.createdAt());
+      ssePayloadData.put("receiverId", receiverId.toString());
+
+      ssePayloadData.put("title", event.title());
+      ssePayloadData.put("content", event.content());
+      ssePayloadData.put("level", event.level());
+
 
       SseMessage sseMessage = SseMessage.create(
           Set.of(receiverId),
           "notifications",
-          event
+          ssePayloadData
       );
 
       sseService.send(sseMessage.getReceiverIds(), sseMessage.getEventName(), sseMessage.getEventData());

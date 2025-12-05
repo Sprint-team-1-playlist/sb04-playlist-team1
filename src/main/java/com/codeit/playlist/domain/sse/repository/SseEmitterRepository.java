@@ -2,13 +2,11 @@ package com.codeit.playlist.domain.sse.repository;
 
 import com.codeit.playlist.domain.sse.exception.InvalidSseEmitterException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -16,18 +14,27 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @Repository
 public class SseEmitterRepository {
 
-  private final ConcurrentMap<UUID, List<SseEmitter>> data = new ConcurrentHashMap<>();
+  private final ConcurrentMap<UUID, SseEmitter> data = new ConcurrentHashMap<>();
 
   public SseEmitter save(UUID receiverId, SseEmitter sseEmitter) {
     if (receiverId == null || sseEmitter == null) {
       throw InvalidSseEmitterException.withId(receiverId, sseEmitter);
     }
-    data.computeIfAbsent(receiverId, key -> new CopyOnWriteArrayList<>())
-        .add(sseEmitter);
+    SseEmitter old = data.put(receiverId, sseEmitter);
+    if (old != null) {
+      try {
+        old.complete();
+      } catch (Exception ignored) {}
+    }
+
+    sseEmitter.onCompletion(() -> data.remove(receiverId, sseEmitter));
+    sseEmitter.onTimeout(() -> data.remove(receiverId, sseEmitter));
+    sseEmitter.onError(e -> data.remove(receiverId, sseEmitter));
+
     return sseEmitter;
   }
 
-  public Optional<List<SseEmitter>> findByReceiverId(UUID receiverId) {
+  public Optional<SseEmitter> findByReceiverId(UUID receiverId) {
     if (receiverId == null) {
       return Optional.empty();
     }
@@ -40,28 +47,19 @@ public class SseEmitterRepository {
     }
     return data.entrySet().stream()
         .filter(entry -> receiverIds.contains(entry.getKey()))
-        .flatMap(entry -> entry.getValue().stream().map(emitter -> Map.entry(entry.getKey(), emitter)))
-        .collect(Collectors.toMap(
-            Map.Entry::getKey,
-            Map.Entry::getValue,
-            (existing, replacement) -> existing
-        ));
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
-
-  public List<SseEmitter> findAll(){
-    return data.values().stream()
-        .flatMap(Collection::stream)
-        .toList();
+  public Collection<SseEmitter> findAll(){
+    return data.values();
   }
 
-  public void delete(UUID receiverId, SseEmitter sseEmitter) {
-    if (receiverId == null || sseEmitter == null) {
-      return;
+  public void delete(UUID receiverId) {
+    SseEmitter emitter = data.remove(receiverId);
+    if (emitter != null) {
+      try {
+        emitter.complete();
+      } catch (Exception ignored) {}
     }
-    data.computeIfPresent(receiverId, (key, emitters) -> {
-      emitters.remove(sseEmitter);
-      return emitters.isEmpty() ? null : emitters;
-    });
   }
 }
