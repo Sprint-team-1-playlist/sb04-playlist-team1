@@ -53,11 +53,11 @@ public class BasicWatchingSessionService implements WatchingSessionService {
                 "watchingId={}, contentId={}, userId={}", watchingId, contentId, userId);
 
         RawWatchingSession raw = redisWatchingSessionRepository.addWatchingSession(watchingId, contentId, userId);
-        redisWatchingSessionRepository.addWebSocketSession(sessionId, userId);
         if (raw == null) {
-            log.error("[실시간 같이 보기] Redis 사용자 퇴장 처리 오류(NPE): watchingId={}, contentId={}, userId={}", watchingId, contentId, userId);
+            log.error("[실시간 같이 보기] Redis 사용자 입장 처리 오류(NPE): watchingId={}, contentId={}, userId={}", watchingId, contentId, userId);
             throw new WatchingSessionUpdateException();
         }
+        redisWatchingSessionRepository.addWebSocketSession(sessionId, userId);
 
         broadcastWatchingEvent(raw, ChangeType.JOIN);
     }
