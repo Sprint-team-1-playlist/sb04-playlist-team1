@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public record TheMovieResponse(
+        @JsonProperty("id") Long tmdbId,
         @JsonProperty("title") String title,
         @JsonProperty("overview") String description,
         @JsonProperty("poster_path") String thumbnailUrl,

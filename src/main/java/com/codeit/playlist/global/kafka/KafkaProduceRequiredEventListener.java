@@ -1,6 +1,6 @@
-package com.codeit.playlist.domain.event.kafka;
+package com.codeit.playlist.global.kafka;
 
-import com.codeit.playlist.domain.event.message.DirectMessageSentEvent;
+import com.codeit.playlist.domain.message.event.message.DirectMessageSentEvent;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

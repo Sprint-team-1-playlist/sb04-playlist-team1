@@ -3,11 +3,11 @@ package com.codeit.playlist.content.service.basic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.BDDMockito.given;
 
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
 import com.codeit.playlist.domain.content.dto.request.ContentCreateRequest;
@@ -19,15 +19,14 @@ import com.codeit.playlist.domain.content.mapper.ContentMapper;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.content.repository.TagRepository;
 import com.codeit.playlist.domain.content.service.basic.BasicContentService;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicContentServiceTest {
@@ -207,14 +206,13 @@ public class BasicContentServiceTest {
         );
 
         given(contentRepository.findById(contentId)).willReturn(Optional.of(content));
-        given(contentMapper.toDto(content)).willReturn(contentDto);
-
+        given(contentMapper.toDto(any(), anyList())).willReturn(contentDto);
         // when
         ContentDto result = contentService.search(contentId);
 
         // then
         verify(contentRepository).findById(contentId);
-        verify(contentMapper).toDto(content);
+        verify(contentMapper).toDto(eq(content), anyList());
         assertThat(result).usingRecursiveComparison().isEqualTo(contentDto);
     }
 }

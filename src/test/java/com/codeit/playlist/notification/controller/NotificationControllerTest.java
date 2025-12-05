@@ -9,6 +9,7 @@ import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.global.config.JpaConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
@@ -16,11 +17,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
@@ -60,6 +66,37 @@ public class NotificationControllerTest {
 
     @MockBean
     private NotificationService notificationService;
+
+    //테스트용 SecurityConfig
+    @TestConfiguration
+    static class TestSecurityConfig {
+
+        @Bean
+        SecurityFilterChain testFilterChain(HttpSecurity http) throws Exception {
+            return http
+                    // CSRF는 테스트에서 귀찮으니 끔 (네가 .with(csrf()) 넣어도 상관 없음)
+                    .csrf(AbstractHttpConfigurer::disable)
+
+                    // 로그인 페이지/리다이렉트 방지 (302 원인 제거)
+                    .formLogin(AbstractHttpConfigurer::disable)
+                    .httpBasic(AbstractHttpConfigurer::disable)
+                    .logout(AbstractHttpConfigurer::disable)
+                    .oauth2Login(AbstractHttpConfigurer::disable)
+
+                    // 아무 요청이나 "인증 필요"만 걸어둔다
+                    .authorizeHttpRequests(auth -> auth
+                            .anyRequest().authenticated()
+                    )
+
+                    // 인증 실패 시 302 대신 401 반환하도록 명시
+                    .exceptionHandling(ex -> ex
+                            .authenticationEntryPoint((req, res, e) ->
+                                    res.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+                    )
+
+                    .build();
+        }
+    }
 
     private Authentication createAuthentication(UUID userId) {
         PlaylistUserDetails userDetails = BDDMockito.mock(PlaylistUserDetails.class);

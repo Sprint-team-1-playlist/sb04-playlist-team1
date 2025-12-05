@@ -70,3 +70,9 @@ api:
   sportsdb:
     key: ${SPORTSDB_API_KEY}
     base-url: ${SPORTSDB_BASE_URL}
+
+loadtest:
+  user:
+    prefix: tester
+    count: 50
+    password: abcd1234?

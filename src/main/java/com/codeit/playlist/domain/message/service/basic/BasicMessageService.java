@@ -7,7 +7,7 @@ import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
 import com.codeit.playlist.global.error.InvalidCursorException;
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
-import com.codeit.playlist.domain.event.message.DirectMessageSentEvent;
+import com.codeit.playlist.domain.message.event.message.DirectMessageSentEvent;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;

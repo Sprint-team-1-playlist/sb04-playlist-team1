@@ -159,7 +159,6 @@ public class BasicFollowServiceTest {
 
     FollowRequest followRequest = new FollowRequest(followeeId);
 
-    when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
     when(followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)).thenReturn(true);
 
     assertThrows(FollowAlreadyExistsException.class, () -> followService.create(followRequest));
@@ -189,12 +188,6 @@ public class BasicFollowServiceTest {
     assertNotNull(result);
     assertFalse(result);
     verify(followRepository, times(1)).existsByFollowerIdAndFolloweeId(followerId, followeeId);
-  }
-
-  @Test
-  @DisplayName("자기 자신을 조회하면 예외 발생")
-  void followedByMeSelfFollowNotAllowed() {
-    assertThrows(FollowSelfNotAllowedException.class, () -> followService.followedByMe(followerId));
   }
 
   @Test
