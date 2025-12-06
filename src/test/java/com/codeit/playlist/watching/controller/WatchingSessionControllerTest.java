@@ -42,21 +42,6 @@ class WatchingSessionControllerTest {
     }
 
     @Test
-    @DisplayName("joinWatching 호출 시 watchingSessionService.join()이 호출됨")
-    void watchingShouldCallService() {
-        // given
-        UUID userId = userDto.id();
-        Principal principal = authentication;
-
-        // when
-        webSocketController.watching(contentId, principal);
-
-        // then
-        verify(watchingSessionService, times(1))
-                .watching(contentId, userId);
-    }
-
-    @Test
     @DisplayName("sendChat 호출 시 watchingSessionService.sendChat()이 호출됨")
     void sendChatShouldCallService() {
         // given

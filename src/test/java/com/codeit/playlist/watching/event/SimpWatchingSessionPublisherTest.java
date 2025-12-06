@@ -1,7 +1,7 @@
 package com.codeit.playlist.watching.event;
 
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
-import com.codeit.playlist.domain.watching.event.impl.SimpWatchingSessionPublisher;
+import com.codeit.playlist.domain.watching.event.publisher.SimpWatchingSessionPublisher;
 import com.codeit.playlist.watching.fixture.WatchingSessionFixtures;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

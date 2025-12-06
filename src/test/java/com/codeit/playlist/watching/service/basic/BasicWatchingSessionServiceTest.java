@@ -12,7 +12,7 @@ import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.request.ContentChatSendRequest;
 import com.codeit.playlist.domain.watching.dto.response.ContentChatDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
-import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
+import com.codeit.playlist.domain.watching.event.publisher.WatchingSessionPublisher;
 import com.codeit.playlist.domain.watching.exception.WatchingSessionUpdateException;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.domain.watching.service.basic.BasicWatchingSessionService;
@@ -53,6 +53,7 @@ class BasicWatchingSessionServiceTest {
 
     private final UUID contentId = WatchingSessionFixtures.FIXED_ID;
     private final UUID userId = WatchingSessionFixtures.FIXED_ID;
+    private final String sessionId = WatchingSessionFixtures.FIXED_SESSION_ID;
 
     @Test
     @DisplayName("watching() 호출 시 Redis 저장 후 Watching 이벤트 publish")
@@ -72,7 +73,7 @@ class BasicWatchingSessionServiceTest {
                 .thenReturn(3L);
 
         // when
-        watchingSessionService.watching(contentId, userId);
+        watchingSessionService.joinWatching(sessionId, contentId, userId);
 
         // then
         verify(redisWatchingSessionRepository, times(1))
@@ -89,7 +90,7 @@ class BasicWatchingSessionServiceTest {
                 .thenReturn(null);
 
         // when & then
-        assertThatThrownBy(() -> watchingSessionService.watching(contentId, userId))
+        assertThatThrownBy(() -> watchingSessionService.joinWatching(sessionId, contentId, userId))
                 .isInstanceOf(WatchingSessionUpdateException.class);
     }
 
@@ -145,7 +146,7 @@ class BasicWatchingSessionServiceTest {
                 .thenThrow(UserNotFoundException.withId(userId));
 
         // when
-        watchingSessionService.watching(contentId, userId);
+        watchingSessionService.joinWatching(sessionId, contentId, userId);
 
         // then
         ArgumentCaptor<WatchingSessionChange> captor = ArgumentCaptor.forClass(WatchingSessionChange.class);
