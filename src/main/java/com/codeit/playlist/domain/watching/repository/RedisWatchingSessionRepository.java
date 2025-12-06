@@ -4,15 +4,17 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawContentChat;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
+import com.codeit.playlist.domain.watching.exception.JsonSerializationFailedException;
 import com.codeit.playlist.domain.watching.exception.WatchingNotFoundException;
 import com.codeit.playlist.domain.watching.exception.WatchingSessionMismatch;
 import com.codeit.playlist.global.error.InvalidCursorException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.time.Duration;
 import java.util.*;
 
 /*
@@ -20,10 +22,10 @@ import java.util.*;
  * 1. String user:{userId}:watching (사용자의 현재 세션 정보)
  * value = watchingId(UUID)
  *
- * 2. ZSET: score로 정렬하기 위함(커서 페이지네이션에 사용)
+ * 2. ZSet: score로 정렬하기 위함(커서 페이지네이션에 사용)
  * content:{contentId}:watching
  * members = watchingId1, watchingId2, watchingId3, ...
- * score = currentTimeMillis
+ * score = enterAt(currentTimeMillis)
  *
  * 3. HASH: 시청세션의 상세정보를 조회하기 위함
  * watching:{watchingId}
@@ -31,11 +33,15 @@ import java.util.*;
  * userId
  * createdAt
  *
- * 4. List: 콘텐츠별 채팅 내역 보관
- * content:{contentId}:chat:list
- * value: String(senderId:content)
+ * 4. ZSet: 콘텐츠별 채팅 내역 보관
+ * content:{contentId}:chat
+ * members = JSON { "userId" : "uuid", "content" : "String" }
+ * score = sentAt(currentTimeMillis)
  *
- * 5. String ws:session:{sessionId}
+ * 5. List: 특정 유저가 보낸 메시지 리스트
+ * content:{contentId}:chat:{userId}
+ *
+ * 6. String ws:session:{sessionId}
  * value: userId
  * */
 
@@ -44,6 +50,7 @@ import java.util.*;
 @Slf4j
 public class RedisWatchingSessionRepository {
     private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     private String userKey(UUID userId) {
         return "user:" + userId + ":watching";
@@ -58,7 +65,11 @@ public class RedisWatchingSessionRepository {
     }
 
     private String chatKey(UUID contentId) {
-        return "content:" + contentId + ":chat:list";
+        return "content:" + contentId + ":chat";
+    }
+
+    private String chatUserKey(UUID contentId, UUID userId) {
+        return "content:" + contentId + ":chat:" + userId;
     }
 
     private String sessionKey(String sessionId) {
@@ -129,6 +140,9 @@ public class RedisWatchingSessionRepository {
                 .remove(contentKey(contentId), watchingIdStr);
         redisTemplate.delete(watchingKey(watchingId));
         redisTemplate.delete(userKey(userId));
+
+        // 채팅 삭제
+        removeChat(contentId, uid);
 
         return new RawWatchingSession(watchingId, contentId, uid, createdAtEpoch);
     }
@@ -217,19 +231,41 @@ public class RedisWatchingSessionRepository {
 
     // 채팅
     public RawContentChat addChat(UUID contentId, UUID senderId, String content) {
-        String chatData = senderId.toString() + ":" + content;
-        Long raw = redisTemplate.opsForList()
-                .rightPush(chatKey(contentId), chatData);
-        if (raw == null) {
-            return null;
-        }
+        long now = System.currentTimeMillis();
 
-        redisTemplate.expire(chatKey(contentId), Duration.ofMinutes(30));
-
-        return new RawContentChat(
+        RawContentChat rawContentChat = new RawContentChat(
                 senderId,
                 content
         );
+
+        String chatData;
+        try {
+            chatData = objectMapper.writeValueAsString(rawContentChat);
+        } catch (JsonProcessingException e) {
+            log.error("[실시간 같이 보기] 채팅 데이터 JSON 직렬화 실패: error={}", e.getMessage());
+            throw JsonSerializationFailedException.withContentIdAndUserId(contentId, senderId);
+        }
+
+        redisTemplate.opsForZSet()
+                .add(chatKey(contentId), chatData, now);
+        redisTemplate.opsForList()
+                .rightPush(chatUserKey(contentId, senderId), chatData);
+
+        return rawContentChat;
+    }
+
+    public void removeChat(UUID contentId, UUID senderId) {
+        List<String> messages = redisTemplate.opsForList()
+                .range(chatUserKey(contentId, senderId), 0, -1);
+
+        if (messages != null) {
+            for (String message : messages) {
+                redisTemplate.opsForZSet()
+                        .remove(chatKey(contentId), message);
+            }
+        }
+
+        redisTemplate.delete(chatUserKey(contentId, senderId));
     }
 
     // 헬퍼 메서드

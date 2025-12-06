@@ -8,15 +8,19 @@ import com.codeit.playlist.domain.watching.exception.WatchingNotFoundException;
 import com.codeit.playlist.domain.watching.exception.WatchingSessionMismatch;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.global.error.InvalidCursorException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.redis.DataRedisTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +37,16 @@ class RedisWatchingSessionRepositoryTest {
 
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
+    }
 
     private UUID contentId;
     private UUID userId;
@@ -72,12 +86,22 @@ class RedisWatchingSessionRepositoryTest {
     }
 
     @Test
-    @DisplayName("removeWatchingSession 정상 제거 및 Raw 반환")
-    void testRemoveWatchingSession() {
+    @DisplayName("removeWatchingSession 정상 제거 및 Raw 반환 (채팅도 함께 제거되는지 확인)")
+    void testRemoveWatchingSession() throws Exception {
         repository.addWatchingSession(watchingId, contentId, userId);
 
+        RawContentChat rawChat = repository.addChat(contentId, userId, "hello-remove-test");
+        Set<String> chatZset = redisTemplate.opsForZSet().range("content:" + contentId + ":chat", 0, -1);
+        List<String> chatList = redisTemplate.opsForList().range("content:" + contentId + ":chat:" + userId, 0, -1);
+
+        assertThat(chatZset).isNotEmpty();
+        assertThat(chatList).isNotEmpty();
+
+        // when
         RawWatchingSession removed = repository.removeWatchingSession(userId);
 
+        // then
+        assertThat(removed).isNotNull();
         assertThat(removed.userId()).isEqualTo(userId);
         assertThat(removed.contentId()).isEqualTo(contentId);
 
@@ -87,6 +111,17 @@ class RedisWatchingSessionRepositoryTest {
                 .isEmpty();
         assertThat(redisTemplate.opsForZSet().size("content:" + contentId + ":watching"))
                 .isZero();
+
+        List<String> chatListAfter = redisTemplate.opsForList().range("content:" + contentId + ":chat:" + userId, 0, -1);
+        assertThat(chatListAfter).isNullOrEmpty();
+
+        Set<String> chatZsetAfter = redisTemplate.opsForZSet().range("content:" + contentId + ":chat", 0, -1);
+        if (chatZsetAfter != null) {
+            for (String m : chatZsetAfter) {
+                RawContentChat rc = objectMapper.readValue(m, RawContentChat.class);
+                assertThat(rc.userId()).isNotEqualTo(userId);
+            }
+        }
     }
 
     @Test
@@ -262,37 +297,35 @@ class RedisWatchingSessionRepositoryTest {
     }
 
     @Test
-    @DisplayName("addChat 정상 동작 및 리스트에 저장")
-    void testAddChat() {
+    @DisplayName("addChat 정상 동작 (ZSet + user list 에 JSON 저장되는지 확인)")
+    void testAddChat() throws Exception {
         // given
         String content = "content";
-        String chatData = userId.toString() + ":" + content;
 
         // when
         RawContentChat rawChat = repository.addChat(contentId, userId, content);
 
         // then
         assertThat(rawChat.userId()).isEqualTo(userId);
-        assertThat(rawChat.content()).isEqualTo("content");
+        assertThat(rawChat.content()).isEqualTo(content);
 
-        List<String> chatList = redisTemplate.opsForList()
-                .range("content:" + contentId + ":chat:list", 0, -1);
-        assertThat(chatList).hasSize(1);
-        assertThat(chatList.get(0)).isEqualTo(chatData);
-    }
+        // zset members (JSON)
+        Set<String> chatZset = redisTemplate.opsForZSet().range("content:" + contentId + ":chat", 0, -1);
+        assertThat(chatZset).isNotNull().hasSize(1);
 
-    @Test
-    @DisplayName("addChat 호출 시 expire 30분 설정")
-    void testAddChatExpire() {
-        // given
-        String content = "content";
-        String chatData = userId.toString() + ":" + content;
+        // list for user
+        List<String> chatList = redisTemplate.opsForList().range("content:" + contentId + ":chat:" + userId, 0, -1);
+        assertThat(chatList).isNotNull().hasSize(1);
 
-        // when
-        RawContentChat rawChat = repository.addChat(contentId, userId, content);
+        // deserialize JSON to RawContentChat and verify fields
+        String jsonInZset = chatZset.iterator().next();
+        RawContentChat deserialized = objectMapper.readValue(jsonInZset, RawContentChat.class);
+        assertThat(deserialized.userId()).isEqualTo(userId);
+        assertThat(deserialized.content()).isEqualTo(content);
 
-        Long ttl = redisTemplate.getExpire("content:" + contentId + ":chat:list");
-        assertThat(ttl).isNotNull();
-        assertThat(ttl).isGreaterThan(0);
+        String jsonInList = chatList.get(0);
+        RawContentChat deserializedList = objectMapper.readValue(jsonInList, RawContentChat.class);
+        assertThat(deserializedList.userId()).isEqualTo(userId);
+        assertThat(deserializedList.content()).isEqualTo(content);
     }
 }
