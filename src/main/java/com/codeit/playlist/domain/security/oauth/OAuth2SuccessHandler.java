@@ -14,8 +14,6 @@ import com.codeit.playlist.domain.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +38,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
   @Value("${oauth2.redirect.base-url:http://localhost:8080}")
   private String frontendBaseUrl;
+
+  @Value("${jwt.refresh-token.expiration-ms}")
+  private long refreshTokenExpirationMs;
 
   @Override
   public void onAuthenticationSuccess(
@@ -105,15 +106,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         .secure(cookieSecure)
         .path("/")
         .sameSite("Lax")
-        .maxAge(60 * 60 * 24 * 7) // 7일
+        .maxAge(refreshTokenExpirationMs / 1000) // 7일
         .build();
 
     response.addHeader("Set-Cookie", refreshCookie.toString());
 
     String redirect =
         frontendBaseUrl +
-            "/#/contents" +
-            "?accessToken=" + URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
+            "/#/contents";
 
     log.info("[소셜 로그인] : OAuth2 로그인 성공 -> 사용자 = {}", email);
 
