@@ -1,4 +1,4 @@
-package com.codeit.playlist.global.config;
+package com.codeit.playlist.global.constant;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
