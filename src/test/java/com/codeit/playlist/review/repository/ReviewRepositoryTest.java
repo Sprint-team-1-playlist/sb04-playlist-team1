@@ -19,6 +19,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,6 +32,8 @@ public class ReviewRepositoryTest {
 
     @Autowired
     private EntityManager em;
+
+    private static final AtomicLong TMDB_ID_SEQ = new AtomicLong(1);
 
     @Test
     @DisplayName("findReviews 성공 - contentId, 정렬, limit이 정상적으로 적용")
@@ -193,6 +196,7 @@ public class ReviewRepositoryTest {
 
     private Content createTestContent(String title) {
         Content content = new Content(
+                TMDB_ID_SEQ.getAndIncrement(),
                 Type.MOVIE,
                 title,
                 "설명",

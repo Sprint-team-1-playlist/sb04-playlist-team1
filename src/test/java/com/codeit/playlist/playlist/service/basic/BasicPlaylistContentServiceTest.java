@@ -1,12 +1,5 @@
 package com.codeit.playlist.playlist.service.basic;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
@@ -23,8 +16,6 @@ import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.playlist.service.basic.BasicPlaylistContentService;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +23,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicPlaylistContentServiceTest {
@@ -58,6 +60,8 @@ public class BasicPlaylistContentServiceTest {
 
     @InjectMocks
     private BasicPlaylistContentService basicPlaylistContentService;
+
+    private static final AtomicLong TMDB_ID_SEQ = new AtomicLong(1);
 
     @Test
     @DisplayName("addContentToPlaylist 성공 - 정상 요청이면 PlaylistContent가 저장된다")
@@ -280,7 +284,7 @@ public class BasicPlaylistContentServiceTest {
     }
 
     private Content createContent(String title) {
-        Content content = new Content(Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
+        Content content = new Content(TMDB_ID_SEQ.getAndIncrement(), Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
         return content;
     }
 
