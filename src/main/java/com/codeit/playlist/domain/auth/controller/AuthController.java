@@ -43,7 +43,6 @@ public class AuthController {
 
   @GetMapping("/csrf-token")
   public ResponseEntity<Void> getCsrfToken(HttpServletResponse response) {
-    String fakeToken = UUID.randomUUID().toString();
 
     ResponseCookie cookie = generateFakeCsrfTokenCookie();
 
