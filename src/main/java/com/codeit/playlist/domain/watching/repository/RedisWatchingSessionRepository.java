@@ -70,6 +70,15 @@ public class RedisWatchingSessionRepository {
                 .set(sessionKey(sessionId), userId.toString());
     }
 
+    public void removeWebSocketSession(String sessionId) {
+        redisTemplate.delete(sessionKey(sessionId));
+    }
+
+    public UUID findUserBySession(String sessionId) {
+        String userId = redisTemplate.opsForValue().get(sessionKey(sessionId));
+        return userId != null ? UUID.fromString(userId) : null;
+    }
+
     // 입장
     public RawWatchingSession addWatchingSession(UUID watchingId, UUID contentId, UUID userId) {
         // 기존 세션이 있으면 먼저 제거
