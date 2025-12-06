@@ -12,6 +12,5 @@ public interface TheMovieMapper {
     @Mapping(target = "title", source = "theMovieResponse.title")
     @Mapping(target = "description", source = "theMovieResponse.description")
     @Mapping(target = "thumbnailUrl", source = "theMovieResponse.thumbnailUrl")
-    @Mapping(target = "averageRating", source = "theMovieResponse.averageRating")
     Content toContent(TheMovieResponse theMovieResponse, Type type);
 }
