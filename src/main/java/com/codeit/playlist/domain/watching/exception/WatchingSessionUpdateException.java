@@ -19,4 +19,10 @@ public class WatchingSessionUpdateException extends WatchingException {
         exception.addDetail("userId", userId);
         return exception;
     }
+
+    public static WatchingSessionUpdateException withSessionId(String sessionId) {
+        WatchingSessionUpdateException exception = new WatchingSessionUpdateException();
+        exception.addDetail("sessionId", sessionId);
+        return exception;
+    }
 }

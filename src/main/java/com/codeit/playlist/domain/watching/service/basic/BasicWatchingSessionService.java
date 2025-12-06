@@ -55,7 +55,7 @@ public class BasicWatchingSessionService implements WatchingSessionService {
         RawWatchingSession raw = redisWatchingSessionRepository.addWatchingSession(watchingId, contentId, userId);
         redisWatchingSessionRepository.addWebSocketSession(sessionId, userId);
         if (raw == null) {
-            log.error("[실시간 같이 보기] Redis 사용자 퇴장 처리 오류(NPE): watchingId={}, contentId={}, userId={}", watchingId, contentId, userId);
+            log.error("[실시간 같이 보기] Redis 사용자 입장 처리 오류(NPE): watchingId={}, contentId={}, userId={}", watchingId, contentId, userId);
             throw new WatchingSessionUpdateException();
         }
 
@@ -65,6 +65,11 @@ public class BasicWatchingSessionService implements WatchingSessionService {
     @Override
     public void leaveWatching(String sessionId) {
         UUID userId = redisWatchingSessionRepository.findUserBySession(sessionId);
+        if (userId == null) {
+            log.error("[실시간 같이 보기] 유효하지 않은 세션: sessionId={}", sessionId);
+            throw WatchingSessionUpdateException.withSessionId(sessionId);
+        }
+
         redisWatchingSessionRepository.removeWebSocketSession(sessionId);
         RawWatchingSession raw = redisWatchingSessionRepository.removeWatchingSession(userId);
         if (raw == null) {
