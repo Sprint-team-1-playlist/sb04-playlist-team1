@@ -18,41 +18,45 @@ public class WebSocketUnsubscribeListener {
 
     @EventListener
     public void onUnsubscribe(SessionUnsubscribeEvent event) {
-        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-
-        String sessionId = accessor.getSessionId();
-        if (sessionId == null) {
-            log.warn("[실시간 같이 보기] Unsubscribe 에서 sessionId가 null임");
-            throw new WatchingNotFoundException();
-        }
-
-        log.debug("[실시간 같이 보기] UNSUBSCRIBE 감지: sessionId={}", sessionId);
-        try {
-            watchingSessionService.leaveWatching(sessionId);
-            log.info("[실시간 같이 보기] UNSUBSCRIBE 시청 세션 처리 완료: sessionId={}", sessionId);
-        } catch (WatchingNotFoundException e) {
-            log.error("[실시간 같이 보기] UNSUBSCRIBE 시청 세션 처리 중 오류 발생: " +
-                    "sessionId={}, error={}", sessionId, e.getMessage());
-        }
+        sendToService(event);
     }
 
     @EventListener
     public void onDisconnect(SessionDisconnectEvent event) {
-        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+        sendToService(event);
+    }
+
+    private void sendToService(Object event) {
+        String eventName = event.getClass().getSimpleName();
+        String sessionId = getSessionId(event);
+
+        log.debug("[실시간 같이 보기] {} 감지: sessionId={}", eventName, sessionId);
+
+        try {
+            watchingSessionService.leaveWatching(sessionId);
+            log.info("[실시간 같이 보기] {} 처리 완료: sessionId={}", eventName, sessionId);
+
+        } catch (WatchingNotFoundException e) {
+            log.error("[실시간 같이 보기] {} 처리 중 오류: sessionId={}, error={}",
+                    eventName, sessionId, e.getMessage());
+        }
+    }
+
+    private String getSessionId(Object event) {
+        StompHeaderAccessor accessor =
+                StompHeaderAccessor.wrap(
+                        (event instanceof SessionUnsubscribeEvent)
+                                ? ((SessionUnsubscribeEvent) event).getMessage()
+                                : ((SessionDisconnectEvent) event).getMessage()
+                );
 
         String sessionId = accessor.getSessionId();
         if (sessionId == null) {
-            log.warn("[실시간 같이 보기] Disconnect 에서 sessionId가 null임");
+            log.warn("[실시간 같이 보기] {} 에서 sessionId가 null",
+                    event.getClass().getSimpleName());
             throw new WatchingNotFoundException();
         }
 
-        log.debug("[실시간 같이 보기] DISCONNECT 감지: sessionId={}", sessionId);
-        try {
-            watchingSessionService.leaveWatching(sessionId);
-            log.info("[실시간 같이 보기] DISCONNECT 시청 세션 처리 완료: sessionId={}", sessionId);
-        } catch (WatchingNotFoundException e) {
-            log.error("[실시간 같이 보기] DISCONNECT 시청 세션 처리 중 오류 발생: " +
-                    "sessionId={}, error={}", sessionId, e.getMessage());
-        }
+        return sessionId;
     }
 }
