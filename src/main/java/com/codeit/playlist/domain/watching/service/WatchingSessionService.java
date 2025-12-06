@@ -6,7 +6,9 @@ import java.util.UUID;
 
 public interface WatchingSessionService {
 
-    void watching(UUID contentId, UUID userId);
+    void joinWatching(String sessionId, UUID contentId, UUID userId);
+
+    void leaveWatching(String sessionId);
 
     long count(UUID contentId);
 
