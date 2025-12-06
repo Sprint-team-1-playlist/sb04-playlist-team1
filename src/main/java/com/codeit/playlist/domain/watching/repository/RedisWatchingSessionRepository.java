@@ -38,7 +38,10 @@ import java.util.*;
  * members = JSON { "userId" : "uuid", "content" : "String" }
  * score = sentAt(currentTimeMillis)
  *
- * 5. String ws:session:{sessionId}
+ * 5. List: 특정 유저가 보낸 메시지 리스트
+ * content:{contentId}:chat:{userId}
+ *
+ * 6. String ws:session:{sessionId}
  * value: userId
  * */
 
@@ -63,6 +66,10 @@ public class RedisWatchingSessionRepository {
 
     private String chatKey(UUID contentId) {
         return "content:" + contentId + ":chat";
+    }
+
+    private String chatUserKey(UUID contentId, UUID userId) {
+        return "content:" + contentId + ":chat:" + userId;
     }
 
     private String sessionKey(String sessionId) {
@@ -133,6 +140,9 @@ public class RedisWatchingSessionRepository {
                 .remove(contentKey(contentId), watchingIdStr);
         redisTemplate.delete(watchingKey(watchingId));
         redisTemplate.delete(userKey(userId));
+
+        // 채팅 삭제
+        removeChat(contentId, uid);
 
         return new RawWatchingSession(watchingId, contentId, uid, createdAtEpoch);
     }
@@ -238,8 +248,24 @@ public class RedisWatchingSessionRepository {
 
         redisTemplate.opsForZSet()
                 .add(chatKey(contentId), chatData, now);
+        redisTemplate.opsForList()
+                .rightPush(chatUserKey(contentId, senderId), chatData);
 
         return rawContentChat;
+    }
+
+    public void removeChat(UUID contentId, UUID senderId) {
+        List<String> messages = redisTemplate.opsForList()
+                .range(chatUserKey(contentId, senderId), 0, -1);
+
+        if (messages != null) {
+            for (String message : messages) {
+                redisTemplate.opsForZSet()
+                        .remove(chatKey(contentId), message);
+            }
+        }
+
+        redisTemplate.delete(chatUserKey(contentId, senderId));
     }
 
     // 헬퍼 메서드
