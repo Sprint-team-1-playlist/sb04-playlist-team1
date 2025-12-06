@@ -4,9 +4,12 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.dto.data.RawContentChat;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
+import com.codeit.playlist.domain.watching.exception.JsonSerializationFailedException;
 import com.codeit.playlist.domain.watching.exception.WatchingNotFoundException;
 import com.codeit.playlist.domain.watching.exception.WatchingSessionMismatch;
 import com.codeit.playlist.global.error.InvalidCursorException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -44,6 +47,7 @@ import java.util.*;
 @Slf4j
 public class RedisWatchingSessionRepository {
     private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     private String userKey(UUID userId) {
         return "user:" + userId + ":watching";
@@ -58,7 +62,7 @@ public class RedisWatchingSessionRepository {
     }
 
     private String chatKey(UUID contentId) {
-        return "content:" + contentId + ":chat:list";
+        return "content:" + contentId + ":chat";
     }
 
     private String sessionKey(String sessionId) {
@@ -217,17 +221,25 @@ public class RedisWatchingSessionRepository {
 
     // 채팅
     public RawContentChat addChat(UUID contentId, UUID senderId, String content) {
-        String chatData = senderId.toString() + ":" + content;
-        Long raw = redisTemplate.opsForList()
-                .rightPush(chatKey(contentId), chatData);
-        if (raw == null) {
-            return null;
-        }
+        long now = System.currentTimeMillis();
 
-        return new RawContentChat(
+        RawContentChat rawContentChat = new RawContentChat(
                 senderId,
                 content
         );
+
+        String chatData;
+        try {
+            chatData = objectMapper.writeValueAsString(rawContentChat);
+        } catch (JsonProcessingException e) {
+            log.error("[실시간 같이 보기] 채팅 데이터 JSON 직렬화 실패: error={}", e.getMessage());
+            throw JsonSerializationFailedException.withContentIdAndUserId(contentId, senderId);
+        }
+
+        redisTemplate.opsForZSet()
+                .add(chatKey(contentId), chatData, now);
+
+        return rawContentChat;
     }
 
     // 헬퍼 메서드
