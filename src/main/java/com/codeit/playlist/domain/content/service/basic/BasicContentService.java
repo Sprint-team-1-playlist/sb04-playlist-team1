@@ -57,8 +57,9 @@ public class BasicContentService implements ContentService {
         if(thumbnail == null || thumbnail.isBlank()) {
             throw new ContentBadRequestException("썸네일은 필수입니다.");
         }
-
+        Long uuid = UUID.randomUUID().getLeastSignificantBits();
         Content content = new Content(
+                uuid,
                 type,
                 request.title(),
                 request.description(),
@@ -240,7 +241,7 @@ public class BasicContentService implements ContentService {
         log.info("[콘텐츠 데이터 관리] nextIdAfter : {}", nextIdAfter);
 
         CursorResponseContentDto responseDto = new CursorResponseContentDto(data, nextCursor, nextIdAfter, hasNext, pageSize, sortBy, sortDirection);
-        log.debug("[콘텐츠 데이터 관리] 커서 페이지네이션 컨텐츠 수집 완료, response = {}", responseDto);
+        log.debug("[콘텐츠 데이터 관리] 커서 페이지네이션 컨텐츠 수집 완료");
         return responseDto;
     }
 

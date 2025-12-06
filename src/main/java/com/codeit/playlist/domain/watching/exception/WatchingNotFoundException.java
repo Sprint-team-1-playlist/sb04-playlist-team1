@@ -12,4 +12,10 @@ public class WatchingNotFoundException extends WatchingException {
         exception.addDetail("watchingId", id);
         return exception;
     }
+
+    public static WatchingNotFoundException withSessionId(String sessionId) {
+        WatchingNotFoundException exception = new WatchingNotFoundException();
+        exception.addDetail("watchingSessionId", sessionId);
+        return exception;
+    }
 }

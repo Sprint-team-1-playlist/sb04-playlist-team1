@@ -1,8 +1,7 @@
-package com.codeit.playlist.domain.watching.event.impl;
+package com.codeit.playlist.domain.watching.event.publisher;
 
 import com.codeit.playlist.domain.watching.dto.response.ContentChatDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
-import com.codeit.playlist.domain.watching.event.WatchingSessionPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
@@ -11,7 +10,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class SimpWatchingSessionPublisher implements WatchingSessionPublisher { // TODO: 카프카 구현체로 변경
+public class SimpWatchingSessionPublisher implements WatchingSessionPublisher {
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override

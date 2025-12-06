@@ -17,11 +17,11 @@ import java.util.*;
 
 /*
  * Redis 설계
- * 1. String user:{userId}:session (사용자의 현재 세션 정보)
- * value = watchingId
+ * 1. String user:{userId}:watching (사용자의 현재 세션 정보)
+ * value = watchingId(UUID)
  *
  * 2. ZSET: score로 정렬하기 위함(커서 페이지네이션에 사용)
- * content:{contentId}:sessions
+ * content:{contentId}:watching
  * members = watchingId1, watchingId2, watchingId3, ...
  * score = currentTimeMillis
  *
@@ -34,6 +34,9 @@ import java.util.*;
  * 4. List: 콘텐츠별 채팅 내역 보관
  * content:{contentId}:chat:list
  * value: String(senderId:content)
+ *
+ * 5. String ws:session:{sessionId}
+ * value: userId
  * */
 
 @Repository
@@ -43,11 +46,11 @@ public class RedisWatchingSessionRepository {
     private final StringRedisTemplate redisTemplate;
 
     private String userKey(UUID userId) {
-        return "user:" + userId + ":session";
+        return "user:" + userId + ":watching";
     }
 
     private String contentKey(UUID contentId) {
-        return "content:" + contentId + ":sessions";
+        return "content:" + contentId + ":watching";
     }
 
     private String watchingKey(UUID watchingId) {
@@ -56,6 +59,24 @@ public class RedisWatchingSessionRepository {
 
     private String chatKey(UUID contentId) {
         return "content:" + contentId + ":chat:list";
+    }
+
+    private String sessionKey(String sessionId) {
+        return "ws:session:" + sessionId;
+    }
+
+    public void addWebSocketSession(String sessionId, UUID userId) {
+        redisTemplate.opsForValue()
+                .set(sessionKey(sessionId), userId.toString());
+    }
+
+    public void removeWebSocketSession(String sessionId) {
+        redisTemplate.delete(sessionKey(sessionId));
+    }
+
+    public UUID findUserBySession(String sessionId) {
+        String userId = redisTemplate.opsForValue().get(sessionKey(sessionId));
+        return userId != null ? UUID.fromString(userId) : null;
     }
 
     // 입장

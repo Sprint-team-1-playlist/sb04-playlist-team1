@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
@@ -20,16 +19,6 @@ import java.util.UUID;
 @MessageMapping("/contents/{contentId}")
 public class WatchingSessionController {
     private final WatchingSessionService watchingSessionService;
-
-    @SubscribeMapping("/watch")
-    public void watching(@DestinationVariable UUID contentId,
-                                          Principal principal) {
-        UUID userId = getUserId(principal);
-        log.debug("[실시간 같이 보기] 콘텐츠 시청 세션 시작: contentId={}, userId={}", contentId, userId);
-        watchingSessionService.watching(contentId, userId);
-
-        log.info("[실시간 같이 보기] 콘텐츠 시청 세션 성공: contentId={}, userId={}", contentId, userId);
-    }
 
     @MessageMapping("/chat")
     public void sendChat(@DestinationVariable UUID contentId,
