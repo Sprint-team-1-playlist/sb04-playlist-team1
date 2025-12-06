@@ -84,9 +84,6 @@ management:
     annotations:
       enabled: true
 
-  cookie:
-    secure: ${COOKIE_SECURE:false} # 로컬 개발시에만 false
-
 websocket:
   allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:8080}
 
