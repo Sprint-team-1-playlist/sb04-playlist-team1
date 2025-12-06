@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.time.Duration;
 import java.util.*;
 
 /*
@@ -20,10 +19,10 @@ import java.util.*;
  * 1. String user:{userId}:watching (사용자의 현재 세션 정보)
  * value = watchingId(UUID)
  *
- * 2. ZSET: score로 정렬하기 위함(커서 페이지네이션에 사용)
+ * 2. ZSet: score로 정렬하기 위함(커서 페이지네이션에 사용)
  * content:{contentId}:watching
  * members = watchingId1, watchingId2, watchingId3, ...
- * score = currentTimeMillis
+ * score = enterAt(currentTimeMillis)
  *
  * 3. HASH: 시청세션의 상세정보를 조회하기 위함
  * watching:{watchingId}
@@ -31,9 +30,10 @@ import java.util.*;
  * userId
  * createdAt
  *
- * 4. List: 콘텐츠별 채팅 내역 보관
- * content:{contentId}:chat:list
- * value: String(senderId:content)
+ * 4. ZSet: 콘텐츠별 채팅 내역 보관
+ * content:{contentId}:chat
+ * members = JSON { "userId" : "uuid", "content" : "String" }
+ * score = sentAt(currentTimeMillis)
  *
  * 5. String ws:session:{sessionId}
  * value: userId
@@ -223,8 +223,6 @@ public class RedisWatchingSessionRepository {
         if (raw == null) {
             return null;
         }
-
-        redisTemplate.expire(chatKey(contentId), Duration.ofMinutes(30));
 
         return new RawContentChat(
                 senderId,
