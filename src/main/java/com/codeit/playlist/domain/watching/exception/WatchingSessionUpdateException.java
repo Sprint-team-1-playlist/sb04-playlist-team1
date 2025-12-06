@@ -20,7 +20,7 @@ public class WatchingSessionUpdateException extends WatchingException {
         return exception;
     }
 
-    public static WatchingSessionUpdateException withSessionId(String sessionId) {
+    public static WatchingSessionUpdateException watchingSessionId(String sessionId) {
         WatchingSessionUpdateException exception = new WatchingSessionUpdateException();
         exception.addDetail("sessionId", sessionId);
         return exception;

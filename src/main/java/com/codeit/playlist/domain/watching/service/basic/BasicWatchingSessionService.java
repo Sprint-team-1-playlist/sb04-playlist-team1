@@ -67,7 +67,7 @@ public class BasicWatchingSessionService implements WatchingSessionService {
         UUID userId = redisWatchingSessionRepository.findUserBySession(sessionId);
         if (userId == null) {
             log.error("[실시간 같이 보기] 유효하지 않은 세션: sessionId={}", sessionId);
-            throw WatchingSessionUpdateException.withSessionId(sessionId);
+            throw WatchingSessionUpdateException.watchingSessionId(sessionId);
         }
 
         redisWatchingSessionRepository.removeWebSocketSession(sessionId);
