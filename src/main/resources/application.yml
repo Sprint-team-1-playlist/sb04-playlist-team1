@@ -72,6 +72,9 @@ spring:
       mode: always
       schema-locations: classpath:schema-postgres.sql
 
+  jackson:
+    time-zone: Asia/Seoul
+
 management:
   endpoints:
     web:
