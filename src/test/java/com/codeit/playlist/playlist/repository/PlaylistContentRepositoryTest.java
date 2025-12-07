@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Import;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,6 +39,8 @@ public class PlaylistContentRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    private static final AtomicLong TMDB_ID_SEQ = new AtomicLong(1);
 
     @Test
     @DisplayName("existsByPlaylist_IdAndContent_Id 성공 - 매핑이 존재하면 true를 반환한다")
@@ -260,7 +263,7 @@ public class PlaylistContentRepositoryTest {
     }
 
     private Content createContent(String title) {
-        Content content = new Content(Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
+        Content content = new Content(TMDB_ID_SEQ.getAndIncrement(), Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
         return content;
     }
 
