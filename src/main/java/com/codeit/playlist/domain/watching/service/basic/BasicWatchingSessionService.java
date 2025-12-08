@@ -28,8 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -107,10 +105,8 @@ public class BasicWatchingSessionService implements WatchingSessionService {
                 .orElseThrow(() -> ContentNotFoundException.withId(raw.contentId()));
         List<Tag> tags = tagRepository.findByContentId(raw.contentId());
 
-        LocalDateTime createdAt = LocalDateTime.ofInstant(
-                Instant.ofEpochMilli(raw.createdAtEpoch()),
-                ZoneId.systemDefault()
-        );
+        Instant createdAt =
+                Instant.ofEpochMilli(raw.createdAtEpoch());
 
         return new WatchingSessionDto(
                 raw.watchingId(),

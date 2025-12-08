@@ -3,7 +3,8 @@ package com.codeit.playlist.domain.message.dto.data;
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDateTime;
+
+import java.time.Instant;
 import java.util.UUID;
 
 public record DirectMessageDto(
@@ -12,7 +13,7 @@ public record DirectMessageDto(
 
     @NotNull
     UUID conversationId,
-    LocalDateTime createdAt,
+    Instant createdAt,
 
     @NotNull
     UserSummary sender,

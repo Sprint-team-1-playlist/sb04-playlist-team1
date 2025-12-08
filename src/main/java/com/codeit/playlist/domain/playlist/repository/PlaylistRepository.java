@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,7 +37,7 @@ public interface PlaylistRepository extends JpaRepository<Playlist, UUID>, Playl
          where p.deletedAt is not null
                 and p.deletedAt <= :threshold
     """)
-    List<Playlist> findAllDeletedBefore(@Param("threshold") LocalDateTime threshold);
+    List<Playlist> findAllDeletedBefore(@Param("threshold") Instant threshold);
 
     //플레이리스트 단건 조회
     @EntityGraph(attributePaths = {

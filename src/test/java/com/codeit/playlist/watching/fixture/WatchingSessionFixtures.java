@@ -7,10 +7,14 @@ import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
-import com.codeit.playlist.domain.watching.dto.data.*;
+import com.codeit.playlist.domain.watching.dto.data.ChangeType;
+import com.codeit.playlist.domain.watching.dto.data.RawContentChat;
+import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
+import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
+import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,7 +22,7 @@ import static org.mockito.Mockito.mock;
 
 public class WatchingSessionFixtures {
     public static final UUID FIXED_ID = UUID.randomUUID();
-    public static final LocalDateTime FIXED_TIME = LocalDateTime.now();
+    public static final Instant FIXED_TIME = Instant.now();
     public static final long FIXED_LONG_TIME = System.currentTimeMillis();
     public static final String FIXED_SESSION_ID = "session-id";
 
