@@ -27,10 +27,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -51,6 +53,8 @@ public class PlaylistRepositoryTest {
     private TestEntityManager entityManager;
     @Autowired
     private ContentRepository contentRepository;
+
+    private static final AtomicLong TMDB_ID_SEQ = new AtomicLong(1);
 
     @Test
     @DisplayName("searchPlaylists 성공 - 구독자 필터로 자신이 구독한 플레이리스트만 조회")
@@ -107,19 +111,19 @@ public class PlaylistRepositoryTest {
         EntityManager em = entityManager.getEntityManager();
 
         // updatedAt 강제 조정(Auditing 우회)
-        LocalDateTime base = LocalDateTime.now();
+        Instant base = Instant.now();
         em.createQuery("UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
-                .setParameter("t", base.minusHours(3))
+                .setParameter("t", base.minus(3, ChronoUnit.HOURS))
                 .setParameter("id", p1.getId())
                 .executeUpdate();
 
         em.createQuery("UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
-                .setParameter("t", base.minusHours(2))
+                .setParameter("t", base.minus(2, ChronoUnit.HOURS))
                 .setParameter("id", p2.getId())
                 .executeUpdate();
 
         em.createQuery("UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
-                .setParameter("t", base.minusHours(1))
+                .setParameter("t", base.minus(1, ChronoUnit.HOURS))
                 .setParameter("id", p3.getId())
                 .executeUpdate();
 
@@ -208,7 +212,7 @@ public class PlaylistRepositoryTest {
         entityManager.persist(owner);
 
         Playlist playlist = new Playlist(owner, "제목", "설명");
-        playlist.setDeletedAt(LocalDateTime.now());
+        playlist.setDeletedAt(Instant.now());
         entityManager.persist(playlist);
         entityManager.flush();
         entityManager.clear();
@@ -229,13 +233,13 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("testmail@test.com");
         entityManager.persist(owner);
 
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
 
         Playlist oldDeleted = new Playlist(owner, "old", "old desc");
-        oldDeleted.setDeletedAt(now.minusDays(8)); // 7일보다 더 이전
+        oldDeleted.setDeletedAt(now.minus(8,ChronoUnit.DAYS)); // 7일보다 더 이전
 
         Playlist recentDeleted = new Playlist(owner, "recent", "desc");
-        recentDeleted.setDeletedAt(now.minusDays(3)); // 7일 이전이 아님
+        recentDeleted.setDeletedAt(now.minus(3, ChronoUnit.DAYS)); // 7일 이전이 아님
 
         Playlist notDeleted = new Playlist(owner, "notDeleted", "desc");
 
@@ -245,7 +249,7 @@ public class PlaylistRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        LocalDateTime threshold = now.minusDays(7);
+        Instant threshold = now.minus(7, ChronoUnit.DAYS);
 
         // when
         List<Playlist> result = playlistRepository.findAllDeletedBefore(threshold);
@@ -269,7 +273,7 @@ public class PlaylistRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        LocalDateTime threshold = LocalDateTime.now().minusDays(7);
+        Instant threshold = Instant.now().minus(7, ChronoUnit.DAYS);
 
         // when
         List<Playlist> result = playlistRepository.findAllDeletedBefore(threshold);
@@ -290,12 +294,12 @@ public class PlaylistRepositoryTest {
 
         // deletedAt 강제 세팅 (ReflectionTestUtils 사용)
         ReflectionTestUtils.setField(playlist, "deletedAt",
-                LocalDateTime.now().minusDays(3)); // 7일 이전 X
+                Instant.now().minus(3, ChronoUnit.DAYS)); // 7일 이전 X
 
         entityManager.flush();
         entityManager.clear();
 
-        LocalDateTime threshold = LocalDateTime.now().minusDays(7);
+        Instant threshold = Instant.now().minus(7, ChronoUnit.DAYS);
 
         // when
         List<Playlist> result = playlistRepository.findAllDeletedBefore(threshold);
@@ -388,7 +392,7 @@ public class PlaylistRepositoryTest {
         playlistRepository.save(playlist);
 
         // 논리 삭제
-        playlist.setDeletedAt(LocalDateTime.now());
+        playlist.setDeletedAt(Instant.now());
         playlistRepository.save(playlist);
 
         entityManager.flush();
@@ -492,6 +496,6 @@ public class PlaylistRepositoryTest {
     }
 
     public static Content createTestContent(String title) {
-        return new Content(Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
+        return new Content(TMDB_ID_SEQ.getAndIncrement(), Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
     }
 }

@@ -8,7 +8,6 @@ import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConver
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationAlreadyExistsException;
 import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
-import com.codeit.playlist.global.error.InvalidCursorException;
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.exception.SelfChatNotAllowedException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
@@ -18,19 +17,14 @@ import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.message.entity.Message;
 import com.codeit.playlist.domain.message.mapper.MessageMapper;
 import com.codeit.playlist.domain.message.repository.MessageRepository;
+import com.codeit.playlist.domain.message.repository.ReadStatusRepository;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.codeit.playlist.global.error.InvalidCursorException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -39,6 +33,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -52,6 +54,7 @@ public class BasicConversationService implements ConversationService {
   private final UserMapper userMapper;
   private final MessageRepository messageRepository;
   private final MessageMapper messageMapper;
+  private final ReadStatusRepository readStatusRepository;
 
   @Override
   public ConversationDto create(ConversationCreateRequest request) {
@@ -100,7 +103,7 @@ public class BasicConversationService implements ConversationService {
 
     UUID currentUserId = getCurrentUserId();
 
-    LocalDateTime cursorTime = parseCursor(cursor);
+    Instant cursorTime = parseCursor(cursor);
 
     List<Conversation> conversations = isAsc
         ? conversationRepository.findPageAsc(currentUserId, keywordLike, cursorTime, idAfter, pageable)
@@ -128,7 +131,9 @@ public class BasicConversationService implements ConversationService {
           Message lastestMessage = lastestMessageMap.get(conversation.getId());
           DirectMessageDto messageDto = messageMapper.toDto(lastestMessage);
 
-          return conversationMapper.toDto(conversation, userSummary, messageDto);
+          boolean hasUnread = hasUnreadMessage(conversation.getId(), currentUserId);
+
+          return conversationMapper.toDto(conversation, userSummary, messageDto, hasUnread);
         })
         .toList();
 
@@ -209,14 +214,16 @@ public class BasicConversationService implements ConversationService {
         .orElse(null);
     DirectMessageDto messageDto = messageMapper.toDto(lastestMessage);
 
-    ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto);
+    boolean hasUnread = hasUnreadMessage(conversation.getId(), currentUserId);
+
+    ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto, hasUnread);
     return conversationDto;
   }
 
-  private LocalDateTime parseCursor(String cursor) {
+  private Instant parseCursor(String cursor) {
     if (cursor == null) return null;
     try {
-      return LocalDateTime.parse(cursor);
+      return Instant.parse(cursor);
     } catch (DateTimeParseException e) {
       throw InvalidCursorException.withCursor(cursor);
     }
@@ -226,5 +233,9 @@ public class BasicConversationService implements ConversationService {
     if (!conversation.isParticipant(userId)) {
       throw NotConversationParticipantException.withId(userId);
     }
+  }
+
+  private boolean hasUnreadMessage(UUID conversationId, UUID userId) {
+    return readStatusRepository.hasUnread(conversationId, userId);
   }
 }

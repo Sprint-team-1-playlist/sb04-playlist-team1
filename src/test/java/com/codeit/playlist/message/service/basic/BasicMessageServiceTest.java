@@ -1,7 +1,6 @@
 package com.codeit.playlist.message.service.basic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -23,6 +22,7 @@ import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.entity.Message;
+import com.codeit.playlist.domain.message.event.message.DirectMessageSentEvent;
 import com.codeit.playlist.domain.message.exception.InvalidMessageReadOperationException;
 import com.codeit.playlist.domain.message.exception.MessageNotFoundException;
 import com.codeit.playlist.domain.message.mapper.MessageMapper;
@@ -34,7 +34,9 @@ import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.global.error.InvalidCursorException;
 import java.lang.reflect.Field;
-import java.time.LocalDateTime;
+import java.security.Principal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -77,6 +79,7 @@ class BasicMessageServiceTest {
   private Conversation conversation;
   private UUID conversationId;
   private UUID currentUserId;
+  private Principal authentication;
 
   @BeforeEach
   void setUp() {
@@ -95,17 +98,18 @@ class BasicMessageServiceTest {
     PlaylistUserDetails userDetails = mock(PlaylistUserDetails.class);
     when(userDetails.getUserDto()).thenReturn(
         new com.codeit.playlist.domain.user.dto.data.UserDto(
-            user1.getId(), LocalDateTime.now(),
+            user1.getId(), Instant.now(),
             user1.getEmail(), user1.getName(), null, user1.getRole(), false
         )
     );
 
-    Authentication authentication = mock(Authentication.class);
-    when(authentication.getPrincipal()).thenReturn(userDetails);
+    Authentication auth = mock(Authentication.class);
+    when(auth.getPrincipal()).thenReturn(userDetails);
+    this.authentication = auth;
 
     SecurityContext securityContext = mock(SecurityContext.class);
 
-    when(securityContext.getAuthentication()).thenReturn(authentication);
+    when(securityContext.getAuthentication()).thenReturn(auth);
 
     SecurityContextHolder.setContext(securityContext);
   }
@@ -118,11 +122,13 @@ class BasicMessageServiceTest {
     DirectMessageSendRequest sendRequest = new DirectMessageSendRequest("Hello!");
 
     Message savedMessage = new Message(conversation, user1, user2, sendRequest.content());
+    setId(savedMessage, UUID.randomUUID());
+    setCreatedAt(savedMessage, Instant.now());
 
     DirectMessageDto dto = new DirectMessageDto(
-        UUID.randomUUID(),
+        savedMessage.getId(),
         conversationId,
-        LocalDateTime.now(),
+        savedMessage.getCreatedAt(),
         new UserSummary(user1.getId(), user1.getName(), user1.getProfileImageUrl()),
         new UserSummary(user2.getId(), user2.getName(), user2.getProfileImageUrl()),
         sendRequest.content()
@@ -133,7 +139,7 @@ class BasicMessageServiceTest {
     when(messageMapper.toDto(savedMessage)).thenReturn(dto);
 
     // when
-    DirectMessageDto result = messageService.save(conversationId, sendRequest);
+    DirectMessageDto result = messageService.save(conversationId, sendRequest, authentication);
 
     // then
     assertNotNull(result);
@@ -145,6 +151,7 @@ class BasicMessageServiceTest {
 
     verify(messageRepository, times(1)).save(any(Message.class));
     verify(messageMapper, times(1)).toDto(savedMessage);
+    verify(eventPublisher, times(1)).publishEvent(any(DirectMessageSentEvent.class));
   }
 
   @Test
@@ -156,10 +163,11 @@ class BasicMessageServiceTest {
     when(conversationRepository.findById(conversationId)).thenReturn(Optional.empty());
 
     // when & then
-    assertThrows(ConversationNotFoundException.class, () -> messageService.save(conversationId, sendRequest));
+    assertThrows(ConversationNotFoundException.class, () -> messageService.save(conversationId, sendRequest, authentication));
 
     verify(messageRepository, never()).save(any());
     verify(messageMapper, never()).toDto(any());
+    verify(eventPublisher, never()).publishEvent(any());
   }
 
   @Test
@@ -170,13 +178,18 @@ class BasicMessageServiceTest {
     DirectMessageSendRequest sendRequest = new DirectMessageSendRequest("Hi there!");
 
     when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
-    when(messageRepository.save(any(Message.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(messageRepository.save(any(Message.class))).thenAnswer(invocation -> {
+      Message m = invocation.getArgument(0);
+      setId(m, UUID.randomUUID());
+      setCreatedAt(m, Instant.now());
+      return m;
+    });
     when(messageMapper.toDto(any(Message.class))).thenAnswer(invocation -> {
       Message m = invocation.getArgument(0);
       return new DirectMessageDto(
           m.getId(),
           conversationId,
-          LocalDateTime.now(),
+          m.getCreatedAt(),
           new UserSummary(m.getSender().getId(), m.getSender().getName(), m.getSender().getProfileImageUrl()),
           new UserSummary(m.getReceiver().getId(), m.getReceiver().getName(), m.getReceiver().getProfileImageUrl()),
           m.getContent()
@@ -184,11 +197,42 @@ class BasicMessageServiceTest {
     });
 
     // when
-    DirectMessageDto result = messageService.save(conversationId, sendRequest);
+    DirectMessageDto result = messageService.save(conversationId, sendRequest, authentication);
 
     // then
     assertEquals(user1.getId(), result.sender().userId());
     assertEquals(user2.getId(), result.receiver().userId());
+  }
+
+  @Test
+  @DisplayName("메시지 저장 실패 - 현재 유저가 대화 참여자가 아닌 경우")
+  void saveMessageNotParticipant() {
+    // given
+    UUID strangerId = UUID.randomUUID();
+    User stranger = new User("stranger@test.com", "pw", "stranger", null, Role.USER);
+    setId(stranger, strangerId);
+
+    // Current User를 stranger로 변경
+    PlaylistUserDetails userDetails = mock(PlaylistUserDetails.class);
+    when(userDetails.getUserDto()).thenReturn(
+        new com.codeit.playlist.domain.user.dto.data.UserDto(
+            stranger.getId(), Instant.now(),
+            stranger.getEmail(), stranger.getName(), null, stranger.getRole(), false
+        )
+    );
+    Authentication strangerAuth = mock(Authentication.class);
+    when(strangerAuth.getPrincipal()).thenReturn(userDetails);
+
+    DirectMessageSendRequest sendRequest = new DirectMessageSendRequest("Hello!");
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+
+    // when & then
+    assertThrows(NotConversationParticipantException.class,
+        () -> messageService.save(conversationId, sendRequest, strangerAuth));
+
+    verify(messageRepository, never()).save(any());
+    verify(messageMapper, never()).toDto(any());
+    verify(eventPublisher, never()).publishEvent(any());
   }
 
   @Test
@@ -198,8 +242,8 @@ class BasicMessageServiceTest {
     UUID messageId1 = UUID.randomUUID();
     UUID messageId2 = UUID.randomUUID();
 
-    LocalDateTime time1 = LocalDateTime.now().minusMinutes(10);
-    LocalDateTime time2 = LocalDateTime.now().minusMinutes(5);
+    Instant time1 = Instant.now().minus(10, ChronoUnit.MINUTES);
+    Instant time2 = Instant.now().minus(5, ChronoUnit.MINUTES);
 
     Message m1 = new Message(conversation, user1, user2, "Hello 1");
     setId(m1, messageId1);
@@ -234,21 +278,22 @@ class BasicMessageServiceTest {
 
     List<Message> messages = List.of(m1, m2);
 
+    int limit = 2;
     when(messageRepository.findMessagesByConversationWithCursor(
         any(UUID.class),
-        nullable(LocalDateTime.class),
+        nullable(Instant.class),
         nullable(UUID.class),
         any(Pageable.class)
     )).thenReturn(messages);
 
-    when(messageRepository.countByConversationId(conversationId)).thenReturn(5L);
+    long totalCount = 5L;
+    when(messageRepository.countByConversationId(conversationId)).thenReturn(totalCount);
 
     String cursor = null;
     UUID idAfter = null;
-    int limit = 2;
 
     // when
-    CursorResponseDirectMessageDto result = messageService.findAll(conversationId, cursor, idAfter, limit, SortDirection.DESCENDING, MessageSortBy.createdAt);
+    CursorResponseDirectMessageDto result = messageService.findAll(conversationId, cursor, idAfter, limit, SortDirection.DESCENDING, MessageSortBy.createdAt, authentication);
 
     // then
     assertNotNull(result);
@@ -258,10 +303,10 @@ class BasicMessageServiceTest {
     assertEquals(true, result.hasNext());
     assertEquals(MessageSortBy.createdAt, result.sortBy());
     assertEquals(SortDirection.DESCENDING, result.sortDirection());
-    assertEquals(5, result.totalCount());
+    assertEquals(totalCount, result.totalCount());
 
     verify(messageRepository, times(1))
-        .findMessagesByConversationWithCursor(any(UUID.class), nullable(LocalDateTime.class), nullable(UUID.class), any(Pageable.class));
+        .findMessagesByConversationWithCursor(any(UUID.class), nullable(Instant.class), nullable(UUID.class), any(Pageable.class));
 
     verify(messageRepository, times(1)).countByConversationId(conversationId);
 
@@ -278,7 +323,7 @@ class BasicMessageServiceTest {
 
     // when & then
     assertThrows(ConversationNotFoundException.class, () ->
-        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt)
+        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt, authentication)
     );
 
     verify(messageRepository, never())
@@ -290,28 +335,26 @@ class BasicMessageServiceTest {
   void findAllMessagesNotParticipant() {
     // given
     UUID strangerId = UUID.randomUUID();
+    User stranger = new User("stranger@test.com", "pw", "stranger", null, Role.USER);
+    setId(stranger, strangerId);
 
     PlaylistUserDetails userDetails = mock(PlaylistUserDetails.class);
     when(userDetails.getUserDto()).thenReturn(
         new com.codeit.playlist.domain.user.dto.data.UserDto(
-            strangerId, LocalDateTime.now(),
+            strangerId, Instant.now(),
             "stranger@test.com", "stranger", null, Role.USER, false
         )
     );
 
-    Authentication authentication = mock(Authentication.class);
-    when(authentication.getPrincipal()).thenReturn(userDetails);
-
-    SecurityContext securityContext = mock(SecurityContext.class);
-    when(securityContext.getAuthentication()).thenReturn(authentication);
-    SecurityContextHolder.setContext(securityContext);
+    Authentication strangerAuth = mock(Authentication.class);
+    when(strangerAuth.getPrincipal()).thenReturn(userDetails);
 
     when(conversationRepository.findById(conversationId))
         .thenReturn(Optional.of(conversation));
 
     // when & then
     assertThrows(NotConversationParticipantException.class, () ->
-        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt)
+        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt, strangerAuth)
     );
 
     verify(messageRepository, never())
@@ -329,7 +372,7 @@ class BasicMessageServiceTest {
 
     // when & then
     assertThrows(InvalidCursorException.class, () ->
-        messageService.findAll(conversationId, invalidCursor, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt)
+        messageService.findAll(conversationId, invalidCursor, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt, authentication)
     );
 
     verify(messageRepository, never())
@@ -341,7 +384,7 @@ class BasicMessageServiceTest {
   void markMessageAsReadSuccess() {
     // given
     UUID messageId = UUID.randomUUID();
-    LocalDateTime time = LocalDateTime.now().minusMinutes(10);
+    Instant time = Instant.now().minus(10, ChronoUnit.MINUTES);
 
     Message message = new Message(conversation, user1, user2, "Hello 1");
     setId(message, messageId);
@@ -353,10 +396,12 @@ class BasicMessageServiceTest {
         .thenReturn(Optional.of(message));
 
     // when
-    messageService.markMessageAsRead(conversationId, messageId);
+    messageService.markMessageAsRead(conversationId, messageId, authentication);
 
     // then
-    assertFalse(conversation.getHasUnread(), "Conversation의 hasUnread가 false가 되어야 함");
+    verify(conversationRepository, times(1)).findById(conversationId);
+    verify(messageRepository, times(1)).findById(messageId);
+    verify(messageRepository, times(1)).findFirstByConversationOrderByCreatedAtDesc(conversation);
   }
 
   @Test
@@ -369,8 +414,38 @@ class BasicMessageServiceTest {
     // when & then
     assertThrows(
         ConversationNotFoundException.class,
-        () -> messageService.markMessageAsRead(conversationId, messageId)
+        () -> messageService.markMessageAsRead(conversationId, messageId, authentication)
     );
+  }
+
+  @Test
+  @DisplayName("DM 읽음 처리 실패 - 현재 유저가 대화 참여자가 아님")
+  void markMessageAsReadFail_NotParticipant() {
+    // given
+    UUID messageId = UUID.randomUUID();
+    UUID strangerId = UUID.randomUUID();
+    User stranger = new User("stranger@test.com", "pw", "stranger", null, Role.USER);
+    setId(stranger, strangerId);
+
+    PlaylistUserDetails userDetails = mock(PlaylistUserDetails.class);
+    when(userDetails.getUserDto()).thenReturn(
+        new com.codeit.playlist.domain.user.dto.data.UserDto(
+            strangerId, Instant.now(),
+            "stranger@test.com", "stranger", null, Role.USER, false
+        )
+    );
+
+    Authentication strangerAuth = mock(Authentication.class);
+    when(strangerAuth.getPrincipal()).thenReturn(userDetails);
+
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+
+    // when & then
+    assertThrows(
+        NotConversationParticipantException.class,
+        () -> messageService.markMessageAsRead(conversationId, messageId, strangerAuth)
+    );
+    verify(messageRepository, never()).findById(any());
   }
 
   @Test
@@ -384,8 +459,9 @@ class BasicMessageServiceTest {
     // when & then
     assertThrows(
         MessageNotFoundException.class,
-        () -> messageService.markMessageAsRead(conversationId, messageId)
+        () -> messageService.markMessageAsRead(conversationId, messageId, authentication)
     );
+    verify(messageRepository, times(1)).findById(messageId);
   }
 
   @Test
@@ -407,8 +483,10 @@ class BasicMessageServiceTest {
     // when & then
     assertThrows(
         InvalidMessageReadOperationException.class,
-        () -> messageService.markMessageAsRead(conversationId, messageId)
+        () -> messageService.markMessageAsRead(conversationId, messageId, authentication)
     );
+    verify(messageRepository, times(1)).findById(messageId);
+    verify(messageRepository, times(1)).findFirstByConversationOrderByCreatedAtDesc(conversation);
   }
 
   private void setId(Object entity, UUID id) {
@@ -421,7 +499,7 @@ class BasicMessageServiceTest {
     }
   }
 
-  private void setCreatedAt(BaseEntity entity, LocalDateTime time) {
+  private void setCreatedAt(BaseEntity entity, Instant time) {
     try {
       Field field = BaseEntity.class.getDeclaredField("createdAt");
       field.setAccessible(true);

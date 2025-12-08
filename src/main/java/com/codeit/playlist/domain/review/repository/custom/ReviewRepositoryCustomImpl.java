@@ -13,7 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -102,7 +102,7 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
 
         // createdAt 기준
         if ("createdAt".equals(sortBy)) {
-            LocalDateTime cursorCreatedAt = cursorReview.getCreatedAt();
+            Instant cursorCreatedAt = cursorReview.getCreatedAt();
 
             if (asc) {
                 return review.createdAt.gt(cursorCreatedAt)

@@ -17,7 +17,7 @@ public class ContentScheduler {
     private final JobLauncher jobLauncher;
     private final Job contentJob;
 
-    @Scheduled(cron = "0/30 * * * * *")
+    @Scheduled(cron = "0 0/1 * * * *")
     public void runContentJob() {
         log.info("[콘텐츠 데이터 관리] API 배치 작업 시작");
         JobParameters jobParameters = new JobParametersBuilder()

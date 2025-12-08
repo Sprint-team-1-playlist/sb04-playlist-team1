@@ -25,11 +25,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.UUID;
 
 @Slf4j
@@ -76,7 +77,12 @@ public class BasicNotificationService implements NotificationService {
         //DB 저장
         Notification saved = notificationRepository.save(notification);
 
-        log.info("[알림] 알림 저장 성공 : receiverId= {}, title= {}", receiverId, title);
+        log.info("[알림] 알림 저장 성공 : receiverId= {}, title= {}, createdAt = {}",
+                receiverId, title, saved.getCreatedAt()); //실제 DB에 저장된 생성시간
+
+        log.info("[알림] 서버 JVM TimeZone = {}", TimeZone.getDefault().getID());  //저장된 시간이 (KST/UTC)
+        log.info("[알림] 서버 Instant.now() = {}", Instant.now());    //현재 서버 시간
+        log.info("[알림] 서버 ZonedDateTime.now() = {}", ZonedDateTime.now());   //타임존 포함된 서버 시간
 
         return notificationMapper.toDto(saved);
     }
@@ -122,11 +128,11 @@ public class BasicNotificationService implements NotificationService {
 
 
         //cursor 파싱
-        LocalDateTime cursorDateTime = null;
+        Instant cursorDateTime = null;
 
         if (cursor != null && !cursor.isBlank()) {
             try {
-                cursorDateTime = LocalDateTime.parse(cursor, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                cursorDateTime = Instant.parse(cursor);
             } catch (DateTimeParseException e) {
                 throw InvalidCursorException.withCursor(cursor);
             }
@@ -163,9 +169,9 @@ public class BasicNotificationService implements NotificationService {
 
         if (slice.hasNext() && !notifications.isEmpty()) {
             Notification last = notifications.get(notifications.size() - 1);
-            LocalDateTime lastCreatedAt = last.getCreatedAt();
+            Instant lastCreatedAt = last.getCreatedAt();
             nextCursor = lastCreatedAt.truncatedTo(ChronoUnit.SECONDS)
-                    .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    .toString();
             nextIdAfter = last.getId();
         }
 

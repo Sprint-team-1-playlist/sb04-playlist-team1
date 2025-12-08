@@ -2,7 +2,6 @@ package com.codeit.playlist.domain.conversation.entity;
 
 import com.codeit.playlist.domain.base.BaseUpdatableEntity;
 import com.codeit.playlist.domain.user.entity.User;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -27,21 +26,9 @@ public class Conversation extends BaseUpdatableEntity {
   @JoinColumn(name = "user2_id", nullable = false)
   private User user2;
 
-  @Column(name = "has_unread", nullable = false)
-  private Boolean hasUnread = true;
-
   public Conversation(User user1, User user2) {
     this.user1 = user1;
     this.user2 = user2;
-    this.hasUnread = true;
-  }
-
-  public void markAsRead() {
-    this.hasUnread = false;
-  }
-
-  public void markAsUnread() {
-    this.hasUnread = true;
   }
 
   public boolean isParticipant(UUID userId) {

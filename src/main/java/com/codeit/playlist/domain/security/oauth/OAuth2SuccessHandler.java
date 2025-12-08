@@ -39,6 +39,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
   @Value("${oauth2.redirect.base-url:http://localhost:8080}")
   private String frontendBaseUrl;
 
+  @Value("${playlist.jwt.refresh-token.expiration-ms}")
+  private long refreshTokenExpirationMs;
+
   @Override
   public void onAuthenticationSuccess(
       HttpServletRequest request,
@@ -97,30 +100,20 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     jwtRegistry.registerJwtInformation(info);
 
     // Refresh Token Cookie 생성
+
     ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
-        .httpOnly(true)
-        .secure(cookieSecure) // localhost 환경이므로 false, 배포에서는 true 필수
-        .path("/")
-        .sameSite("Lax") // <-- 프론트가 같은 도메인(localhost:8080)이므로 Lax가 안정적
-        .maxAge(60 * 60 * 24 * 14) // 14일
-        .build();
-
-    response.addHeader("Set-Cookie", refreshCookie.toString());
-
-    // Access Token Cookie 생성
-    ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", accessToken)
         .httpOnly(true)
         .secure(cookieSecure)
         .path("/")
         .sameSite("Lax")
-        .maxAge(60 * 30) // 30분
+        .maxAge(refreshTokenExpirationMs / 1000) // 7일
         .build();
 
-    response.addHeader("Set-Cookie", accessCookie.toString());
+    response.addHeader("Set-Cookie", refreshCookie.toString());
 
-    //프론트로 Redirect (AccessToken 전달 X)
-
-    String redirect = frontendBaseUrl + "/#/contents";
+    String redirect =
+        frontendBaseUrl +
+            "/#/contents";
 
     log.info("[소셜 로그인] : OAuth2 로그인 성공 -> 사용자 = {}", email);
 

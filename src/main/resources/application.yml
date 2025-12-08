@@ -52,17 +52,6 @@ spring:
           starttls:
             enable: true
 
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-    consumer:
-      group-id: playlist-group
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-
   batch:
     jdbc:
       initialize-schema: NEVER
@@ -71,6 +60,9 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema-postgres.sql
+
+  jackson:
+    time-zone: Asia/Seoul
 
 management:
   endpoints:
@@ -83,9 +75,6 @@ management:
   observations:
     annotations:
       enabled: true
-
-  cookie:
-    secure: ${COOKIE_SECURE:false} # 로컬 개발시에만 false
 
 websocket:
   allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:8080}

@@ -46,7 +46,7 @@ public class SecurityConfig {
         )
 
         .sessionManagement(session ->
-            session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 
         )
         .authorizeHttpRequests((authorize) -> authorize

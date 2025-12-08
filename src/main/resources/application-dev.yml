@@ -28,6 +28,17 @@ spring:
           min-idle: 5
           max-wait: 60000
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: playlist-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
 playlist:
   jwt:
     access-token:
@@ -61,6 +72,9 @@ management:
   info:
     env:
       enabled: true
+
+  cookie:
+    secure: ${COOKIE_SECURE:false}
 
 # api
 api:
