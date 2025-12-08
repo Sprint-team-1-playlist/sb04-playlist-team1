@@ -16,9 +16,13 @@ import com.codeit.playlist.domain.message.exception.MessageNotFoundException;
 import com.codeit.playlist.domain.message.mapper.MessageMapper;
 import com.codeit.playlist.domain.message.repository.MessageRepository;
 import com.codeit.playlist.domain.message.service.MessageService;
+import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
+import com.codeit.playlist.domain.notification.entity.Level;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.global.error.InvalidCursorException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.Principal;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -31,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +50,9 @@ public class BasicMessageService implements MessageService {
   private final MessageMapper messageMapper;
   private final ConversationRepository conversationRepository;
   private final ApplicationEventPublisher eventPublisher;
+
+  private final ObjectMapper objectMapper;
+  private final KafkaTemplate<String, String> kafkaTemplate;
 
   @Override
   public DirectMessageDto save(UUID conversationId, DirectMessageSendRequest sendRequest, Principal principal) {
@@ -70,6 +78,8 @@ public class BasicMessageService implements MessageService {
         : conversation.getUser1();
 
     Message savedMessage = messageRepository.save(new Message(conversation, sender, receiver, sendRequest.content()));
+
+    sendMessageNotification(receiver, savedMessage);
 
     log.info("[Message] 메시지 저장 완료: {}", savedMessage.getId());
 
@@ -174,6 +184,25 @@ public class BasicMessageService implements MessageService {
     Optional<Message> latest = messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation);
     if (latest.isEmpty() || !latest.get().getId().equals(message.getId())) {
       throw InvalidMessageReadOperationException.withId(message.getId());
+    }
+  }
+
+  private void sendMessageNotification(User receiver, Message message) {
+    NotificationDto notificationDto = new NotificationDto(
+        null,
+        null,
+        receiver.getId(),
+        String.format("[DM] %s", receiver.getName()),
+        String.format(message.getContent()),
+        Level.INFO
+    );
+    try {
+      String payload = objectMapper.writeValueAsString(notificationDto);
+      kafkaTemplate.send("playlist.NotificationDto", payload);
+      log.info("[Message] 메시지 알림 발송: receiverId={}", receiver.getId());
+    } catch (JsonProcessingException e) {
+      log.error("[Message] 메시지 알림 직렬화 실패: receiverId={}",
+          receiver.getId(), e);
     }
   }
 }
