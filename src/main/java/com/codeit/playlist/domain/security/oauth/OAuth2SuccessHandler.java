@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -118,5 +119,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     log.info("[소셜 로그인] : OAuth2 로그인 성공 -> 사용자 = {}", email);
 
     response.sendRedirect(redirect);
+
+    SecurityContextHolder.clearContext();
   }
 }

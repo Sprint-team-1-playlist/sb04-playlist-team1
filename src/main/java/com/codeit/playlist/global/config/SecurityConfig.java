@@ -47,7 +47,10 @@ public class SecurityConfig {
 
         .sessionManagement(session ->
             session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        )
 
+        .securityContext(context ->
+            context.requireExplicitSave(false)
         )
         .authorizeHttpRequests((authorize) -> authorize
             //로그인 관련
@@ -82,6 +85,7 @@ public class SecurityConfig {
         .oauth2Login(oauth -> oauth
             .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2Service))
             .successHandler(oAuth2SuccessHandler)
+
         )
 
         .addFilterAfter(jwtAuthenticationFilter, OAuth2LoginAuthenticationFilter.class)
