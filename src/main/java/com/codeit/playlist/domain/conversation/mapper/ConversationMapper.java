@@ -9,13 +9,13 @@ import org.mapstruct.Mapping;
 import org.mapstruct.NullValueMappingStrategy;
 
 @Mapper(componentModel = "spring"
-        ,nullValueMappingStrategy = NullValueMappingStrategy.RETURN_NULL)
+    ,nullValueMappingStrategy = NullValueMappingStrategy.RETURN_NULL)
 public interface ConversationMapper {
 
   @Mapping(source = "conversation.id", target = "id")
   @Mapping(source = "user", target = "with")
   @Mapping(source = "message", target = "lastestMessage")
-  @Mapping(source = "conversation.hasUnread", target = "hasUnread")
-  ConversationDto toDto(Conversation conversation, UserSummary user, DirectMessageDto message);
+  @Mapping(source = "hasUnread", target = "hasUnread")
+  ConversationDto toDto(Conversation conversation, UserSummary user, DirectMessageDto message, boolean hasUnread);
 }
 
