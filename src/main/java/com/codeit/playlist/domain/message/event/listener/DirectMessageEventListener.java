@@ -14,7 +14,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class DirectMessageEventListener {
   private final SimpMessagingTemplate messagingTemplate;
 
-  @Async("eventTaskExecutor")
+  @Async("websocketExecutor")
   @TransactionalEventListener
   public void on(DirectMessageSentEvent event) {
     String destination = "/sub/conversations/" + event.conversationId() + "/direct-messages";
