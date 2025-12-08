@@ -11,7 +11,7 @@ import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
@@ -27,5 +27,5 @@ public abstract class BaseEntity {
 
     @CreatedDate
     @Column(name = "createdAt", updatable = false, nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

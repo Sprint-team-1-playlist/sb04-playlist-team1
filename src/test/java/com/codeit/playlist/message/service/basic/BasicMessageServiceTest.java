@@ -1,17 +1,5 @@
 package com.codeit.playlist.message.service.basic;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
@@ -33,11 +21,6 @@ import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.global.error.InvalidCursorException;
-import java.lang.reflect.Field;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -52,6 +35,25 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.lang.reflect.Field;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -95,7 +97,7 @@ class BasicMessageServiceTest {
     PlaylistUserDetails userDetails = mock(PlaylistUserDetails.class);
     when(userDetails.getUserDto()).thenReturn(
         new com.codeit.playlist.domain.user.dto.data.UserDto(
-            user1.getId(), LocalDateTime.now(),
+            user1.getId(), Instant.now(),
             user1.getEmail(), user1.getName(), null, user1.getRole(), false
         )
     );
@@ -122,7 +124,7 @@ class BasicMessageServiceTest {
     DirectMessageDto dto = new DirectMessageDto(
         UUID.randomUUID(),
         conversationId,
-        LocalDateTime.now(),
+        Instant.now(),
         new UserSummary(user1.getId(), user1.getName(), user1.getProfileImageUrl()),
         new UserSummary(user2.getId(), user2.getName(), user2.getProfileImageUrl()),
         sendRequest.content()
@@ -176,7 +178,7 @@ class BasicMessageServiceTest {
       return new DirectMessageDto(
           m.getId(),
           conversationId,
-          LocalDateTime.now(),
+          Instant.now(),
           new UserSummary(m.getSender().getId(), m.getSender().getName(), m.getSender().getProfileImageUrl()),
           new UserSummary(m.getReceiver().getId(), m.getReceiver().getName(), m.getReceiver().getProfileImageUrl()),
           m.getContent()
@@ -198,8 +200,8 @@ class BasicMessageServiceTest {
     UUID messageId1 = UUID.randomUUID();
     UUID messageId2 = UUID.randomUUID();
 
-    LocalDateTime time1 = LocalDateTime.now().minusMinutes(10);
-    LocalDateTime time2 = LocalDateTime.now().minusMinutes(5);
+    Instant time1 = Instant.now().minus(10, ChronoUnit.MINUTES);
+    Instant time2 = Instant.now().minus(5, ChronoUnit.MINUTES);
 
     Message m1 = new Message(conversation, user1, user2, "Hello 1");
     setId(m1, messageId1);
@@ -236,7 +238,7 @@ class BasicMessageServiceTest {
 
     when(messageRepository.findMessagesByConversationWithCursor(
         any(UUID.class),
-        nullable(LocalDateTime.class),
+        nullable(Instant.class),
         nullable(UUID.class),
         any(Pageable.class)
     )).thenReturn(messages);
@@ -261,7 +263,7 @@ class BasicMessageServiceTest {
     assertEquals(5, result.totalCount());
 
     verify(messageRepository, times(1))
-        .findMessagesByConversationWithCursor(any(UUID.class), nullable(LocalDateTime.class), nullable(UUID.class), any(Pageable.class));
+        .findMessagesByConversationWithCursor(any(UUID.class), nullable(Instant.class), nullable(UUID.class), any(Pageable.class));
 
     verify(messageRepository, times(1)).countByConversationId(conversationId);
 
@@ -294,7 +296,7 @@ class BasicMessageServiceTest {
     PlaylistUserDetails userDetails = mock(PlaylistUserDetails.class);
     when(userDetails.getUserDto()).thenReturn(
         new com.codeit.playlist.domain.user.dto.data.UserDto(
-            strangerId, LocalDateTime.now(),
+            strangerId, Instant.now(),
             "stranger@test.com", "stranger", null, Role.USER, false
         )
     );
@@ -341,7 +343,7 @@ class BasicMessageServiceTest {
   void markMessageAsReadSuccess() {
     // given
     UUID messageId = UUID.randomUUID();
-    LocalDateTime time = LocalDateTime.now().minusMinutes(10);
+    Instant time = Instant.now().minus(10, ChronoUnit.MINUTES);
 
     Message message = new Message(conversation, user1, user2, "Hello 1");
     setId(message, messageId);
@@ -421,7 +423,7 @@ class BasicMessageServiceTest {
     }
   }
 
-  private void setCreatedAt(BaseEntity entity, LocalDateTime time) {
+  private void setCreatedAt(BaseEntity entity, Instant time) {
     try {
       Field field = BaseEntity.class.getDeclaredField("createdAt");
       field.setAccessible(true);

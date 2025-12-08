@@ -36,7 +36,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -143,7 +143,7 @@ public class PlaylistControllerTest {
                 null,
                 "제목",
                 "설명",
-                LocalDateTime.now(),
+                Instant.now(),
                 0L,
                 false,
                 List.of()
@@ -217,7 +217,7 @@ public class PlaylistControllerTest {
                 new UserSummary(currentUserId, "owner", null),
                 "수정제목",
                 "수정설명",
-                LocalDateTime.now(),
+                Instant.now(),
                 5L,
                 false,
                 List.of()
@@ -326,7 +326,7 @@ public class PlaylistControllerTest {
                 new UserSummary(UUID.randomUUID(), "owner", null),
                 "플리제목",
                 "플리설명",
-                LocalDateTime.now(),
+                Instant.now(),
                 3L,
                 false,
                 List.of()
@@ -386,7 +386,7 @@ public class PlaylistControllerTest {
                 new UserSummary(UUID.randomUUID(), "owner", null),
                 "단건제목",
                 "단건설명",
-                LocalDateTime.now(),
+                Instant.now(),
                 2L,
                 false,
                 List.of()

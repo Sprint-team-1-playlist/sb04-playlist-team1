@@ -14,7 +14,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -170,7 +170,7 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
             }
 
         } else { // updatedAt
-            LocalDateTime cursorUpdatedAt = cursorPlaylist.getUpdatedAt();
+            Instant cursorUpdatedAt = cursorPlaylist.getUpdatedAt();
 
             if (asc) {
                 primaryCompare = playlist.updatedAt.gt(cursorUpdatedAt);

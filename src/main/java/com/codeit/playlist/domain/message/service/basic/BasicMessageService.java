@@ -3,15 +3,14 @@ package com.codeit.playlist.domain.message.service.basic;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundException;
-import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
-import com.codeit.playlist.global.error.InvalidCursorException;
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
-import com.codeit.playlist.domain.message.event.message.DirectMessageSentEvent;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
+import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.entity.Message;
+import com.codeit.playlist.domain.message.event.message.DirectMessageSentEvent;
 import com.codeit.playlist.domain.message.exception.InvalidMessageReadOperationException;
 import com.codeit.playlist.domain.message.exception.MessageNotFoundException;
 import com.codeit.playlist.domain.message.mapper.MessageMapper;
@@ -19,12 +18,7 @@ import com.codeit.playlist.domain.message.repository.MessageRepository;
 import com.codeit.playlist.domain.message.service.MessageService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.entity.User;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.codeit.playlist.global.error.InvalidCursorException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -34,6 +28,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -97,7 +98,7 @@ public class BasicMessageService implements MessageService {
       throw NotConversationParticipantException.withId(currentUserId);
     }
 
-    LocalDateTime cursorTime = parseCursor(cursor);
+    Instant cursorTime = parseCursor(cursor);
 
     Pageable pageable = PageRequest.of(0, limit + 1);
     List<Message> messages = messageRepository.findMessagesByConversationWithCursor(
@@ -165,10 +166,10 @@ public class BasicMessageService implements MessageService {
     return userDetails.getUserDto().id();
   }
 
-  private LocalDateTime parseCursor(String cursor) {
+  private Instant parseCursor(String cursor) {
     if (cursor == null) return null;
     try {
-      return LocalDateTime.parse(cursor);
+      return Instant.parse(cursor);
     } catch (DateTimeParseException e) {
       throw InvalidCursorException.withCursor(cursor);
     }
