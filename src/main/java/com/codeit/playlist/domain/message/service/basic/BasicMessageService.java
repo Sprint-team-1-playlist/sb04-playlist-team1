@@ -188,12 +188,16 @@ public class BasicMessageService implements MessageService {
   }
 
   private void sendMessageNotification(User receiver, Message message) {
+    String preview = message.getContent().length() > 30
+        ? message.getContent().substring(0, 30) + "..."
+        : message.getContent();
+
     NotificationDto notificationDto = new NotificationDto(
         null,
         null,
         receiver.getId(),
-        String.format("[DM] %s", receiver.getName()),
-        String.format(message.getContent()),
+        String.format("[DM] %s", message.getReceiver().getName()),
+        preview,
         Level.INFO
     );
     try {
@@ -201,8 +205,7 @@ public class BasicMessageService implements MessageService {
       kafkaTemplate.send("playlist.NotificationDto", payload);
       log.info("[Message] 메시지 알림 발송: receiverId={}", receiver.getId());
     } catch (JsonProcessingException e) {
-      log.error("[Message] 메시지 알림 직렬화 실패: receiverId={}",
-          receiver.getId(), e);
+      log.error("[Message] 메시지 알림 직렬화 실패: receiverId={}", receiver.getId(), e);
     }
   }
 }
