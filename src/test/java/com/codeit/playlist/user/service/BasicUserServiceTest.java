@@ -23,7 +23,7 @@ import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.repository.UserRepositoryCustom;
 import com.codeit.playlist.domain.user.service.basic.BasicUserService;
-import com.codeit.playlist.global.config.S3Properties;
+import com.codeit.playlist.global.constant.S3Properties;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

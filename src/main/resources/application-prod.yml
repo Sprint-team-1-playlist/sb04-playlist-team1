@@ -29,6 +29,26 @@ spring:
           min-idle: 5
           max-wait: 60000
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: PLAIN
+      sasl.jaas.config: >
+          org.apache.kafka.common.security.plain.PlainLoginModule required
+          username="${KAFKA_USERNAME}"
+          password="${KAFKA_PASSWORD}";
+
+    consumer:
+      group-id: playlist-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
 playlist:
   jwt:
     access-token:
