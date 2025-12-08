@@ -108,6 +108,7 @@ class UserRepositoryTest {
   }
 
   @Test
+  @DisplayName("findByEmailAndProvider - 사용자 이메일, 소셜여부" )
   void findByEmailAndProvider() {
     AuthProvider provider = AuthProvider.LOCAL;
 
