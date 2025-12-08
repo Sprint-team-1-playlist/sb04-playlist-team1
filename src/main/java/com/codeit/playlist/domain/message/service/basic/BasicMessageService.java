@@ -19,22 +19,21 @@ import com.codeit.playlist.domain.message.service.MessageService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.global.error.InvalidCursorException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import java.security.Principal;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -48,13 +47,13 @@ public class BasicMessageService implements MessageService {
   private final ApplicationEventPublisher eventPublisher;
 
   @Override
-  public DirectMessageDto save(UUID conversationId, DirectMessageSendRequest sendRequest) {
+  public DirectMessageDto save(UUID conversationId, DirectMessageSendRequest sendRequest, Principal principal) {
     log.debug("[Message] 메시지 저장 시작: {}", conversationId);
 
     Conversation conversation = conversationRepository.findById(conversationId)
         .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
 
-    UUID currentUserId = getCurrentUserId();
+    UUID currentUserId = getCurrentUserId(principal);
 
     if (!conversation.isParticipant(currentUserId)) {
       throw NotConversationParticipantException.withId(currentUserId);
@@ -85,14 +84,14 @@ public class BasicMessageService implements MessageService {
   @Transactional(readOnly = true)
   @Override
   public CursorResponseDirectMessageDto findAll(UUID conversationId, String cursor,
-      UUID idAfter, int limit, SortDirection sortDirection, MessageSortBy sortBy) {
+      UUID idAfter, int limit, SortDirection sortDirection, MessageSortBy sortBy, Principal principal) {
 
     log.debug("[Message] DM 목록 조회 시작: {}", conversationId);
 
     Conversation conversation = conversationRepository.findById(conversationId)
         .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
 
-    UUID currentUserId = getCurrentUserId();
+    UUID currentUserId = getCurrentUserId(principal);
 
     if (!conversation.isParticipant(currentUserId)) {
       throw NotConversationParticipantException.withId(currentUserId);
@@ -139,13 +138,13 @@ public class BasicMessageService implements MessageService {
   }
 
   @Override
-  public void markMessageAsRead(UUID conversationId, UUID directMessageId) {
+  public void markMessageAsRead(UUID conversationId, UUID directMessageId, Principal principal) {
     log.debug("[Message] DM 읽음 처리 시작: {}, {}", conversationId, directMessageId);
 
     Conversation conversation = conversationRepository.findById(conversationId)
             .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
 
-    UUID currentUserId = getCurrentUserId();
+    UUID currentUserId = getCurrentUserId(principal);
     if (!conversation.isParticipant(currentUserId)) {
       throw NotConversationParticipantException.withId(currentUserId);
     }
@@ -160,9 +159,8 @@ public class BasicMessageService implements MessageService {
     log.info("[Message] DM 읽음 처리 완료");
   }
 
-  private UUID getCurrentUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    PlaylistUserDetails userDetails = (PlaylistUserDetails) authentication.getPrincipal();
+  private UUID getCurrentUserId(Principal principal) {
+    PlaylistUserDetails userDetails = (PlaylistUserDetails) ((Authentication) principal).getPrincipal();
     return userDetails.getUserDto().id();
   }
 
