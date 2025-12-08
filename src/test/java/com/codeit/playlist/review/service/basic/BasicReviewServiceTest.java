@@ -30,7 +30,7 @@ import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Constructor;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -476,8 +476,8 @@ public class BasicReviewServiceTest {
 
             //BaseEntity / BaseUpdatableEntity 필드 세팅
             ReflectionTestUtils.setField(review, "id", UUID.randomUUID());
-            ReflectionTestUtils.setField(review, "createdAt", LocalDateTime.now());
-            ReflectionTestUtils.setField(review, "updatedAt", LocalDateTime.now());
+            ReflectionTestUtils.setField(review, "createdAt", Instant.now());
+            ReflectionTestUtils.setField(review, "updatedAt", Instant.now());
 
             return review;
         } catch (Exception e) {

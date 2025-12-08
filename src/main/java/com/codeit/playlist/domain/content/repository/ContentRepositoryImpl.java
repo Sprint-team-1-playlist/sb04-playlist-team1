@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,7 +56,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
 
             switch (sortBy) {
                 case "createdAt":
-                    LocalDateTime cursorDt = LocalDateTime.parse(cursor);
+                    Instant cursorDt = Instant.parse(cursor);
 
                     if (ascending) {
                         builder.and(qContent.createdAt.gt(cursorDt)

@@ -10,15 +10,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 public class PlaylistHardDeleteBatchServiceTest {
@@ -33,14 +33,14 @@ public class PlaylistHardDeleteBatchServiceTest {
     @DisplayName("hardDeletedPlaylists - 7일 지난 soft delete 대상이 없으면 delete가 호출되지 않는다")
     void hardDeletedPlaylistsNoTargets() {
         // given
-        when(playlistRepository.findAllDeletedBefore(any(LocalDateTime.class)))
+        when(playlistRepository.findAllDeletedBefore(any(Instant.class)))
                 .thenReturn(List.of());
 
         // when
         batchService.hardDeletedPlaylists();
 
         // then
-        verify(playlistRepository).findAllDeletedBefore(any(LocalDateTime.class));
+        verify(playlistRepository).findAllDeletedBefore(any(Instant.class));
         verify(playlistRepository, never()).delete(any(Playlist.class));
     }
 
@@ -52,14 +52,14 @@ public class PlaylistHardDeleteBatchServiceTest {
         Playlist p2 = mock(Playlist.class);
         List<Playlist> targets = List.of(p1, p2);
 
-        when(playlistRepository.findAllDeletedBefore(any(LocalDateTime.class)))
+        when(playlistRepository.findAllDeletedBefore(any(Instant.class)))
                 .thenReturn(targets);
 
         // when
         batchService.hardDeletedPlaylists();
 
         // then
-        verify(playlistRepository).findAllDeletedBefore(any(LocalDateTime.class));
+        verify(playlistRepository).findAllDeletedBefore(any(Instant.class));
         verify(playlistRepository).delete(p1);
         verify(playlistRepository).delete(p2);
         verifyNoMoreInteractions(playlistRepository);

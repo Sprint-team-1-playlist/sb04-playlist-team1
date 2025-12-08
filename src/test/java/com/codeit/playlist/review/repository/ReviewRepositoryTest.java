@@ -17,7 +17,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Slice;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -62,27 +63,27 @@ public class ReviewRepositoryTest {
         em.persist(other);
         em.flush();
 
-        LocalDateTime base = LocalDateTime.now();
+        Instant base = Instant.now();
 
         // r1 < r2 < r3 (오래된 순)
         em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
-                .setParameter("t", base.minusDays(3))
+                .setParameter("t", base.minus(3, ChronoUnit.DAYS))
                 .setParameter("id", r1.getId())
                 .executeUpdate();
 
         em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
-                .setParameter("t", base.minusDays(2))
+                .setParameter("t", base.minus(2, ChronoUnit.DAYS))
                 .setParameter("id", r2.getId())
                 .executeUpdate();
 
         em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
-                .setParameter("t", base.minusDays(1))
+                .setParameter("t", base.minus(1, ChronoUnit.DAYS))
                 .setParameter("id", r3.getId())
                 .executeUpdate();
 
         // 다른 콘텐츠 리뷰는 같은 날로
         em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
-                .setParameter("t", base.minusDays(1))
+                .setParameter("t", base.minus(1, ChronoUnit.DAYS))
                 .setParameter("id", other.getId())
                 .executeUpdate();
 
@@ -109,8 +110,8 @@ public class ReviewRepositoryTest {
         assertThat(slice.hasNext()).isTrue();
 
         // then - 정렬(createdAt DESC) 확인
-        LocalDateTime first = content.get(0).getCreatedAt();
-        LocalDateTime second = content.get(1).getCreatedAt();
+        Instant first = content.get(0).getCreatedAt();
+        Instant second = content.get(1).getCreatedAt();
         assertThat(first).isAfter(second);
 
         // then - 모두 content1에 대한 리뷰인지 확인
@@ -157,8 +158,8 @@ public class ReviewRepositoryTest {
         Review r1 = createReview(user, content, 3, "리뷰1");
         Review r2 = createReview(user, content, 4, "리뷰2");
 
-        ReflectionTestUtils.setField(r1, "createdAt", LocalDateTime.now().minusDays(2));
-        ReflectionTestUtils.setField(r2, "createdAt", LocalDateTime.now().minusDays(1));
+        ReflectionTestUtils.setField(r1, "createdAt", Instant.now().minus(2, ChronoUnit.DAYS));
+        ReflectionTestUtils.setField(r2, "createdAt", Instant.now().minus(1, ChronoUnit.DAYS));
 
         em.persist(r1);
         em.persist(r2);
@@ -187,7 +188,7 @@ public class ReviewRepositoryTest {
     private User createTestUser(String email) {
         User user = new User(email, "password", "test-user", null, Role.USER);
 
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
         ReflectionTestUtils.setField(user, "createdAt", now);
         ReflectionTestUtils.setField(user, "updatedAt", now);
 
@@ -206,7 +207,7 @@ public class ReviewRepositoryTest {
                 0
         );
 
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
         ReflectionTestUtils.setField(content, "createdAt", now);
         ReflectionTestUtils.setField(content, "updatedAt", now);
 
@@ -216,8 +217,8 @@ public class ReviewRepositoryTest {
     private Review createReview(User user, Content content, int rating, String text) {
         Review review = new Review(content, user, text, rating);
 
-        ReflectionTestUtils.setField(review, "createdAt", LocalDateTime.now());
-        ReflectionTestUtils.setField(review, "updatedAt", LocalDateTime.now());
+        ReflectionTestUtils.setField(review, "createdAt", Instant.now());
+        ReflectionTestUtils.setField(review, "updatedAt", Instant.now());
 
         return review;
     }

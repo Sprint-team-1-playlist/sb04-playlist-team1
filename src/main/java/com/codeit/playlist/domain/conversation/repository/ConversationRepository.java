@@ -1,14 +1,15 @@
 package com.codeit.playlist.domain.conversation.repository;
 
 import com.codeit.playlist.domain.conversation.entity.Conversation;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public interface ConversationRepository extends JpaRepository<Conversation, UUID> {
 
@@ -35,7 +36,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
   List<Conversation> findPageDesc(
       @Param("currentUserId") UUID currentUserId,
       @Param("keyword") String keyword,
-      @Param("cursor") LocalDateTime cursor,
+      @Param("cursor") Instant cursor,
       @Param("idAfter") UUID idAfter,
       Pageable pageable
   );
@@ -57,7 +58,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
   List<Conversation> findPageAsc(
       @Param("currentUserId") UUID currentUserId,
       @Param("keyword") String keyword,
-      @Param("cursor") LocalDateTime cursor,
+      @Param("cursor") Instant cursor,
       @Param("idAfter") UUID idAfter,
       Pageable pageable
   );

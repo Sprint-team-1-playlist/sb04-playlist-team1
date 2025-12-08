@@ -1,13 +1,5 @@
 package com.codeit.playlist.conversation.service.basic;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.when;
-
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
@@ -16,7 +8,6 @@ import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateReq
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
 import com.codeit.playlist.domain.conversation.exception.ConversationAlreadyExistsException;
-import com.codeit.playlist.global.error.InvalidCursorException;
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.mapper.ConversationMapper;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
@@ -32,11 +23,7 @@ import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
-import java.lang.reflect.Field;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import com.codeit.playlist.global.error.InvalidCursorException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,6 +35,21 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.lang.reflect.Field;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicConversationServiceTest {
@@ -90,7 +92,7 @@ public class BasicConversationServiceTest {
     setId(otherUser, otherUserId);
 
     PlaylistUserDetails userDetails = new PlaylistUserDetails(
-        new UserDto(currentUser.getId(), LocalDateTime.now(), currentUser.getEmail(), currentUser.getName(),
+        new UserDto(currentUser.getId(), Instant.now(), currentUser.getEmail(), currentUser.getName(),
             currentUser.getProfileImageUrl(), currentUser.getRole(), currentUser.isLocked()),
         currentUser.getPassword()
     );
@@ -151,9 +153,9 @@ public class BasicConversationServiceTest {
     Conversation midConv = new Conversation(currentUser, otherUser);
     Conversation newConv = new Conversation(currentUser, otherUser);
 
-    setCreatedAt(oldConv, LocalDateTime.now().minusDays(3));
-    setCreatedAt(midConv, LocalDateTime.now().minusDays(2));
-    setCreatedAt(newConv, LocalDateTime.now().minusDays(1));
+    setCreatedAt(oldConv, Instant.now().minus(3, ChronoUnit.DAYS));
+    setCreatedAt(midConv, Instant.now().minus(2, ChronoUnit.DAYS));
+    setCreatedAt(newConv, Instant.now().minus(1, ChronoUnit.DAYS));
 
     List<Conversation> sorted = List.of(oldConv, midConv, newConv);
     when(conversationRepository.findPageAsc(currentUserId, null, null, null, PageRequest.of(0, limit+1)))
@@ -178,9 +180,9 @@ public class BasicConversationServiceTest {
     Conversation midConv = new Conversation(currentUser, otherUser);
     Conversation newConv = new Conversation(currentUser, otherUser);
 
-    setCreatedAt(oldConv, LocalDateTime.now().minusDays(3));
-    setCreatedAt(midConv, LocalDateTime.now().minusDays(2));
-    setCreatedAt(newConv, LocalDateTime.now().minusDays(1));
+    setCreatedAt(oldConv, Instant.now().minus(3, ChronoUnit.DAYS));
+    setCreatedAt(midConv, Instant.now().minus(2, ChronoUnit.DAYS));
+    setCreatedAt(newConv, Instant.now().minus(1, ChronoUnit.DAYS));
 
     List<Conversation> sorted = List.of(newConv, midConv, oldConv);
     when(conversationRepository.findPageDesc(currentUserId, null, null, null, PageRequest.of(0, limit+1)))
@@ -228,7 +230,7 @@ public class BasicConversationServiceTest {
     DirectMessageDto messageDto = new DirectMessageDto(
         UUID.randomUUID(),
         conversationId,
-        LocalDateTime.now(),
+        Instant.now(),
         new UserSummary(currentUserId, currentUser.getName(), currentUser.getProfileImageUrl()),
         new UserSummary(otherUserId, otherUser.getName(), otherUser.getProfileImageUrl()),
         "hello"
@@ -328,7 +330,7 @@ public class BasicConversationServiceTest {
     DirectMessageDto msgDto = new DirectMessageDto(
         UUID.randomUUID(),
         convId,
-        LocalDateTime.now(),
+        Instant.now(),
         new UserSummary(currentUserId, currentUser.getName(), currentUser.getProfileImageUrl()),
         new UserSummary(otherUserId, otherUser.getName(), otherUser.getProfileImageUrl()),
         "hello"
@@ -419,7 +421,7 @@ public class BasicConversationServiceTest {
         () -> conversationService.findByUserId(otherUserId));
   }
 
-  private void setCreatedAt(BaseEntity entity, LocalDateTime time) {
+  private void setCreatedAt(BaseEntity entity, Instant time) {
     try {
       Field field = BaseEntity.class.getDeclaredField("createdAt");
       field.setAccessible(true);
