@@ -71,7 +71,6 @@ public class BasicMessageService implements MessageService {
 
     Message savedMessage = messageRepository.save(new Message(conversation, sender, receiver, sendRequest.content()));
 
-    conversation.markAsUnread();
     log.info("[Message] 메시지 저장 완료: {}", savedMessage.getId());
 
     DirectMessageDto messageDto = messageMapper.toDto(savedMessage);
@@ -153,8 +152,6 @@ public class BasicMessageService implements MessageService {
         .orElseThrow(() -> MessageNotFoundException.withId(directMessageId));
 
     validateReadMessage(message, conversation);
-
-    conversation.markAsRead();
 
     log.info("[Message] DM 읽음 처리 완료");
   }
