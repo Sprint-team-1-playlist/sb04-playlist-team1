@@ -10,11 +10,7 @@ import org.mapstruct.NullValueMappingStrategy;
         nullValueMappingStrategy = NullValueMappingStrategy.RETURN_NULL)
 public interface MessageMapper {
   @Mapping(target = "sender.userId", source = "sender.id")
-  @Mapping(target = "sender.name", source = "sender.name")
-  @Mapping(target = "sender.profileImageUrl", source = "sender.profileImageUrl")
   @Mapping(target = "receiver.userId", source = "receiver.id")
-  @Mapping(target = "receiver.name", source = "receiver.name")
-  @Mapping(target = "receiver.profileImageUrl", source = "receiver.profileImageUrl")
   @Mapping(target = "conversationId", source = "conversation.id")
   DirectMessageDto toDto(Message message);
 }

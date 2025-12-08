@@ -50,8 +50,6 @@ public class BasicMessageService implements MessageService {
   public DirectMessageDto save(UUID conversationId, DirectMessageSendRequest sendRequest, Principal principal) {
     log.debug("[Message] 메시지 저장 시작: {}", conversationId);
 
-    PlaylistUserDetails userDetails = (PlaylistUserDetails) ((Authentication) principal).getPrincipal();
-
     Conversation conversation = conversationRepository.findById(conversationId)
         .orElseThrow(() -> ConversationNotFoundException.withConversationId(conversationId));
 
