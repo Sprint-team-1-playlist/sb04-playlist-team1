@@ -22,16 +22,7 @@
           "appProtocol": "http"
         }
       ],
-      "environment": [
-        {
-          "name": "REDIS_HOST",
-          "value": "REDIS_HOST_PLACEHOLDER"
-        },
-        {
-          "name": "REDIS_PORT",
-          "value": "6379"
-        }
-      ],
+      "environment": [],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {

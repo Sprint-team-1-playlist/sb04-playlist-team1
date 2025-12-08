@@ -27,7 +27,7 @@ import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.repository.UserRepositoryCustom;
 import com.codeit.playlist.domain.user.service.UserService;
-import com.codeit.playlist.global.config.S3Properties;
+import com.codeit.playlist.global.constant.S3Properties;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
 import java.io.IOException;
 import java.io.InputStream;
