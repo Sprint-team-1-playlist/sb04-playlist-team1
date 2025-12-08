@@ -72,15 +72,12 @@ public class SecurityConfig {
             .requestMatchers("/vite.svg").permitAll()
             .requestMatchers("/assets/**").permitAll()
 
-
             //카카오, 구글 Oauth2
             .requestMatchers("/oauth2/**").permitAll()
             .requestMatchers("/login/oauth2/**").permitAll()
             .anyRequest().authenticated()
 
-
         )
-
 
         .oauth2Login(oauth -> oauth
             .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2Service))
