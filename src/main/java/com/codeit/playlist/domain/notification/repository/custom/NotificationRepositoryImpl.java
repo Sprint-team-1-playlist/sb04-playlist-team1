@@ -11,7 +11,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.domain.Sort;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -22,7 +22,7 @@ public class NotificationRepositoryImpl implements NotificationRepositoryCustom 
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public Slice<Notification> findByReceiverIdWithCursorPaging(UUID receiverId, LocalDateTime cursorCreatedAt,
+    public Slice<Notification> findByReceiverIdWithCursorPaging(UUID receiverId, Instant cursorCreatedAt,
                                                                 UUID cursorId, Pageable pageable) {
 
         QNotification notification = QNotification.notification;
