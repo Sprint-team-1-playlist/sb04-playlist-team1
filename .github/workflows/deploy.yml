@@ -116,8 +116,8 @@ jobs:
                 {"name": "KAKAO_REST_API_KEY", "value": $KAKAO_REST_API_KEY},
                 {"name": "KAKAO_CLIENT_SECRET", "value": $KAKAO_CLIENT_SECRET},
                 {"name": "KAFKA_BOOTSTRAP_SERVERS", "value": $KAFKA_BOOTSTRAP_SERVERS},
-                {"name": "KAFKA_USERNAME", "value": KAFKA_USERNAME},
-                {"name": "KAFKA_PASSWORD", "value": KAFKA_PASSWORD}
+                {"name": "KAFKA_USERNAME", "value": $KAFKA_USERNAME},
+                {"name": "KAFKA_PASSWORD", "value": $KAFKA_PASSWORD}
               ]
             ' \
             task-definition.json > tmp.json && mv tmp.json task-definition.json
