@@ -35,7 +35,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Constructor;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -172,7 +172,7 @@ public class BasicPlaylistServiceTest {
                 ownerSummary,
                 "new title",
                 "new description",
-                LocalDateTime.now(),
+                Instant.now(),
                 0L,
                 false,
                 List.of()
@@ -252,7 +252,7 @@ public class BasicPlaylistServiceTest {
                 new UserSummary(UUID.randomUUID(), "owner1", null),
                 "플리1",
                 "설명1",
-                LocalDateTime.now(),
+                Instant.now(),
                 5L,
                 false,
                 List.of());
@@ -261,7 +261,7 @@ public class BasicPlaylistServiceTest {
                 new UserSummary(UUID.randomUUID(), "owner2", null),
                 "플리2",
                 "설명2",
-                LocalDateTime.now(),
+                Instant.now(),
                 3L,
                 false,
                 List.of()
@@ -465,7 +465,7 @@ public class BasicPlaylistServiceTest {
                 "썸네일2.png", List.of("태그2"), 4.0, 8);
 
         PlaylistDto mappedDto = new PlaylistDto(playlistId, ownerSummary, "테스트 플리", "테스트용",
-                LocalDateTime.now(), 2L, false, List.of(content1, content2));
+                Instant.now(), 2L, false, List.of(content1, content2));
 
         given(playlistMapper.toDto(eq(playlist), anyMap())).willReturn(mappedDto);
 
