@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -51,6 +52,8 @@ public class PlaylistRepositoryTest {
     private TestEntityManager entityManager;
     @Autowired
     private ContentRepository contentRepository;
+
+    private static final AtomicLong TMDB_ID_SEQ = new AtomicLong(1);
 
     @Test
     @DisplayName("searchPlaylists 성공 - 구독자 필터로 자신이 구독한 플레이리스트만 조회")
@@ -492,6 +495,6 @@ public class PlaylistRepositoryTest {
     }
 
     public static Content createTestContent(String title) {
-        return new Content(Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
+        return new Content(TMDB_ID_SEQ.getAndIncrement(), Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
     }
 }
