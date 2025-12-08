@@ -1,17 +1,5 @@
 package com.codeit.playlist.follow.service.basic;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.follow.dto.data.FollowDto;
 import com.codeit.playlist.domain.follow.dto.request.FollowRequest;
@@ -29,10 +17,6 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.lang.reflect.Field;
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,6 +28,23 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.lang.reflect.Field;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicFollowServiceTest {
@@ -90,7 +91,7 @@ public class BasicFollowServiceTest {
     setId(follow, UUID.randomUUID());
 
     PlaylistUserDetails userDetails = new PlaylistUserDetails(
-        new UserDto(follower.getId(), LocalDateTime.now(), follower.getEmail(), follower.getName(),
+        new UserDto(follower.getId(), Instant.now(), follower.getEmail(), follower.getName(),
             follower.getProfileImageUrl(), follower.getRole(), follower.isLocked()),
         follower.getPassword()
     );

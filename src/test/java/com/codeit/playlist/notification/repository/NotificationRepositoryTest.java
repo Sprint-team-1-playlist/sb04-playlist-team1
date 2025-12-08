@@ -18,7 +18,8 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,13 +41,13 @@ public class NotificationRepositoryTest {
         User receiver = createTestUser("receiver@test.com");
         em.persist(receiver);
 
-        LocalDateTime base = LocalDateTime.now().withNano(0);
+        Instant base = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
         for (int i = 0; i < 5; i++) {
             Notification n = createTestNotification(
                     receiver,
                     "알림-" + i,
-                    base.minusMinutes(i)
+                    base.minus(i, ChronoUnit.MINUTES)
             );
             em.persist(n);
         }
@@ -58,7 +59,7 @@ public class NotificationRepositoryTest {
         Notification otherNotification = createTestNotification(
                 otherUser,
                 "다른 유저 알림",
-                base.minusMinutes(10)
+                base.minus(10, ChronoUnit.MINUTES)
         );
         em.persist(otherNotification);
 
@@ -77,7 +78,7 @@ public class NotificationRepositoryTest {
                 notificationRepository.findByReceiverIdWithCursorPaging(receiver.getId(), null, null, pageable);
 
         Notification lastOfFirst = firstSlice.getContent().get(2);
-        LocalDateTime cursorCreatedAt = lastOfFirst.getCreatedAt();
+        Instant cursorCreatedAt = lastOfFirst.getCreatedAt();
         UUID cursorId = firstSlice.getContent().get(2).getId();
 
         Slice<Notification> secondSlice =
@@ -108,13 +109,13 @@ public class NotificationRepositoryTest {
         User receiver = createTestUser("receiver@test.com");
         em.persist(receiver);
 
-        LocalDateTime base = LocalDateTime.now().withNano(0);
+        Instant base = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
         for (int i = 0; i < 3; i++) {
             Notification n = createTestNotification(
                     receiver,
                     "알림-" + i,
-                    base.minusMinutes(i)
+                    base.minus(i, ChronoUnit.MINUTES)
             );
             em.persist(n);
         }
@@ -129,7 +130,7 @@ public class NotificationRepositoryTest {
                         .and(Sort.by(Sort.Direction.DESC, "id"))
         );
 
-        LocalDateTime outOfRangeCursorCreatedAt = base.minusDays(1);
+        Instant outOfRangeCursorCreatedAt = base.minus(1,ChronoUnit.DAYS);
 
         // when
         Slice<Notification> slice =
@@ -174,14 +175,14 @@ public class NotificationRepositoryTest {
     private User createTestUser(String email) {
         User user = new User(email, "password", "test-user", null, Role.USER);
 
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
         ReflectionTestUtils.setField(user, "createdAt", now);
         ReflectionTestUtils.setField(user, "updatedAt", now);
 
         return user;
     }
 
-    private Notification createTestNotification(User receiver, String title, LocalDateTime createdAt) {
+    private Notification createTestNotification(User receiver, String title, Instant createdAt) {
         Notification notification = new Notification(
                 receiver,
                 title,

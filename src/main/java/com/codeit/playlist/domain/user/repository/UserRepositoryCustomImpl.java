@@ -9,12 +9,13 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+
+import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
@@ -98,9 +99,9 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
           user.email.lt(cursor).or(user.email.eq(cursor).and(user.id.lt(idAfter)));
 
       case "createdAt" -> {
-        LocalDateTime t;
+        Instant t;
         try {
-          t = LocalDateTime.parse(cursor);
+          t = Instant.parse(cursor);
         } catch (DateTimeParseException e) {
           throw InvalidCursorException.withCursor(cursor);
         }
@@ -135,9 +136,9 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
       }
 
       default -> {
-           LocalDateTime t;
+           Instant t;
            try {
-               t = LocalDateTime.parse(cursor);
+               t = Instant.parse(cursor);
              } catch (DateTimeParseException e) {
                throw InvalidCursorException.withCursor(cursor);
              }
