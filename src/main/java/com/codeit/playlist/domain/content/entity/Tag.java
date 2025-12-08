@@ -27,6 +27,12 @@ public class Tag extends BaseEntity {
     private Content content;
 
     /**
+     * API호출했을 때 들어오는 콘텐츠 데이터의 ID
+     */
+//    @Column(name = "movie_id", nullable = false)
+//    private Long movieId;
+
+    /**
      * 태그명
      */
     @Column(nullable = false, length = 50)
