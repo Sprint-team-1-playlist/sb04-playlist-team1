@@ -7,8 +7,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Service
@@ -19,7 +19,7 @@ public class LogUploadScheduler {
 
     @Scheduled(cron = "0 0 3 * * *") // 3am에 로그 업로드
     public void uploadLog() {
-        String date = Instant.now().minus(1, ChronoUnit.DAYS).toString();
+        String date = LocalDateTime.now().minusDays(1).format(DateTimeFormatter.ISO_DATE);
         File file = new File("logs/app." + date + ".log");
 
         if (!file.exists()) {
