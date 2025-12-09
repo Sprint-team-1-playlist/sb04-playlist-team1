@@ -34,7 +34,8 @@ public class ContentTasklet implements Tasklet {
         log.info("[콘텐츠 데이터 관리] TMDB The Movie API 데이터 배치 수집 시작");
 
         String query = "language=ko-KR&year=2025";
-
+        int invalidCount = 0;
+        int existCount = 0;
         List<TheMovieResponse> movieResponseList = theMovieApiService.getApiMovie(query)
                 .doOnError(e -> log.error("[콘텐츠 데이터 관리] The Movie 배치 Tasklet 스트림 에러 발생 : {}", e.getMessage(), e))
                 .doOnComplete(() -> log.info("[콘텐츠 데이터 관리] The Movie 배치 Tasklet 스트림 동작 완료, API 데이터 수집"))
@@ -55,18 +56,18 @@ public class ContentTasklet implements Tasklet {
             }
 
             if(movieResponse.description() == null || movieResponse.description().isBlank()) {
-                log.warn("[콘텐츠 데이터 관리] 콘텐츠 데이터 설명이 존재하지 않습니다. title : {}", movieResponse.title());
+                invalidCount++;
                 continue;
             }
 
             if(movieResponse.tmdbId() == null) {
-                log.warn("[콘텐츠 데이터 관리] 콘텐츠가 존재하지 않습니다. tmdbId가 null입니다.");
+                invalidCount++;
                 continue;
             }
 
             Long tmdbId = movieResponse.tmdbId();
             if(contentRepository.existsByTmdbId(tmdbId)) {
-                log.warn("[콘텐츠 데이터 관리] 콘텐츠 데이터가 이미 존재합니다. tmdbId : {}", movieResponse.tmdbId());
+                existCount++;
                 continue;
             }
 
@@ -74,10 +75,8 @@ public class ContentTasklet implements Tasklet {
                 log.warn("[콘텐츠 데이터 관리] 콘텐츠 데이터의 title에 한글이 한 글자도 포함되지 않았습니다. title : {}", movieResponse.title());
                 continue;
             }
-
             Content resultContent = contentRepository.save(content); // 썸네일까지 set된 content
 
-            // 조건문 추가해줘야됨
             if(movieResponse.genreIds() != null && !movieResponse.genreIds().isEmpty()) {
                 for(int j = 0; j < movieResponse.genreIds().size(); j++) {
                     Integer genreId = movieResponse.genreIds().get(j);
@@ -87,6 +86,8 @@ public class ContentTasklet implements Tasklet {
                 }
             }
         }
+        log.info("[콘텐츠 데이터 관리] 존재 여주 검증 완료, invalidCount : {}", invalidCount);
+        log.info("[콘텐츠 데이터 관리] 중복 검증 완료, existCount : {}", existCount);
         log.info("[콘텐츠 데이터 관리] The Movie API 콘텐츠와 태그 수집 완료");
         return RepeatStatus.FINISHED;
     }
