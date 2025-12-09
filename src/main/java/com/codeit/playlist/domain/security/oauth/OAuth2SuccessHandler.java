@@ -1,12 +1,10 @@
 package com.codeit.playlist.domain.security.oauth;
 
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
-import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
 import com.codeit.playlist.domain.security.jwt.JwtTokens;
 import com.codeit.playlist.domain.user.entity.AuthProvider;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
-import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -25,9 +22,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
-  private final JwtTokenProvider tokenProvider;
   private final UserRepository userRepository;
-  private final UserMapper userMapper;
   private final JwtRegistry jwtRegistry;
 
   @Value("${management.cookie.secure}")

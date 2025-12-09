@@ -143,6 +143,7 @@ public class DbJwtRegistry implements JwtRegistry {
 
 
   @Transactional
+  @Override
   public JwtTokens issueNewTokensAndInvalidateOld(User user) {
     try {
       // 1. 기존 토큰 무효화 (동시 로그인 방지)
