@@ -17,6 +17,7 @@ import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
 import com.codeit.playlist.domain.message.entity.Message;
 import com.codeit.playlist.domain.message.mapper.MessageMapper;
 import com.codeit.playlist.domain.message.repository.MessageRepository;
+import com.codeit.playlist.domain.message.repository.ReadStatusRepository;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.User;
@@ -53,6 +54,7 @@ public class BasicConversationService implements ConversationService {
   private final UserMapper userMapper;
   private final MessageRepository messageRepository;
   private final MessageMapper messageMapper;
+  private final ReadStatusRepository readStatusRepository;
 
   @Override
   public ConversationDto create(ConversationCreateRequest request) {
@@ -129,7 +131,9 @@ public class BasicConversationService implements ConversationService {
           Message lastestMessage = lastestMessageMap.get(conversation.getId());
           DirectMessageDto messageDto = messageMapper.toDto(lastestMessage);
 
-          return conversationMapper.toDto(conversation, userSummary, messageDto);
+          boolean hasUnread = hasUnreadMessage(conversation.getId(), currentUserId);
+
+          return conversationMapper.toDto(conversation, userSummary, messageDto, hasUnread);
         })
         .toList();
 
@@ -210,7 +214,9 @@ public class BasicConversationService implements ConversationService {
         .orElse(null);
     DirectMessageDto messageDto = messageMapper.toDto(lastestMessage);
 
-    ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto);
+    boolean hasUnread = hasUnreadMessage(conversation.getId(), currentUserId);
+
+    ConversationDto conversationDto = conversationMapper.toDto(conversation, userSummary, messageDto, hasUnread);
     return conversationDto;
   }
 
@@ -227,5 +233,9 @@ public class BasicConversationService implements ConversationService {
     if (!conversation.isParticipant(userId)) {
       throw NotConversationParticipantException.withId(userId);
     }
+  }
+
+  private boolean hasUnreadMessage(UUID conversationId, UUID userId) {
+    return readStatusRepository.hasUnread(conversationId, userId);
   }
 }

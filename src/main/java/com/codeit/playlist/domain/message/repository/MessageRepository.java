@@ -21,11 +21,16 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
   List<Message> findLatestMessagesByConversations(@Param("conversations") List<Conversation> conversations);
 
   @Query("""
-        SELECT m FROM Message m
-        WHERE m.conversation.id = :conversationId
-          AND (:cursor IS NULL OR (m.createdAt < :cursor OR (m.createdAt = :cursor AND m.id < :idAfter)))
-        ORDER BY m.createdAt DESC, m.id DESC
-        """)
+    SELECT m
+    FROM Message m
+    WHERE m.conversation.id = :conversationId
+      AND (
+            :#{#cursor == null} = true
+            OR (m.createdAt < :cursor)
+            OR (m.createdAt = :cursor AND m.id < :idAfter)
+          )
+    ORDER BY m.createdAt DESC, m.id DESC
+    """)
   List<Message> findMessagesByConversationWithCursor(
       @Param("conversationId") UUID conversationId,
       @Param("cursor") Instant cursor,
