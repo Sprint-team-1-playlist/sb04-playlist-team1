@@ -62,7 +62,7 @@ playlist:
 
 oauth2:
   redirect:
-    base-url:
+    base-url: ${OAUTH2_REDIRECT_BASE_URL:http://localhost:8080} # 배포 주소 수정예정
 
 cloud:
   aws:
