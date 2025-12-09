@@ -18,16 +18,8 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
       ssl:
         enabled: true
-      lettuce:
-        pool:
-          max-active: 20
-          max-idle: 10
-          min-idle: 5
-          max-wait: 60000
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
@@ -48,26 +40,12 @@ spring:
 
 playlist:
   jwt:
-    access-token:
-      secret: ${JWT_ACCESS_TOKEN_SECRET}
-      expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000} # 1시간
-    refresh-token:
-      secret: ${JWT_REFRESH_TOKEN_SECRET}
-      expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7일
     cookie:
       secure: true
 
 oauth2:
   redirect:
     base-url: ${OAUTH2_REDIRECT_BASE_URL:http://localhost:8080} # 배포 주소 수정예정
-
-cloud:
-  aws:
-    s3:
-      content-bucket: ${CONTENT_BUCKET}
-      profile-bucket: ${PROFILE_BUCKET}
-      logs-bucket: ${LOGS_BUCKET}
-      region: ${AWS_REGION}
 
 logging:
   level:
@@ -76,18 +54,3 @@ logging:
     org.hibernate.SQL: warn
     org.hibernate.orm.jdbc.bind: warn
     org.springframework.security: info
-
-management:
-  endpoint:
-    health:
-      show-details: always
-
-
-# api
-api:
-  tmdb:
-    key: ${TMDB_API_KEY}
-    base-url: ${TMDB_BASE_URL}
-  sportsdb:
-    key: ${SPORTSDB_API_KEY}
-    base-url: ${SPORTSDB_BASE_URL}
