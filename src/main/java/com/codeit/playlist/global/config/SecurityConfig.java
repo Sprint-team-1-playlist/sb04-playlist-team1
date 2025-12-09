@@ -62,6 +62,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
             .requestMatchers("/api/auth/csrf-token").permitAll()
+            .requestMatchers("/api/sse").permitAll()
 
             // 웹 소켓 핸드웨이크를 위한 엔드포인트
             .requestMatchers("/ws/**").permitAll()

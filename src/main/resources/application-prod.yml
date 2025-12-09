@@ -60,6 +60,10 @@ playlist:
     cookie:
       secure: true
 
+oauth2:
+  redirect:
+    base-url:
+
 cloud:
   aws:
     s3:
@@ -81,8 +85,6 @@ management:
     health:
       show-details: always
 
-  cookie:
-    secure: ${COOKIE_SECURE:true}
 
 # api
 api:
