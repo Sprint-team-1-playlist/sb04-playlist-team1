@@ -68,7 +68,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
           return userRepository.save(User.createOAuthUser(name, email, imageUrl, authProvider));
         });
 
-    // User → UserDto 변환 (MapStruct 사용)
+    jwtRegistry.invalidateJwtInformationByUserId(user.getId());
+
+    // User -> UserDto 변환 (MapStruct 사용)
     UserDto userDto = userMapper.toDto(user);
 
     // PlaylistUserDetails 생성
@@ -101,7 +103,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     jwtRegistry.registerJwtInformation(info);
 
     // Refresh Token Cookie 생성
-
     ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
         .httpOnly(true)
         .secure(cookieSecure)
