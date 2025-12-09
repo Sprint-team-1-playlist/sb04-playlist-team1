@@ -20,6 +20,8 @@ import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -31,12 +33,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -142,7 +142,7 @@ public class BasicAuthService implements AuthService {
     UserDetails userDetails;
     try {
       userDetails = userDetailsService.loadUserByUsername(username);
-    } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+    } catch (UsernameNotFoundException e) {
       throw new InvalidOrExpiredException();
     }
     PlaylistUserDetails playlistUser = (PlaylistUserDetails) userDetails;
