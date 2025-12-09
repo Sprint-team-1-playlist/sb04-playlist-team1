@@ -10,6 +10,7 @@ import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
+import com.codeit.playlist.domain.sse.repository.SseEmitterRepository;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
@@ -52,6 +53,7 @@ public class BasicAuthService implements AuthService {
   private final UserDetailsService userDetailsService;
   private final StringRedisTemplate redisTemplate;
   private final PasswordEncoder passwordEncoder;
+  private final SseEmitterRepository sseEmitterRepository;
 
   private final ObjectMapper objectMapper;
   private final KafkaTemplate<String, String> kafkaTemplate;
@@ -186,6 +188,8 @@ public class BasicAuthService implements AuthService {
     if (jwtTokenProvider.validateRefreshToken(refreshToken)) {
       UUID userId = jwtTokenProvider.getUserId(refreshToken);
       jwtRegistry.invalidateJwtInformationByUserId(userId);
+
+      sseEmitterRepository.closeByUserId(userId);
     }
     jwtRegistry.revokeByToken(refreshToken);
     log.info("[인증 관리] : 로그아웃 완료");
