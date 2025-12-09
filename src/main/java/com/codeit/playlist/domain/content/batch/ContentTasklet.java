@@ -4,10 +4,9 @@ import com.codeit.playlist.domain.content.api.mapper.TheMovieMapper;
 import com.codeit.playlist.domain.content.api.response.TheMovieResponse;
 import com.codeit.playlist.domain.content.api.service.TheMovieApiService;
 import com.codeit.playlist.domain.content.entity.Content;
-import com.codeit.playlist.domain.content.entity.Tag;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
-import com.codeit.playlist.domain.content.repository.TagRepository;
+import com.codeit.playlist.domain.content.service.TagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.StepContribution;
@@ -26,7 +25,7 @@ public class ContentTasklet implements Tasklet {
     private final TheMovieApiService theMovieApiService;
     private final TheMovieMapper theMovieMapper;
     private final ContentRepository contentRepository;
-    private final TagRepository tagRepository;
+    private final TagService tagService;
 
     @Override
     @Transactional
@@ -36,6 +35,8 @@ public class ContentTasklet implements Tasklet {
         String query = "language=ko-KR&year=2025";
         int invalidCount = 0;
         int existCount = 0;
+        int languageCount = 0;
+
         List<TheMovieResponse> movieResponseList = theMovieApiService.getApiMovie(query)
                 .doOnError(e -> log.error("[콘텐츠 데이터 관리] The Movie 배치 Tasklet 스트림 에러 발생 : {}", e.getMessage(), e))
                 .doOnComplete(() -> log.info("[콘텐츠 데이터 관리] The Movie 배치 Tasklet 스트림 동작 완료, API 데이터 수집"))
@@ -55,45 +56,37 @@ public class ContentTasklet implements Tasklet {
                 content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
             }
 
-            if(movieResponse.description() == null || movieResponse.description().isBlank()) {
+            if(movieResponse.description() == null || movieResponse.description().isBlank()) { // 설명이 없음
                 invalidCount++;
                 continue;
             }
 
-            if(movieResponse.tmdbId() == null) {
+            if(movieResponse.tmdbId() == null) { // tmdb id가 없음
                 invalidCount++;
                 continue;
             }
 
             Long tmdbId = movieResponse.tmdbId();
-            if(contentRepository.existsByTmdbId(tmdbId)) {
+            if(contentRepository.existsByTmdbId(tmdbId)) { // tmdbId가 이미 있음
                 existCount++;
                 continue;
             }
 
-            if(movieResponse.title() == null || !isKorean(movieResponse.title())) { // false
-                log.warn("[콘텐츠 데이터 관리] 콘텐츠 데이터의 title에 한글이 한 글자도 포함되지 않았습니다. title : {}", movieResponse.title());
+            if(movieResponse.title() == null || !isKorean(movieResponse.title())) { // 한글이 한글자도 없음, false
+                languageCount++;
                 continue;
             }
             Content resultContent = contentRepository.save(content); // 썸네일까지 set된 content
 
             if(movieResponse.genreIds() != null && !movieResponse.genreIds().isEmpty()) {
-                for(int j = 0; j < movieResponse.genreIds().size(); j++) {
-                    Integer genreId = movieResponse.genreIds().get(j);
-                    String tagName = changeString(genreId);
-                    Tag tag = new Tag(resultContent, tagName);
-                    tagRepository.save(tag);
-                }
+                tagService.saveMovieTagToContent(resultContent, movieResponse.genreIds());
             }
         }
-        log.info("[콘텐츠 데이터 관리] 존재 여주 검증 완료, invalidCount : {}", invalidCount);
+        log.info("[콘텐츠 데이터 관리] 존재여부 검증 완료, invalidCount : {}", invalidCount);
         log.info("[콘텐츠 데이터 관리] 중복 검증 완료, existCount : {}", existCount);
+        log.info("[콘텐츠 데이터 관리] 한글여부 검증 완료, languageCount : {} ", languageCount);
         log.info("[콘텐츠 데이터 관리] The Movie API 콘텐츠와 태그 수집 완료");
         return RepeatStatus.FINISHED;
-    }
-
-    public String changeString(Integer genreId) {
-        return genreId.toString();
     }
 
     private boolean isKorean(String title) {

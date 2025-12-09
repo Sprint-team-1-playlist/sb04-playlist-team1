@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -19,10 +20,10 @@ import java.util.stream.Collectors;
 public class TmdbTagApiService {
     private final WebClient webClient;
 
-    @Value("{TMDB_API_KEY}")
+    @Value("${TMDB_API_KEY}")
     private String apiKey;
 
-    private Mono<TheMovieTagListResponse> callTheMovieTagApi(String query, String path) {
+    private Mono<TheMovieTagListResponse> callTheMovieTagApi(String path) {
         log.info("[콘텐츠 데이터 관리] TheMovie API Tag 수집 시작");
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -30,7 +31,7 @@ public class TmdbTagApiService {
                         .host("api.themoviedb.org")
                         .path(path)
                         .queryParam("api_key",apiKey)
-                        .query(query)
+                        .queryParam("language","ko-KR")
                         .build())
                 .retrieve()
                 .bodyToMono(TheMovieTagListResponse.class)
@@ -38,10 +39,13 @@ public class TmdbTagApiService {
                         e -> log.error("[콘텐츠 데이터 관리] The Movie API Tag List 수집 오류, status : {}, body : {}", e.getStatusCode(), e.getResponseBodyAsString()));
     }
 
-    public Mono<Map<Integer, String>> getApiMovieTag(String query) {
-        return callTheMovieTagApi(query, "/3/genre/movie/list")
+    public Mono<Map<Integer, String>> getApiMovieTag() {
+        return callTheMovieTagApi("/3/genre/movie/list")
                 .map(response -> response.genres().stream()
-                        .collect(Collectors.toMap(TheMovieTagResponse::id, TheMovieTagResponse::name))
+                        .collect(Collectors.toMap(
+                                TheMovieTagResponse::genreId,
+                                TheMovieTagResponse::name)
+                        )
                 );
     }
 }

@@ -6,6 +6,7 @@ import com.codeit.playlist.domain.content.entity.Tag;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
@@ -16,9 +17,12 @@ public interface ContentMapper {
     Content toEntity(ContentDto contentDto);
 
     default List<String> changeTags(List<Tag> tags) {
-        if(tags == null || tags.isEmpty()) {
-            return List.of();
-        }
-        return tags.stream().map(Tag::getItems).toList();
+        List<String> resultTag = new ArrayList<>();
+        resultTag.addAll(
+                tags.stream().map(Tag::getName)
+                        .filter(name -> name != null && !name.isEmpty())
+                        .toList()
+        );
+        return resultTag;
     }
 }

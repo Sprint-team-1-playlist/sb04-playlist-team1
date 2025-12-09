@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface TagRepository extends JpaRepository<Tag, UUID> {
@@ -18,7 +19,7 @@ public interface TagRepository extends JpaRepository<Tag, UUID> {
     void deleteAllByContentId(UUID contentId);
 
     @Query("""
-        select t.content.id as contentId, t.items as tag
+        select t.content.id as contentId, t.name as tag
         from Tag t
         where t.content.id in :contentIds
     """)
@@ -42,4 +43,7 @@ public interface TagRepository extends JpaRepository<Tag, UUID> {
     }
 
     List<Tag> findAllByContent(Content content);
+
+    Optional<Tag> findByGenreId(Integer genreId);
+    List<Tag> findByGenreIdIn(List<Integer> genreIds);
 }
