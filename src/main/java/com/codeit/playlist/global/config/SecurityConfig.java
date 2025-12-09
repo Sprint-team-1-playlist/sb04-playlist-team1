@@ -47,7 +47,10 @@ public class SecurityConfig {
 
         .sessionManagement(session ->
             session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        )
 
+        .securityContext(context ->
+            context.requireExplicitSave(false)
         )
         .authorizeHttpRequests((authorize) -> authorize
             //로그인 관련
@@ -59,6 +62,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
             .requestMatchers("/api/auth/csrf-token").permitAll()
+            .requestMatchers("/api/sse").permitAll()
 
             // 웹 소켓 핸드웨이크를 위한 엔드포인트
             .requestMatchers("/ws/**").permitAll()
@@ -69,19 +73,17 @@ public class SecurityConfig {
             .requestMatchers("/vite.svg").permitAll()
             .requestMatchers("/assets/**").permitAll()
 
-
             //카카오, 구글 Oauth2
             .requestMatchers("/oauth2/**").permitAll()
             .requestMatchers("/login/oauth2/**").permitAll()
             .anyRequest().authenticated()
 
-
         )
-
 
         .oauth2Login(oauth -> oauth
             .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2Service))
             .successHandler(oAuth2SuccessHandler)
+
         )
 
         .addFilterAfter(jwtAuthenticationFilter, OAuth2LoginAuthenticationFilter.class)

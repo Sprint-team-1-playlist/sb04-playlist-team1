@@ -89,6 +89,14 @@ management:
     annotations:
       enabled: true
 
+oauth2:
+  redirect:
+    base-url: ${OAUTH2_REDIRECT_BASE_URL:http://localhost:8080}
+
+  jwt:
+    cookie:
+      secure: ${COOKIE_SECURE:false}
+
 websocket:
   allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:8080}
 

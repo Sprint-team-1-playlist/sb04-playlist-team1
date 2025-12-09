@@ -10,6 +10,7 @@ import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
+import com.codeit.playlist.domain.sse.repository.SseEmitterRepository;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
@@ -20,6 +21,8 @@ import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -31,12 +34,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -52,6 +53,7 @@ public class BasicAuthService implements AuthService {
   private final UserDetailsService userDetailsService;
   private final StringRedisTemplate redisTemplate;
   private final PasswordEncoder passwordEncoder;
+  private final SseEmitterRepository sseEmitterRepository;
 
   private final ObjectMapper objectMapper;
   private final KafkaTemplate<String, String> kafkaTemplate;
@@ -142,7 +144,7 @@ public class BasicAuthService implements AuthService {
     UserDetails userDetails;
     try {
       userDetails = userDetailsService.loadUserByUsername(username);
-    } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+    } catch (UsernameNotFoundException e) {
       throw new InvalidOrExpiredException();
     }
     PlaylistUserDetails playlistUser = (PlaylistUserDetails) userDetails;
@@ -186,6 +188,8 @@ public class BasicAuthService implements AuthService {
     if (jwtTokenProvider.validateRefreshToken(refreshToken)) {
       UUID userId = jwtTokenProvider.getUserId(refreshToken);
       jwtRegistry.invalidateJwtInformationByUserId(userId);
+
+      sseEmitterRepository.delete(userId);
     }
     jwtRegistry.revokeByToken(refreshToken);
     log.info("[인증 관리] : 로그아웃 완료");
