@@ -57,4 +57,4 @@ logging:
 
 management:
   cookie:
-    secure: ture
+    secure: true
