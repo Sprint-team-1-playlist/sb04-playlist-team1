@@ -17,16 +17,8 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
       ssl:
         enabled: false
-      lettuce:
-        pool:
-          max-active: 20
-          max-idle: 10
-          min-idle: 5
-          max-wait: 60000
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
@@ -41,22 +33,8 @@ spring:
 
 playlist:
   jwt:
-    access-token:
-      secret: ${JWT_ACCESS_TOKEN_SECRET}
-      expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000} # 1시간
-    refresh-token:
-      secret: ${JWT_REFRESH_TOKEN_SECRET}
-      expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7일
     cookie:
       secure: false
-
-cloud:
-  aws:
-    s3:
-      content-bucket: ${CONTENT_BUCKET}
-      profile-bucket: ${PROFILE_BUCKET}
-      logs-bucket: ${LOGS_BUCKET}
-      region: ${S3_REGION}
 
 logging:
   level:
@@ -66,24 +44,11 @@ logging:
     org.springframework.security: trace
 
 management:
-  endpoint:
-    health:
-      show-details: always
   info:
     env:
       enabled: true
-
   cookie:
-    secure: ${COOKIE_SECURE:false}
-
-# api
-api:
-  tmdb:
-    base-url: ${TMDB_BASE_URL}
-    key: ${TMDB_API_KEY}
-  sportsdb:
-    key: ${SPORTSDB_API_KEY}
-    base-url: ${SPORTSDB_BASE_URL}
+    secure: false
 
 loadtest:
   user:

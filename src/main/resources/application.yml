@@ -10,8 +10,8 @@ spring:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_PASSWORD}
             scope:
-            - email
-            - profile
+              - email
+              - profile
           kakao:
             client-id: ${KAKAO_REST_API_KEY}
             client-secret: ${KAKAO_CLIENT_SECRET}
@@ -20,9 +20,9 @@ spring:
             redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
             authorization-grant-type: authorization_code
             scope:
-                - profile_nickname
-                - profile_image
-                - account_email
+              - profile_nickname
+              - profile_image
+              - account_email
 
         provider:
           kakao:
@@ -30,6 +30,19 @@ spring:
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      ssl:
+        enabled: true
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 60000
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -81,3 +94,30 @@ websocket:
 
 sse:
   timeout: 300_000
+
+cloud:
+  aws:
+    s3:
+      content-bucket: ${CONTENT_BUCKET}
+      profile-bucket: ${PROFILE_BUCKET}
+      logs-bucket: ${LOGS_BUCKET}
+      region: ${S3_REGION}
+
+api:
+  tmdb:
+    base-url: ${TMDB_BASE_URL}
+    key: ${TMDB_API_KEY}
+  sportsdb:
+    key: ${SPORTSDB_API_KEY}
+    base-url: ${SPORTSDB_BASE_URL}
+
+playlist:
+  jwt:
+    access-token:
+      secret: ${JWT_ACCESS_TOKEN_SECRET}
+      expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000} # 1시간
+    refresh-token:
+      secret: ${JWT_REFRESH_TOKEN_SECRET}
+      expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7일
+    cookie:
+      secure: true
