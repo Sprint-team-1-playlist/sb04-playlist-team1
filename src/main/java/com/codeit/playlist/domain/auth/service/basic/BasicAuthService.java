@@ -189,7 +189,7 @@ public class BasicAuthService implements AuthService {
       UUID userId = jwtTokenProvider.getUserId(refreshToken);
       jwtRegistry.invalidateJwtInformationByUserId(userId);
 
-      sseEmitterRepository.closeByUserId(userId);
+      sseEmitterRepository.delete(userId);
     }
     jwtRegistry.revokeByToken(refreshToken);
     log.info("[인증 관리] : 로그아웃 완료");

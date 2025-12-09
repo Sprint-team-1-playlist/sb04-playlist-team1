@@ -67,7 +67,4 @@ public class SseEmitterRepository {
     }
   }
 
-  public void closeByUserId(UUID userId) {
-    delete(userId);
-  }
 }
