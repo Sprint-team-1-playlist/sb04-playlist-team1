@@ -95,7 +95,7 @@ oauth2:
 
   jwt:
     cookie:
-      secure: ${COOKIE_SECURE:false}
+      secure: false
 
 websocket:
   allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:8080}
@@ -109,7 +109,7 @@ cloud:
       content-bucket: ${CONTENT_BUCKET}
       profile-bucket: ${PROFILE_BUCKET}
       logs-bucket: ${LOGS_BUCKET}
-      region: ${S3_REGION}
+      region: ${AWS_REGION}
 
 api:
   tmdb:
