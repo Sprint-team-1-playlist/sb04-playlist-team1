@@ -68,7 +68,6 @@ public class SseEmitterRepository {
   }
 
   public void closeByUserId(UUID userId) {
-    SseEmitter emitter = data.remove(userId);
-    completeSafely(emitter);
+    delete(userId);
   }
 }
