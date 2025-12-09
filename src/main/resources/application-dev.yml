@@ -47,8 +47,6 @@ management:
   info:
     env:
       enabled: true
-  cookie:
-    secure: false
 
 loadtest:
   user:

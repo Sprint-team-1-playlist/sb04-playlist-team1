@@ -54,7 +54,3 @@ logging:
     org.hibernate.SQL: warn
     org.hibernate.orm.jdbc.bind: warn
     org.springframework.security: info
-
-management:
-  cookie:
-    secure: true

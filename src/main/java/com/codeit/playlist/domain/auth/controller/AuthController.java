@@ -11,8 +11,6 @@ import com.codeit.playlist.domain.user.service.PasswordResetService;
 import com.nimbusds.jose.JOSEException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import java.util.UUID;
-import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,12 +18,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+import java.util.function.Consumer;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -38,7 +34,7 @@ public class AuthController {
   private final PasswordResetService passwordResetService;
   private final RateLimitService rateLimitService;
 
-  @Value("${management.cookie.secure}")
+  @Value("${playlist.jwt.cookie.secure}")
   private boolean cookieSecure;
 
   @GetMapping("/csrf-token")
