@@ -1,20 +1,16 @@
 package com.codeit.playlist.domain.security.oauth;
 
-import com.codeit.playlist.domain.security.PlaylistUserDetails;
-import com.codeit.playlist.domain.security.jwt.DbJwtRegistry;
-import com.codeit.playlist.domain.security.jwt.JwtInformation;
+import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
-import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.security.jwt.JwtTokens;
 import com.codeit.playlist.domain.user.entity.AuthProvider;
 import com.codeit.playlist.domain.user.entity.User;
-import com.codeit.playlist.domain.user.exception.AuthenticationOAuthJwtException;
 import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +28,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
   private final JwtTokenProvider tokenProvider;
   private final UserRepository userRepository;
   private final UserMapper userMapper;
-  private final DbJwtRegistry jwtRegistry;
+  private final JwtRegistry jwtRegistry;
 
   @Value("${management.cookie.secure}")
   private boolean cookieSecure;
@@ -68,42 +64,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
           return userRepository.save(User.createOAuthUser(name, email, imageUrl, authProvider));
         });
 
-    jwtRegistry.invalidateJwtInformationByUserId(user.getId());
-
-    // User -> UserDto 변환 (MapStruct 사용)
-    UserDto userDto = userMapper.toDto(user);
-
-    // PlaylistUserDetails 생성
-    PlaylistUserDetails userDetails = new PlaylistUserDetails(userDto, null);
-
-    // JWT 발급
-    Instant now = Instant.now();
-    String accessToken;
-    String refreshToken;
-
-    try {
-      accessToken = tokenProvider.generateAccessToken(userDetails, now);
-      refreshToken = tokenProvider.generateRefreshToken(userDetails, now);
-    } catch (Exception e) {
-      log.error("[소셜 로그인] : OAuth2 로그인 JWT 생성 실패", e);
-      throw AuthenticationOAuthJwtException.withException("JWT 토큰 생성 실패", e.getMessage());
-    }
-
-    // JWT 저장 정보 생성
-    Instant accessExp = tokenProvider.getExpiryFromToken(accessToken);
-    Instant refreshExp = tokenProvider.getExpiryFromToken(refreshToken);
-
-    JwtInformation info = new JwtInformation(
-        userDto,
-        accessToken, accessExp, now,
-        refreshToken, refreshExp, now
-    );
-
-    // DB 저장
-    jwtRegistry.registerJwtInformation(info);
+    JwtTokens tokens = jwtRegistry.issueNewTokensAndInvalidateOld(user);
 
     // Refresh Token Cookie 생성
-    ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
+    ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", tokens.refreshToken())
         .httpOnly(true)
         .secure(cookieSecure)
         .path("/")

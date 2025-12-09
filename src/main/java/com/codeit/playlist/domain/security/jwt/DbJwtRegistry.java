@@ -1,20 +1,29 @@
 package com.codeit.playlist.domain.security.jwt;
 
+import com.codeit.playlist.domain.security.PlaylistUserDetails;
+import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.entity.UserToken;
+import com.codeit.playlist.domain.user.exception.AuthenticationOAuthJwtException;
+import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserTokenRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DbJwtRegistry implements JwtRegistry {
 
   private final UserTokenRepository userTokenRepository;
+  private final UserMapper userMapper;
+  private final JwtTokenProvider tokenProvider;
 
   @Transactional
   @Override
@@ -130,5 +139,41 @@ public class DbJwtRegistry implements JwtRegistry {
           t.revoke();
           userTokenRepository.save(t);
         });
+  }
+
+
+  @Transactional
+  public JwtTokens issueNewTokensAndInvalidateOld(User user) {
+    try {
+      // 1. 기존 토큰 무효화 (동시 로그인 방지)
+      invalidateJwtInformationByUserId(user.getId());
+
+      // 2. UserDto 변환
+      UserDto userDto = userMapper.toDto(user);
+      PlaylistUserDetails userDetails = new PlaylistUserDetails(userDto, null);
+
+      // 3. 새 토큰 생성
+      Instant now = Instant.now();
+      String accessToken = tokenProvider.generateAccessToken(userDetails, now);
+      String refreshToken = tokenProvider.generateRefreshToken(userDetails, now);
+
+      // 4. 토큰 정보 생성
+      Instant accessExp = tokenProvider.getExpiryFromToken(accessToken);
+      Instant refreshExp = tokenProvider.getExpiryFromToken(refreshToken);
+
+      JwtInformation info = new JwtInformation(
+          userDto, accessToken, accessExp, now,
+          refreshToken, refreshExp, now
+      );
+
+      // 5. DB 저장
+      registerJwtInformation(info);
+
+      return new JwtTokens(accessToken, refreshToken);
+    } catch (Exception e) {
+      log.error("[JWT 서비스] : 사용자 ID {}의 JWT 토큰 발급 실패", user.getId(), e);
+      // 트랜잭션 롤백 -> 기존 토큰 유효 상태 유지
+      throw AuthenticationOAuthJwtException.withException("JWT 토큰 생성 실패", e.getMessage());
+    }
   }
 }
