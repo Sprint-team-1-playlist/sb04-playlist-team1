@@ -2,7 +2,7 @@ package com.codeit.playlist.domain.file;
 
 import com.codeit.playlist.domain.file.exception.FailDeleteFromS3;
 import com.codeit.playlist.domain.file.exception.FailUploadToS3Exception;
-import com.codeit.playlist.global.config.S3Properties;
+import com.codeit.playlist.global.constant.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

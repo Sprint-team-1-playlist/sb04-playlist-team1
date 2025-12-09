@@ -7,7 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -19,7 +20,7 @@ public class PlaylistHardDeleteBatchService {
 
     @Transactional
     public void hardDeletedPlaylists() {
-        LocalDateTime threshold = LocalDateTime.now().minusDays(7);
+        Instant threshold = Instant.now().minus(7, ChronoUnit.DAYS);
 
         List<Playlist> playlists = playlistRepository.findAllDeletedBefore(threshold);
 

@@ -1,5 +1,6 @@
 package com.codeit.playlist.global.config;
 
+import com.codeit.playlist.global.constant.S3Properties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;

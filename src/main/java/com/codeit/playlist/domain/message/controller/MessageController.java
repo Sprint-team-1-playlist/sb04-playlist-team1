@@ -6,6 +6,7 @@ import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessa
 import com.codeit.playlist.domain.message.service.MessageService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import java.security.Principal;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +35,8 @@ public class MessageController {
       @RequestParam(required = false) UUID idAfter,
       @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit,
       @RequestParam(defaultValue = "DESCENDING") SortDirection sortDirection,
-      @RequestParam(defaultValue = "createdAt") MessageSortBy sortBy) {
+      @RequestParam(defaultValue = "createdAt") MessageSortBy sortBy,
+      Principal principal) {
 
     log.debug("[Message] DM 목록 조회 요청: {}", conversationId);
 
@@ -44,7 +46,8 @@ public class MessageController {
         idAfter,
         limit,
         sortDirection,
-        sortBy);
+        sortBy,
+        principal);
 
     log.info("[Message] DM 목록 조회 응답: {}", cursorMessageDto);
     return ResponseEntity
@@ -54,10 +57,11 @@ public class MessageController {
 
   @PostMapping("/{conversationId}/direct-messages/{directMessageId}/read")
   public ResponseEntity<Void> markAsRead(@PathVariable UUID conversationId,
-      @PathVariable UUID directMessageId){
+      @PathVariable UUID directMessageId,
+      Principal principal) {
     log.debug("[Message] DM 읽음 처리 요청: {}, {}", conversationId, directMessageId);
 
-    messageService.markMessageAsRead(conversationId, directMessageId);
+    messageService.markMessageAsRead(conversationId, directMessageId, principal);
 
     log.info("[Message] DM 읽음 처리 응답");
     return ResponseEntity

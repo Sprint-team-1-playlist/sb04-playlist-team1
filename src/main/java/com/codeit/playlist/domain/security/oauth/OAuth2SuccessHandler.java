@@ -40,7 +40,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
   @Value("${oauth2.redirect.base-url:http://localhost:8080}")
   private String frontendBaseUrl;
 
-  @Value("${jwt.refresh-token.expiration-ms}")
+  @Value("${playlist.jwt.refresh-token.expiration-ms}")
   private long refreshTokenExpirationMs;
 
   @Override

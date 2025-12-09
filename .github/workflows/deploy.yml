@@ -79,7 +79,10 @@ jobs:
             --arg GOOGLE_CLIENT_ID "${{ secrets.GOOGLE_CLIENT_ID }}" \
             --arg GOOGLE_CLIENT_PASSWORD "${{ secrets.GOOGLE_CLIENT_PASSWORD }}" \
             --arg KAKAO_REST_API_KEY "${{ secrets.KAKAO_REST_API_KEY }}" \
+            --arg KAKAO_CLIENT_SECRET "${{ secrets.KAKAO_CLIENT_SECRET }}" \
             --arg KAFKA_BOOTSTRAP_SERVERS "${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}" \
+            --arg KAFKA_USERNAME "${{ secrets.KAFKA_USERNAME }}" \
+            --arg KAFKA_PASSWORD "${{ secrets.KAFKA_PASSWORD }}" \
             '
             .containerDefinitions[0].image = $IMAGE
             | .containerDefinitions[0].environment = [
@@ -111,7 +114,10 @@ jobs:
                 {"name": "GOOGLE_CLIENT_ID", "value": $GOOGLE_CLIENT_ID},
                 {"name": "GOOGLE_CLIENT_PASSWORD", "value": $GOOGLE_CLIENT_PASSWORD},
                 {"name": "KAKAO_REST_API_KEY", "value": $KAKAO_REST_API_KEY},
-                {"name": "KAFKA_BOOTSTRAP_SERVERS", "value": $KAFKA_BOOTSTRAP_SERVERS}
+                {"name": "KAKAO_CLIENT_SECRET", "value": $KAKAO_CLIENT_SECRET},
+                {"name": "KAFKA_BOOTSTRAP_SERVERS", "value": $KAFKA_BOOTSTRAP_SERVERS},
+                {"name": "KAFKA_USERNAME", "value": $KAFKA_USERNAME},
+                {"name": "KAFKA_PASSWORD", "value": $KAFKA_PASSWORD}
               ]
             ' \
             task-definition.json > tmp.json && mv tmp.json task-definition.json
@@ -122,4 +128,4 @@ jobs:
           task-definition: task-definition.json
           service: ${{ secrets.SERVICE_NAME }}
           cluster: ${{ secrets.CLUSTER_NAME }}
-          wait-for-service-stability: true
+          wait-for-service-stability: false

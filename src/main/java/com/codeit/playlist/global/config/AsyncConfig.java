@@ -22,4 +22,15 @@ public class AsyncConfig {
     executor.initialize();
     return executor;
   }
+  @Bean(name = "websocketExecutor")
+  public Executor websocketExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(10);
+    executor.setMaxPoolSize(30);
+    executor.setQueueCapacity(500);
+    executor.setThreadNamePrefix("ws-");
+    executor.initialize();
+    return executor;
+  }
+
 }

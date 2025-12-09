@@ -1,7 +1,7 @@
 package com.codeit.playlist.domain.file.scheduler;
 
 import com.codeit.playlist.domain.file.S3Uploader;
-import com.codeit.playlist.global.config.S3Properties;
+import com.codeit.playlist.global.constant.S3Properties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
