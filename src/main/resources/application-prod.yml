@@ -45,7 +45,7 @@ playlist:
 
 oauth2:
   redirect:
-    base-url: ${OAUTH2_REDIRECT_BASE_URL:http://localhost:8080} # 배포 주소 수정예정
+    base-url: ${OAUTH2_REDIRECT_BASE_URL}
 
 logging:
   level:
