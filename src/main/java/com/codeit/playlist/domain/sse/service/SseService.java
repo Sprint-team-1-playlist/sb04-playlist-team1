@@ -124,6 +124,18 @@ public class SseService {
         });
   }
 
+  @Scheduled(fixedRate = 30000)
+  public void keepAlive() {
+    sseEmitterRepository.findAll().forEach(emitter -> {
+      try {
+        emitter.send(SseEmitter.event().comment("keep-alive"));
+      } catch (Exception e) {
+        log.warn("Keep-alive ping 실패 → emitter 제거", e);
+        emitter.complete();
+      }
+    });
+  }
+
   private boolean ping(SseEmitter sseEmitter) {
     try {
       sseEmitter.send(SseEmitter.event().name("ping").data("").build());
