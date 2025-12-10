@@ -238,6 +238,13 @@ public class BasicUserService implements UserService {
     user.updateUsername(request.name());
 
     if (image != null && !image.isEmpty()) {
+      if (user.getProfileImageUrl() != null) {
+        String oldKey = extractKeyFromUrl(user.getProfileImageUrl());
+        if (oldKey != null) {
+          s3Uploader.delete(s3Properties.getProfileBucket(), oldKey);
+        }
+      }
+
       String contentType = image.getContentType();
       if (!ALLOWED_IMAGE_TYPES.contains(contentType)) {
         throw InvalidImageTypeException.withType(contentType);
@@ -279,5 +286,10 @@ public class BasicUserService implements UserService {
     log.info("[프로필 관리] 프로필 변경 완료 : userId = {}", userId);
 
     return userDto;
+  }
+
+  private String extractKeyFromUrl(String url) {
+    int idx = url.lastIndexOf('/');
+    return idx != -1 ? url.substring(idx + 1) : null;
   }
 }
