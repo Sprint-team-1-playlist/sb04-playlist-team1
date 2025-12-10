@@ -29,7 +29,7 @@ public class TheMovieApiService {
     private final int maxPage = 5;
 
     private Mono<TheMovieListResponse> callTheMovieApi(String query, String path, int page) {
-        log.info("[콘텐츠 데이터 관리] TheMovie API Mono 빌드 시작, callTheMovieApi query : {}, path : {}", query, path);
+        log.info("[콘텐츠 데이터 관리] TheMovie API Mono 빌드 시작");
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .scheme("https")
@@ -51,7 +51,7 @@ public class TheMovieApiService {
     }
 
     private Flux<TheMovieResponse> fluxingTheMovieApi(String query, String path) {
-        log.info("[콘텐츠 데이터 관리] TheMovie API Flux 빌드 시작, fluxingTheMovieApi query : {}, path : {}", query, path);
+        log.info("[콘텐츠 데이터 관리] TheMovie API Flux 빌드 시작");
         return callTheMovieApi(query, path, firstPage)
                     .flatMapMany(firstPageResponse -> {
                        if(firstPageResponse.results() == null || firstPageResponse.results().isEmpty()) {
