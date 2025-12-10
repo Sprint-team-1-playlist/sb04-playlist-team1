@@ -18,7 +18,6 @@ import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.service.PasswordResetService;
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -59,7 +58,7 @@ class AuthControllerTest {
   private UserDto mockUser() {
     return new UserDto(
         UUID.randomUUID(),
-        LocalDateTime.now(),
+        Instant.now(),
         "test@test.com",
         "테스트유저",
         null,
