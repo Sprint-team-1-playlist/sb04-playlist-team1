@@ -18,7 +18,7 @@ public interface TagRepository extends JpaRepository<Tag, UUID> {
     void deleteAllByContentId(UUID contentId);
 
     @Query("""
-        select t.content.id as contentId, t.items as tag
+        select t.content.id as contentId, t.name as tag
         from Tag t
         where t.content.id in :contentIds
     """)
@@ -40,6 +40,4 @@ public interface TagRepository extends JpaRepository<Tag, UUID> {
 
         return map;
     }
-
-    List<Tag> findAllByContent(Content content);
 }

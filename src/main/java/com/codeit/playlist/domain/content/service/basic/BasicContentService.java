@@ -154,11 +154,7 @@ public class BasicContentService implements ContentService {
             limit = 10;
         }
 
-        log.info("[콘텐츠 데이터 관리] 요청 typeEqual : {}, keywordLike : {}, cursor : {}, idAfter : {}, limit : {}, sortDirection : {}, sortBy : {}",
-                request.typeEqual(), request.keywordLike(), request.cursor(), request.idAfter(), request.limit(), request.sortDirection(), request.sortBy());
-
         String sortDirection = request.sortDirection() != null ? request.sortDirection().toString() : "DESCENDING";
-        log.info("[콘텐츠 데이터 관리] sortDirection : {}", sortDirection);
         boolean ascending;
 
         switch(sortDirection) {
@@ -173,13 +169,11 @@ public class BasicContentService implements ContentService {
             default:
                 throw new IllegalArgumentException("[콘텐츠 데이터 관리] sortDirection was something wrong : " + sortDirection);
         }
-        log.info("[콘텐츠 데이터 관리] after sortDirection : {}", sortDirection);
 
         String sortBy = request.sortBy();
         if(sortBy == null) {
             sortBy = "createdAt"; // 디폴트
         }
-        log.info("[콘텐츠 데이터 관리] sortBy : {}", sortBy);
 
         List<Content> contents = contentRepository.searchContents(request, ascending, limit, sortBy);
         // hasNext 판단용으로 limit + 1개를 가져왔으니 실제 반환할 데이터는 limit개까지만
@@ -211,7 +205,6 @@ public class BasicContentService implements ContentService {
         int size = contents.size();
         boolean hasNext = size == limit + 1;
         int pageSize = Math.min(size, limit);
-        log.info("[콘텐츠 데이터 관리] pageSize = {}, hasNext = {}", pageSize, hasNext);
 
         if(hasNext && pageSize > 0) {
             Content lastPage = contents.get(pageSize - 1); // 이번 페이지에서 실제로 반환되는 마지막 요소
@@ -236,10 +229,6 @@ public class BasicContentService implements ContentService {
             nextIdAfter = lastPage.getId().toString();
         }
 
-        log.info("[콘텐츠 데이터 관리] after SortBy : {}", sortBy);
-        log.info("[콘텐츠 데이터 관리] nextCursor : {}", nextCursor);
-        log.info("[콘텐츠 데이터 관리] nextIdAfter : {}", nextIdAfter);
-
         CursorResponseContentDto responseDto = new CursorResponseContentDto(data, nextCursor, nextIdAfter, hasNext, pageSize, sortBy, sortDirection);
         log.debug("[콘텐츠 데이터 관리] 커서 페이지네이션 컨텐츠 수집 완료");
         return responseDto;
@@ -251,7 +240,6 @@ public class BasicContentService implements ContentService {
         Content searchContent = contentRepository.findById(contentId)
                 .orElseThrow(() -> ContentNotFoundException.withId(contentId));
         List<Tag> tags = tagRepository.findByContentId(searchContent.getId());
-        log.info("[콘텐츠 데이터] 확인용 Tag : {} ", tags);
         log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 완료, searchContent : {}", searchContent);
         return contentMapper.toDto(searchContent,tags);
     }
