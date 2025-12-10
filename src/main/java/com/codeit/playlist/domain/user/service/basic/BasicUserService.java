@@ -16,24 +16,13 @@ import com.codeit.playlist.domain.user.dto.request.UserUpdateRequest;
 import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
-import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
-import com.codeit.playlist.domain.user.exception.NewPasswordRequired;
-import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
-import com.codeit.playlist.domain.user.exception.UserLockStateUnchangedException;
-import com.codeit.playlist.domain.user.exception.UserNameRequiredException;
-import com.codeit.playlist.domain.user.exception.UserNotFoundException;
-import com.codeit.playlist.domain.user.exception.UserProfileAccessDeniedException;
+import com.codeit.playlist.domain.user.exception.*;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.repository.UserRepositoryCustom;
 import com.codeit.playlist.domain.user.service.UserService;
 import com.codeit.playlist.global.constant.S3Properties;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,6 +33,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -269,7 +264,7 @@ public class BasicUserService implements UserService {
       }
 
       String extension = contentType.equals("image/png") ? ".png" : ".jpg";
-      String key = "profile/" + UUID.randomUUID() + extension;
+      String key = UUID.randomUUID() + extension;
 
       String imageUrl = s3Uploader.upload(
           s3Properties.getProfileBucket(),
