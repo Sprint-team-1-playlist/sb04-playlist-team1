@@ -43,7 +43,7 @@ public class BasicTagService implements TagService {
 //    }
 
     @Override
-    public void saveMovieTagToContent(Content content, List<Integer> generIds) {
+    public void saveMovieTagToContent(Content content, List<Integer> genreIds) {
         Map<Integer, String> movieGenreList = tmdbTagApiService.getApiMovieTag().block();
 
         if (movieGenreList == null || movieGenreList.isEmpty()) {
@@ -51,10 +51,13 @@ public class BasicTagService implements TagService {
             return;
         }
 
-        for(int i=0; i< generIds.size(); i++) {
-            Integer genreId = generIds.get(i);
+        for(Integer genreId : genreIds) {
             String name = movieGenreList.get(genreId);
-            Tag tag = new Tag(content, genreId, name);
+            if(name == null) {
+                log.debug("[콘텐츠 데이터 관리] genreId {}에 해당하는 장르명을 찾을 수 없습니다", genreId);
+            }
+            Tag tag = new Tag(content, name);
+            tag.setGenreId(genreId);
             tagRepository.save(tag);
         }
     }
