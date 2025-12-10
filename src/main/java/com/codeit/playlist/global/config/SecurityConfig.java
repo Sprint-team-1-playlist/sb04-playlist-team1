@@ -77,6 +77,9 @@ public class SecurityConfig {
             .requestMatchers("/oauth2/**").permitAll()
             .requestMatchers("/login/oauth2/**").permitAll()
             .requestMatchers("/oauth2/authorization/**").permitAll()
+
+            // Postman 테스트용 movie 컨트롤러, 동진
+            .requestMatchers("/adminMovie").permitAll()
             .anyRequest().authenticated()
 
         )
