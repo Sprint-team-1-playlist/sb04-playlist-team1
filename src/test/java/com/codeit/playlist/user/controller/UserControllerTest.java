@@ -23,7 +23,7 @@ import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,7 +73,7 @@ class UserControllerTest {
 
     UserDto response = new UserDto(
         userId,
-        LocalDateTime.now(),
+        Instant.now(),
         "test@test.com",
         "홍길동",
         null,
@@ -98,7 +98,7 @@ class UserControllerTest {
 
     UserDto response = new UserDto(
         userId,
-        LocalDateTime.now(),
+        Instant.now(),
         "test@test.com",
         "홍길동",
         null,
@@ -125,7 +125,7 @@ class UserControllerTest {
 
     UserDto response = new UserDto(
         userId,
-        LocalDateTime.now(),
+        Instant.now(),
         "test@test.com",
         "변경이름",
         null,
