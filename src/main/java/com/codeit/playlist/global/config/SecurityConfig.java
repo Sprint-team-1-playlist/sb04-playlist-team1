@@ -62,7 +62,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
             .requestMatchers("/api/auth/csrf-token").permitAll()
-            .requestMatchers("/api/sse").permitAll()
+            .requestMatchers("/actuator/health").permitAll()
 
             // 웹 소켓 핸드웨이크를 위한 엔드포인트
             .requestMatchers("/ws/**").permitAll()
@@ -76,6 +76,7 @@ public class SecurityConfig {
             //카카오, 구글 Oauth2
             .requestMatchers("/oauth2/**").permitAll()
             .requestMatchers("/login/oauth2/**").permitAll()
+            .requestMatchers("/oauth2/authorization/**").permitAll()
             .anyRequest().authenticated()
 
         )
