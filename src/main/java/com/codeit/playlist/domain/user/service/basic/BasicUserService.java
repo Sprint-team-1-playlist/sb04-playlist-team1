@@ -237,6 +237,8 @@ public class BasicUserService implements UserService {
     }
     user.updateUsername(request.name());
 
+    String oldProfileImageUrl = user.getProfileImageUrl();
+
     if (image != null && !image.isEmpty()) {
       String contentType = image.getContentType();
       if (!ALLOWED_IMAGE_TYPES.contains(contentType)) {
@@ -273,11 +275,37 @@ public class BasicUserService implements UserService {
       );
 
       user.updateProfileImageUrl(imageUrl);
+
+      if (oldProfileImageUrl != null) {
+        String oldKey = extractKeyFromUrl(oldProfileImageUrl);
+        if (oldKey != null) {
+          try {
+            s3Uploader.delete(s3Properties.getProfileBucket(), oldKey);
+          } catch (RuntimeException e) {
+            log.warn("[프로필 관리] 기존 프로필 이미지 삭제 실패 : userId = {}, key = {}", userId, oldKey, e);
+          }
+        }
+      }
     }
 
     UserDto userDto = userMapper.toDto(user);
     log.info("[프로필 관리] 프로필 변경 완료 : userId = {}", userId);
 
     return userDto;
+  }
+
+  private String extractKeyFromUrl(String url) {
+    if (url == null || url.isEmpty()) {
+      return null;
+    }
+    try {
+      int queryIdx = url.indexOf('?');
+      String pathUrl = queryIdx != -1 ? url.substring(0, queryIdx) : url;
+      int idx = pathUrl.lastIndexOf('/');
+      return idx != -1 ? pathUrl.substring(idx + 1) : null;
+    } catch (Exception e) {
+      log.warn("[프로필 관리] URL에서 키 추출 실패 : url = {}", url, e);
+      return null;
+    }
   }
 }
