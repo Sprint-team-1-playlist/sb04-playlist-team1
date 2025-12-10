@@ -35,14 +35,18 @@ public class SseService {
   public SseEmitter connect(UUID receiverId, UUID lastEventId) {
     if (receiverId == null) throw SseReconnectFailedException.withId(null, null);
 
-    SseEmitter sseEmitter = new SseEmitter(timeout);
+    SseEmitter emitter = new SseEmitter(timeout);
+
+    emitter.onCompletion(() -> sseEmitterRepository.delete(receiverId));
+    emitter.onTimeout(() -> sseEmitterRepository.delete(receiverId));
+    emitter.onError(e -> sseEmitterRepository.delete(receiverId));
 
     Optional.ofNullable(lastEventId)
         .ifPresentOrElse(
             id -> {
               for (SseMessage sseMessage : sseMessageRepository.findAllByEventIdAfterAndReceiverId(id, receiverId)) {
                 try {
-                  sseEmitter.send(sseMessage.toEvent());
+                  emitter.send(sseMessage.toEvent());
                 } catch (Exception e) {
                   log.error("SSE 재전송 실패 receiverId={}, eventId={}", receiverId, sseMessage.getEventId(), e);
                   throw SseReconnectFailedException.withId(receiverId, sseMessage.getEventId());
@@ -50,15 +54,15 @@ public class SseService {
               }
             },
             () -> {
-              if (!ping(sseEmitter)) {
+              if (!ping(emitter)) {
                 log.error("Initial ping failed for receiverId={}", receiverId);
-                sseEmitter.complete();
+                emitter.complete();
                 throw SseReconnectFailedException.withId(receiverId, null);
               }
             }
         );
-    sseEmitterRepository.save(receiverId, sseEmitter);
-    return sseEmitter;
+    sseEmitterRepository.save(receiverId, emitter);
+    return emitter;
   }
 
   public void send(Collection<UUID> receiverIds, String eventName, Object data) {
@@ -124,6 +128,7 @@ public class SseService {
         });
   }
 
+  //30초
   @Scheduled(fixedRate = 30000)
   public void keepAlive() {
     sseEmitterRepository.findAll().forEach(emitter -> {
