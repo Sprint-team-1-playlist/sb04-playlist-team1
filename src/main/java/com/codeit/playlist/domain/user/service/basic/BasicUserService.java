@@ -237,14 +237,9 @@ public class BasicUserService implements UserService {
     }
     user.updateUsername(request.name());
 
-    if (image != null && !image.isEmpty()) {
-      if (user.getProfileImageUrl() != null) {
-        String oldKey = extractKeyFromUrl(user.getProfileImageUrl());
-        if (oldKey != null) {
-          s3Uploader.delete(s3Properties.getProfileBucket(), oldKey);
-        }
-      }
+    String oldProfileImageUrl = user.getProfileImageUrl();
 
+    if (image != null && !image.isEmpty()) {
       String contentType = image.getContentType();
       if (!ALLOWED_IMAGE_TYPES.contains(contentType)) {
         throw InvalidImageTypeException.withType(contentType);
@@ -280,6 +275,17 @@ public class BasicUserService implements UserService {
       );
 
       user.updateProfileImageUrl(imageUrl);
+
+      if (oldProfileImageUrl != null) {
+        String oldKey = extractKeyFromUrl(oldProfileImageUrl);
+        if (oldKey != null) {
+          try {
+            s3Uploader.delete(s3Properties.getProfileBucket(), oldKey);
+          } catch (RuntimeException e) {
+            log.warn("[프로필 관리] 기존 프로필 이미지 삭제 실패 : userId = {}, key = {}", userId, oldKey, e);
+          }
+        }
+      }
     }
 
     UserDto userDto = userMapper.toDto(user);
