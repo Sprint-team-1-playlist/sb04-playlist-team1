@@ -8,7 +8,6 @@ import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +15,8 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
@@ -25,7 +26,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
   private final UserRepository userRepository;
   private final JwtRegistry jwtRegistry;
 
-  @Value("${management.cookie.secure}")
+  @Value("${playlist.jwt.cookie.secure}")
   private boolean cookieSecure;
 
   @Value("${oauth2.redirect.base-url:http://localhost:8080}")
