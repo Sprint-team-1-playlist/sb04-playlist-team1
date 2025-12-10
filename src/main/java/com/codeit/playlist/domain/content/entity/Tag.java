@@ -48,11 +48,6 @@ public class Tag extends BaseEntity {
     public Tag(Content content, String name) {
         this.content = content;
         this.name = name;
-    }
-
-    public Tag(Content content, String name, Integer genreId) {
-        this.content = content;
-        this.name = name;
-        this.genreId = genreId;
+        this.genreId = 0;
     }
 }

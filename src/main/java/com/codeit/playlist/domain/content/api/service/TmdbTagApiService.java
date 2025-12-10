@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -35,11 +36,11 @@ public class TmdbTagApiService {
                         .build())
                 .retrieve()
                 .bodyToMono(TheMovieTagListResponse.class)
+                .timeout(Duration.ofSeconds(10)) // API가 응답하지 않을 때를 대비
                 .doOnError(WebClientResponseException.class,
                         e -> log.error("[콘텐츠 데이터 관리] The Movie API Tag List 수집 오류, status : {}, body : {}", e.getStatusCode(), e.getResponseBodyAsString()));
     }
-
-    @Cacheable(value = "movieGenres", unless = "#result == null")
+    
     public Mono<Map<Integer, String>> getApiMovieTag() {
         return callTheMovieTagApi("/3/genre/movie/list")
                 .map(response -> {
