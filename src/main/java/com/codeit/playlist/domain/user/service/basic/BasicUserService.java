@@ -295,7 +295,17 @@ public class BasicUserService implements UserService {
   }
 
   private String extractKeyFromUrl(String url) {
-    int idx = url.lastIndexOf('/');
-    return idx != -1 ? url.substring(idx + 1) : null;
+    if (url == null || url.isEmpty()) {
+      return null;
+    }
+    try {
+      int queryIdx = url.indexOf('?');
+      String pathUrl = queryIdx != -1 ? url.substring(0, queryIdx) : url;
+      int idx = pathUrl.lastIndexOf('/');
+      return idx != -1 ? pathUrl.substring(idx + 1) : null;
+    } catch (Exception e) {
+      log.warn("[프로필 관리] URL에서 키 추출 실패 : url = {}", url, e);
+      return null;
+    }
   }
 }
