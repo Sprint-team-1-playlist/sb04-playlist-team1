@@ -83,6 +83,7 @@ jobs:
             --arg KAFKA_BOOTSTRAP_SERVERS "${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}" \
             --arg KAFKA_USERNAME "${{ secrets.KAFKA_USERNAME }}" \
             --arg KAFKA_PASSWORD "${{ secrets.KAFKA_PASSWORD }}" \
+            --arg OAUTH2_REDIRECT_BASE_URL "${{ secrets.OAUTH2_REDIRECT_BASE_URL }}" \
             '
             .containerDefinitions[0].image = $IMAGE
             | .containerDefinitions[0].environment = [
@@ -117,7 +118,8 @@ jobs:
                 {"name": "KAKAO_CLIENT_SECRET", "value": $KAKAO_CLIENT_SECRET},
                 {"name": "KAFKA_BOOTSTRAP_SERVERS", "value": $KAFKA_BOOTSTRAP_SERVERS},
                 {"name": "KAFKA_USERNAME", "value": $KAFKA_USERNAME},
-                {"name": "KAFKA_PASSWORD", "value": $KAFKA_PASSWORD}
+                {"name": "KAFKA_PASSWORD", "value": $KAFKA_PASSWORD},
+                {"name": "OAUTH2_REDIRECT_BASE_URL", "value": $OAUTH2_REDIRECT_BASE_URL}
               ]
             ' \
             task-definition.json > tmp.json && mv tmp.json task-definition.json
