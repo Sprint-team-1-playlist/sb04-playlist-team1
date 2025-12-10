@@ -44,7 +44,6 @@ public class ContentTasklet implements Tasklet {
                 .block();
 
         if(movieResponseList == null || movieResponseList.isEmpty()) {
-            log.error("[콘텐츠 데이터 관리] TMDB The Movie API contents가 없어요. query : {}", query);
             return RepeatStatus.FINISHED;
         }
 
@@ -62,7 +61,6 @@ public class ContentTasklet implements Tasklet {
             }
 
             if(movieResponse.tmdbId() == null) { // tmdb id가 없음
-                invalidCount++;
                 continue;
             }
 
@@ -82,9 +80,9 @@ public class ContentTasklet implements Tasklet {
                 tagService.saveMovieTagToContent(resultContent, movieResponse.genreIds());
             }
         }
-        log.info("[콘텐츠 데이터 관리] 존재여부 검증 완료, invalidCount : {}", invalidCount);
-        log.info("[콘텐츠 데이터 관리] 중복 검증 완료, existCount : {}", existCount);
-        log.info("[콘텐츠 데이터 관리] 한글여부 검증 완료, languageCount : {} ", languageCount);
+        log.info("[콘텐츠 데이터 관리] TMDB The Movie API에서 한글이 한글자도 없는 콘텐츠 횟수 : {}", languageCount);
+        log.info("[콘텐츠 데이터 관리] TMDB The Movie API가 이만큼 비어있었어요. count : {}", invalidCount);
+        log.info("[콘텐츠 데이터 관리] TMDB The Movie API contents가 이만큼 없어요. count : {}", existCount);
         log.info("[콘텐츠 데이터 관리] The Movie API 콘텐츠와 태그 수집 완료");
         return RepeatStatus.FINISHED;
     }

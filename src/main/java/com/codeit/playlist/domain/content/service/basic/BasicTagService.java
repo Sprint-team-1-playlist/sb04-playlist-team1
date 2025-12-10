@@ -19,29 +19,6 @@ public class BasicTagService implements TagService {
     private final TagRepository tagRepository;
     private final TmdbTagApiService tmdbTagApiService;
 
-//    @Override
-//    public void saveMovieTag() {
-//        log.info("[콘텐츠 데이터 관리] The Movie Tag DB적재 시작");
-//        List<TheMovieTagResponse> tagResponseList = tmdbTagApiService.getApiMovieTag().block();
-//
-//        for(int i = 0; i < tagResponseList.size(); i++) {
-//            TheMovieTagResponse tagResponse = tagResponseList.get(i);
-//            Optional<Tag> genreTag = tagRepository.findByGenreId(tagResponse.genreId());
-//            if(genreTag.isPresent()) {
-//                Tag existsTag = genreTag.get();
-//                existsTag.setName(tagResponse.name());
-//                log.info("[콘텐츠 데이터 관리] 태그가 이미 존재합니다. GenreId에 맞는 name으로 바꾸기만 합니다.");
-//            } else {
-//                Tag tag = new Tag();
-//                tag.setGenreId(tagResponse.genreId());
-//                tag.setName(tagResponse.name());
-//                tagRepository.save(tag);
-//                log.info("[콘텐츠 데이터 관리] 태그 생성 완료, tag : {}", tagRepository.findByGenreId(tagResponse.genreId()).orElse(null));
-//            }
-//        }
-//        log.info("[콘텐츠 데이터 관리] The Movie Tag DB적재 완료, size : {}", tagResponseList.size());
-//    }
-
     @Override
     public void saveMovieTagToContent(Content content, List<Integer> genreIds) {
         Map<Integer, String> movieGenreList = tmdbTagApiService.getApiMovieTag().block();
