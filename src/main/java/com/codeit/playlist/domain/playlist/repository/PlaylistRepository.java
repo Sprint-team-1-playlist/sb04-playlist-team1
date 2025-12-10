@@ -24,7 +24,7 @@ public interface PlaylistRepository extends JpaRepository<Playlist, UUID>, Playl
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         update playlists
-           set deletedAt = now() 
+           set deleted_at = now() 
          where id = :playlistId 
            and deleted_at is null
     """, nativeQuery = true)
