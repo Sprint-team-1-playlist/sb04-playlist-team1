@@ -41,9 +41,4 @@ public interface TagRepository extends JpaRepository<Tag, UUID> {
 
         return map;
     }
-
-    List<Tag> findAllByContent(Content content);
-
-    Optional<Tag> findByGenreId(Integer genreId);
-    List<Tag> findByGenreIdIn(List<Integer> genreIds);
 }
