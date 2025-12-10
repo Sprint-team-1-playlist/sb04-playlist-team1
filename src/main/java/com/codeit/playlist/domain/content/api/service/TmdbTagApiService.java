@@ -43,11 +43,16 @@ public class TmdbTagApiService {
     @Cacheable(value = "movieGenres", unless = "#result == null")
     public Mono<Map<Integer, String>> getApiMovieTag() {
         return callTheMovieTagApi("/3/genre/movie/list")
-                .map(response -> response.genres().stream()
-                        .collect(Collectors.toMap(
-                                TheMovieTagResponse::genreId,
-                                TheMovieTagResponse::name)
-                        )
-                );
+                .map(response -> {
+                    if(response.genres() == null) {
+                        return Map.<Integer, String>of(); // NPE를 방지하기 위한 빈 리스트 추가
+                    }
+                    return response.genres().stream()
+                            .collect(Collectors.toMap(
+                                    TheMovieTagResponse::genreId,
+                                    TheMovieTagResponse::name,
+                                    (existing, replacement) -> existing) // 수정
+                            );
+                });
     }
 }
