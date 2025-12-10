@@ -5,6 +5,7 @@ import com.codeit.playlist.domain.content.api.response.TheMovieTagResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -39,6 +40,7 @@ public class TmdbTagApiService {
                         e -> log.error("[콘텐츠 데이터 관리] The Movie API Tag List 수집 오류, status : {}, body : {}", e.getStatusCode(), e.getResponseBodyAsString()));
     }
 
+    @Cacheable(value = "movieGenres", unless = "#result == null")
     public Mono<Map<Integer, String>> getApiMovieTag() {
         return callTheMovieTagApi("/3/genre/movie/list")
                 .map(response -> response.genres().stream()
