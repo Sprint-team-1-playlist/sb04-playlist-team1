@@ -17,12 +17,12 @@ public interface ContentMapper {
     Content toEntity(ContentDto contentDto);
 
     default List<String> changeTags(List<Tag> tags) {
-        List<String> resultTag = new ArrayList<>();
-        resultTag.addAll(
-                tags.stream().map(Tag::getName)
-                        .filter(name -> name != null && !name.isEmpty())
-                        .toList()
-        );
-        return resultTag;
+        if(tags == null || tags.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return tags.stream().map(Tag::getName)
+                .filter(name -> name != null && !name.isEmpty())
+                .toList();
     }
 }
