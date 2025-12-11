@@ -4,6 +4,7 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.dto.data.ContentSummary;
 import com.codeit.playlist.domain.content.repository.TagRepository;
 import com.codeit.playlist.domain.follow.repository.FollowRepository;
+import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
@@ -20,6 +21,7 @@ import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,12 +51,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -147,6 +151,107 @@ public class BasicPlaylistServiceTest {
         assertTrue(ex.getMessage().contains("사용자 정보가 없습니다."));
         verify(userRepository).findById(ownerId);
         verifyNoInteractions(playlistMapper, playlistRepository);
+    }
+
+    @Test
+    @DisplayName("createPlaylist 성공 - 팔로워가 있으면 각 팔로워에게 알림 이벤트를 발행한다")
+    void createPlaylistSuccessWithFollowers() throws Exception {
+        // given
+        UUID ownerId = CURRENT_USER_ID;
+        PlaylistCreateRequest request = new PlaylistCreateRequest("플리제목", "플리설명");
+
+        User owner = mock(User.class);
+        when(owner.getName()).thenReturn("테스트유저");
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
+
+        Playlist saved = mock(Playlist.class);
+        when(saved.getTitle()).thenReturn("플리제목");
+        when(saved.getDescription()).thenReturn("플리설명");
+        when(playlistRepository.save(any(Playlist.class))).thenReturn(saved);
+
+        PlaylistDto expected = new PlaylistDto(
+                UUID.randomUUID(), null, "플리제목", "플리설명",
+                null, 0L, false, List.of()
+        );
+        when(playlistMapper.toDto(saved)).thenReturn(expected);
+
+        UUID follower1 = UUID.randomUUID();
+        UUID follower2 = UUID.randomUUID();
+        when(followRepository.findFollowerIdsByFolloweeId(ownerId))
+                .thenReturn(List.of(follower1, follower2));
+
+        when(objectMapper.writeValueAsString(any(NotificationDto.class)))
+                .thenReturn("serialized-notification");
+
+        when(kafkaTemplate.send(eq("playlist.NotificationDto"), anyString()))
+                .thenReturn(null);
+
+        // when
+        PlaylistDto actual = basicPlaylistService.createPlaylist(request, ownerId);
+
+        // then
+        assertSame(expected, actual);
+        verify(userRepository).findById(ownerId);
+        verify(playlistRepository).save(any(Playlist.class));
+        verify(playlistMapper).toDto(saved);
+
+        verify(followRepository).findFollowerIdsByFolloweeId(ownerId);
+        verify(objectMapper, times(2))
+                .writeValueAsString(any(NotificationDto.class));
+        verify(kafkaTemplate, times(2))
+                .send(eq("playlist.NotificationDto"), anyString());
+        verifyNoMoreInteractions(
+                userRepository, playlistRepository, playlistMapper,
+                followRepository, objectMapper, kafkaTemplate
+        );
+    }
+
+    @Test
+    @DisplayName("createPlaylist 성공 - 알림 직렬화 실패 시 예외는 밖으로 전파되지 않고 해당 팔로워에 대한 전송만 건너뛴다")
+    void createPlaylistWhenNotificationSerializationFails() throws Exception {
+        // given
+        UUID ownerId = CURRENT_USER_ID;
+        PlaylistCreateRequest request = new PlaylistCreateRequest("플리제목", "플리설명");
+
+        User owner = mock(User.class);
+        when(owner.getName()).thenReturn("테스트유저");
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
+
+        Playlist saved = mock(Playlist.class);
+        when(saved.getTitle()).thenReturn("플리제목");
+        when(saved.getDescription()).thenReturn("플리설명");
+        when(saved.getId()).thenReturn(UUID.randomUUID());
+        when(playlistRepository.save(any(Playlist.class))).thenReturn(saved);
+
+        PlaylistDto expected = new PlaylistDto(
+                UUID.randomUUID(), null, "플리제목", "플리설명",
+                null, 0L, false, List.of()
+        );
+        when(playlistMapper.toDto(saved)).thenReturn(expected);
+
+        UUID followerId = UUID.randomUUID();
+        when(followRepository.findFollowerIdsByFolloweeId(ownerId))
+                .thenReturn(List.of(followerId));
+
+        when(objectMapper.writeValueAsString(any(NotificationDto.class)))
+                .thenThrow(new JsonProcessingException("serialize fail") {});
+
+        // when
+        PlaylistDto actual = basicPlaylistService.createPlaylist(request, ownerId);
+
+        // then
+        assertSame(expected, actual);
+        verify(userRepository).findById(ownerId);
+        verify(playlistRepository).save(any(Playlist.class));
+        verify(playlistMapper).toDto(saved);
+
+        verify(followRepository).findFollowerIdsByFolloweeId(ownerId);
+        verify(objectMapper).writeValueAsString(any(NotificationDto.class));
+        verifyNoInteractions(kafkaTemplate);
+        verifyNoMoreInteractions(
+                userRepository, playlistRepository, playlistMapper,
+                followRepository, objectMapper
+        );
     }
 
     @Test

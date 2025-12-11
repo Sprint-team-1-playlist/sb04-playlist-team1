@@ -9,13 +9,17 @@ import com.codeit.playlist.domain.playlist.entity.PlaylistContent;
 import com.codeit.playlist.domain.playlist.entity.Subscribe;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
 import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
+import com.codeit.playlist.domain.playlist.repository.custom.PlaylistRepositoryCustomImpl;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.global.config.JpaConfig;
 import com.codeit.playlist.global.config.QuerydslConfig;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.hibernate.Hibernate;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +38,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.codeit.playlist.domain.playlist.entity.QPlaylist.playlist;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -51,10 +56,21 @@ public class PlaylistRepositoryTest {
 
     @Autowired
     private TestEntityManager entityManager;
+
     @Autowired
     private ContentRepository contentRepository;
 
+    @Autowired
+    JPAQueryFactory queryFactory;
+
+    private PlaylistRepositoryCustomImpl customRepository;
+
     private static final AtomicLong TMDB_ID_SEQ = new AtomicLong(1);
+
+    @BeforeEach
+    void initCustom() {
+        customRepository = new PlaylistRepositoryCustomImpl(queryFactory);
+    }
 
     @Test
     @DisplayName("searchPlaylists 성공 - 구독자 필터로 자신이 구독한 플레이리스트만 조회")
@@ -178,6 +194,53 @@ public class PlaylistRepositoryTest {
         // then
         assertThat(slice.getContent()).isEmpty();
         assertThat(slice.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("countPlaylists 성공 - keyword와 ownerId 조건이 정상 적용된다")
+    void countPlaylistsSuccessWithKeywordAndOwnerFilter() {
+        // given
+        User owner1 = userRepository.save(createTestUser("owner1@test.com"));
+        User owner2 = userRepository.save(createTestUser("owner2@test.com"));
+
+        Playlist p1 = new Playlist(owner1, "테스트 플리 1", "설명입니다");
+        Playlist p2 = new Playlist(owner1, "테스트 플리 2", "테스트 설명");
+        Playlist p3 = new Playlist(owner1, "다른 제목", "설명입니다");
+
+        Playlist p4 = new Playlist(owner2, "테스트 플리 3", "설명입니다");
+
+        playlistRepository.saveAll(List.of(p1, p2, p3, p4));
+
+        String keywordLike = "테스트";
+        UUID ownerIdEqual = owner1.getId();
+        UUID subscriberIdEqual = null;
+
+        // when
+        long count = customRepository.countPlaylists(keywordLike, ownerIdEqual, subscriberIdEqual);
+
+        // then
+        assertThat(count).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("countPlaylists 경계 - 조건에 맞는 플레이리스트가 없으면 0을 반환한다")
+    void countPlaylistsReturnsZeroWhenNoMatch() {
+        // given
+        User owner = userRepository.save(createTestUser("owner@test.com"));
+
+        // 키워드와 상관없는 플레이리스트 하나
+        Playlist p = new Playlist(owner, "아무 제목", "아무 설명");
+        playlistRepository.save(p);
+
+        String keywordLike = "%없는키워드%";   // 매칭 안 되는 키워드
+        UUID ownerIdEqual = owner.getId();
+        UUID subscriberIdEqual = null;
+
+        // when
+        long count = customRepository.countPlaylists(keywordLike, ownerIdEqual, subscriberIdEqual);
+
+        // then
+        assertThat(count).isEqualTo(0L);
     }
 
     @Test
@@ -471,6 +534,107 @@ public class PlaylistRepositoryTest {
                 .orElseThrow();
         assertThat(reloaded.getSubscriberCount()).isEqualTo(0L);
     }
+
+    @Test
+    @DisplayName("createCursorCondition 성공 - updatedAt DESC 기준 커서 이후 데이터만 조회된다")
+    void createCursorConditionSuccessUpdatedAtDesc() {
+        // given
+        User owner = userRepository.save(createTestUser("owner@test.com"));
+
+        Playlist p1 = playlistRepository.save(new Playlist(owner, "플리1", "설명"));
+        Playlist p2 = playlistRepository.save(new Playlist(owner, "플리2", "설명"));
+        Playlist p3 = playlistRepository.save(new Playlist(owner, "플리3", "설명"));
+
+        entityManager.flush();
+
+        Instant base = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+
+        entityManager.getEntityManager().createQuery(
+                        "UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
+                .setParameter("t", base.minus(3, ChronoUnit.DAYS))
+                .setParameter("id", p1.getId())
+                .executeUpdate();
+
+        entityManager.getEntityManager().createQuery(
+                        "UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
+                .setParameter("t", base.minus(2, ChronoUnit.DAYS))
+                .setParameter("id", p2.getId())
+                .executeUpdate();
+
+        entityManager.getEntityManager().createQuery(
+                        "UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
+                .setParameter("t", base.minus(1, ChronoUnit.DAYS))
+                .setParameter("id", p3.getId())
+                .executeUpdate();
+
+        entityManager.clear();
+
+        boolean hasCursor = true;
+        UUID cursorId = p2.getId();
+        boolean asc = false;
+        String sortBy = "updatedAt";
+
+        // when
+        BooleanExpression condition = ReflectionTestUtils.invokeMethod(
+                customRepository,
+                "createCursorCondition",
+                hasCursor, cursorId, asc, sortBy
+        );
+
+        // then
+        assertThat(condition).isNotNull();
+
+        List<Playlist> result = queryFactory
+                .selectFrom(playlist)
+                .where(condition)
+                .orderBy(playlist.updatedAt.desc(), playlist.id.desc())
+                .fetch();
+
+        assertThat(result)
+                .extracting(Playlist::getId)
+                .containsExactly(p1.getId());
+    }
+
+    @Test
+    @DisplayName("createCursorCondition 실패 - hasCursor가 false이면 null을 반환한다")
+    void createCursorConditionReturnsNullWhenHasCursorFalse() {
+        // given
+        boolean hasCursor = false;
+        UUID cursorId = UUID.randomUUID();
+        boolean asc = true;
+        String sortBy = "updatedAt";
+
+        // when
+        BooleanExpression condition = ReflectionTestUtils.invokeMethod(
+                customRepository,
+                "createCursorCondition",
+                hasCursor, cursorId, asc, sortBy
+        );
+
+        // then
+        assertThat(condition).isNull();
+    }
+
+    @Test
+    @DisplayName("createCursorCondition 실패 - cursorId에 해당하는 Playlist가 없으면 null을 반환한다")
+    void createCursorConditionReturnsNullWhenCursorPlaylistNotFound() {
+        // given
+        boolean hasCursor = true;
+        UUID cursorId = UUID.randomUUID(); // DB에 없는 ID
+        boolean asc = true;
+        String sortBy = "updatedAt";
+
+        // when
+        BooleanExpression condition = ReflectionTestUtils.invokeMethod(
+                customRepository,
+                "createCursorCondition",
+                hasCursor, cursorId, asc, sortBy
+        );
+
+        // then
+        assertThat(condition).isNull();
+    }
+
 
     // ==== 테스트용 엔티티 생성 헬퍼 메서드 ====
 
