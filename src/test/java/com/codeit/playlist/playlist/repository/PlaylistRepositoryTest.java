@@ -596,6 +596,69 @@ public class PlaylistRepositoryTest {
     }
 
     @Test
+    @DisplayName("createCursorCondition 성공 - subscribeCount DESC 기준 커서 이후 데이터만 조회된다")
+    void createCursorConditionSuccessSubscribeCountDesc() {
+        // given
+        User owner = userRepository.save(createTestUser("owner@test.com"));
+
+        // 플레이리스트 저장(기본 updatedAt 등 자동 저장)
+        Playlist p1 = playlistRepository.save(new Playlist(owner, "플리1", "설명"));
+        Playlist p2 = playlistRepository.save(new Playlist(owner, "플리2", "설명"));
+        Playlist p3 = playlistRepository.save(new Playlist(owner, "플리3", "설명"));
+
+        entityManager.flush();
+
+        // subscriberCount 직접 세팅 (Reflection 또는 UPDATE 사용)
+        entityManager.getEntityManager().createQuery(
+                        "UPDATE Playlist p SET p.subscriberCount = :c WHERE p.id = :id")
+                .setParameter("c", 10L)
+                .setParameter("id", p1.getId())
+                .executeUpdate();
+
+        entityManager.getEntityManager().createQuery(
+                        "UPDATE Playlist p SET p.subscriberCount = :c WHERE p.id = :id")
+                .setParameter("c", 20L)
+                .setParameter("id", p2.getId())
+                .executeUpdate();
+
+        entityManager.getEntityManager().createQuery(
+                        "UPDATE Playlist p SET p.subscriberCount = :c WHERE p.id = :id")
+                .setParameter("c", 30L)
+                .setParameter("id", p3.getId())
+                .executeUpdate();
+
+        entityManager.clear();
+
+        boolean hasCursor = true;
+        UUID cursorId = p2.getId();  // subscriberCount = 20
+        boolean asc = false;         // DESC
+        String sortBy = "subscribeCount";
+
+        // when
+        BooleanExpression condition = ReflectionTestUtils.invokeMethod(
+                customRepository,
+                "createCursorCondition",
+                hasCursor, cursorId, asc, sortBy
+        );
+
+        // then
+        assertThat(condition).isNotNull();
+
+        // DESC 정렬: subscriberCount DESC, 그다음 id DESC
+        List<Playlist> result = queryFactory
+                .selectFrom(playlist)
+                .where(condition)
+                .orderBy(playlist.subscriberCount.desc(), playlist.id.desc())
+                .fetch();
+
+        // DESC 기준 cursorCount = 20 → subscriberCount < 20 → p1만
+        assertThat(result)
+                .extracting(Playlist::getId)
+                .containsExactly(p1.getId());
+    }
+
+
+    @Test
     @DisplayName("createCursorCondition 실패 - hasCursor가 false이면 null을 반환한다")
     void createCursorConditionReturnsNullWhenHasCursorFalse() {
         // given
