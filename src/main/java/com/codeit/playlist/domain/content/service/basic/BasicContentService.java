@@ -63,12 +63,12 @@ public class BasicContentService implements ContentService {
         }
         if(request.type().equals("movie")) {
             type = Type.MOVIE;
-        }
-        if (request.type().equals("sport")) {
+        } else if(request.type().equals("sport")) {
             type = Type.SPORT;
-        }
-        if (request.type().equals("tvSeries")) {
+        } else if(request.type().equals("tvSeries")) {
             type = Type.TV_SERIES;
+        } else {
+            throw new ContentBadRequestException("유효하지 않은 타입입니다. : " + request.type());
         }
         log.info("타입 생성 완료 : type = {}", type);
 
