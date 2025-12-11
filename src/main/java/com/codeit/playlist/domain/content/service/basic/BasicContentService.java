@@ -16,10 +16,15 @@ import com.codeit.playlist.domain.content.repository.TagRepository;
 import com.codeit.playlist.domain.content.service.ContentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +38,18 @@ public class BasicContentService implements ContentService {
     private final ContentRepository contentRepository;
     private final TagRepository tagRepository;
     private final ContentMapper contentMapper;
+
+    private final S3Client s3Client;
+
+    @Value("${cloud.aws.s3.content-bucket}")
+    private String bucket;
+
+    @Value("${cloud.aws.s3.directory}")
+    private String directory;
+
+    @Value("${cloud.aws.s3.base-url}")
+    private String baseUrl;
+
 
     @Transactional
     @Override
@@ -247,6 +264,37 @@ public class BasicContentService implements ContentService {
 
     @Override
     public String saveImageToS3(MultipartFile file) {
-        return null;
+        log.debug("[콘텐츠 데이터 관리] 썸네일 MultipartFile S3업로드 시작");
+        if(file == null || file.isEmpty()) {
+            log.debug("[콘텐츠 데이터 관리] file이 없어요.");
+            throw new IllegalArgumentException();
+        }
+        try {
+            String originalFilename = file.getOriginalFilename();
+            String extractFilename = "";
+            if(originalFilename !=null && !originalFilename.contains(".")) {
+                extractFilename = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+            String key = directory + UUID.randomUUID() + extractFilename;
+
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .contentType(file.getContentType())
+                    .build();
+
+            s3Client.putObject(
+                    putObjectRequest,
+                    RequestBody.fromInputStream(file.getInputStream(), file.getSize())
+            );
+
+            String url = baseUrl + "/" + key;
+            log.info("[콘텐츠 데이터 관리] MultipartFile S3 업로드 완료, url : {}", url);
+            return url;
+
+        } catch(IOException e) {
+            log.error("[콘텐츠 데이터 관리] 썸네일 MultipartFile S3업로드 실패",e);
+            throw new IllegalArgumentException();
+        }
     }
 }

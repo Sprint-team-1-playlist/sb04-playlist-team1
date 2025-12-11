@@ -110,6 +110,8 @@ cloud:
       profile-bucket: ${PROFILE_BUCKET}
       logs-bucket: ${LOGS_BUCKET}
       region: ${AWS_REGION}
+      directory: ${AWS_DIRECTORY}
+      base-url: ${AWS_BASE_URL}
 
 api:
   tmdb:
