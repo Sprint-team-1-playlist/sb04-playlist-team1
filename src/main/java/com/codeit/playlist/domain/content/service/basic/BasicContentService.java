@@ -53,7 +53,7 @@ public class BasicContentService implements ContentService {
 
     @Transactional
     @Override
-    public ContentDto create(ContentCreateRequest request, String thumbnail) {
+    public ContentDto create(ContentCreateRequest request, MultipartFile thumbnail) {
         log.debug("[콘텐츠 데이터 관리] 관리자 권한 컨텐츠 생성 시작 : request = {}", request);
 
         log.debug("[콘텐츠 데이터 관리] 타입 생성 시작 : type = {}", request.type());
@@ -72,16 +72,19 @@ public class BasicContentService implements ContentService {
         }
         log.info("타입 생성 완료 : type = {}", type);
 
-        if(thumbnail == null || thumbnail.isBlank()) {
+        if(thumbnail == null || thumbnail.isEmpty()) {
             throw new ContentBadRequestException("썸네일은 필수입니다.");
         }
+
+        String strThumbnail = saveImageToS3(thumbnail);
         Long uuid = UUID.randomUUID().getLeastSignificantBits();
+
         Content content = new Content(
                 uuid,
                 type,
                 request.title(),
                 request.description(),
-                thumbnail,
+                strThumbnail,
                 0,
                 0,
                 0);
@@ -265,6 +268,7 @@ public class BasicContentService implements ContentService {
     @Override
     public String saveImageToS3(MultipartFile file) {
         log.debug("[콘텐츠 데이터 관리] 썸네일 MultipartFile S3업로드 시작");
+
         if(file == null || file.isEmpty()) {
             log.debug("[콘텐츠 데이터 관리] file이 없어요.");
             throw new IllegalArgumentException();
@@ -272,7 +276,7 @@ public class BasicContentService implements ContentService {
         try {
             String originalFilename = file.getOriginalFilename();
             String extractFilename = "";
-            if(originalFilename !=null && !originalFilename.contains(".")) {
+            if(originalFilename != null && originalFilename.contains(".")) {
                 extractFilename = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
             String key = directory + UUID.randomUUID() + extractFilename;
@@ -288,7 +292,7 @@ public class BasicContentService implements ContentService {
                     RequestBody.fromInputStream(file.getInputStream(), file.getSize())
             );
 
-            String url = baseUrl + "/" + key;
+            String url = baseUrl + key;
             log.info("[콘텐츠 데이터 관리] MultipartFile S3 업로드 완료, url : {}", url);
             return url;
 

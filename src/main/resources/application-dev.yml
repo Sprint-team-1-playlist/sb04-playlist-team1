@@ -59,3 +59,5 @@ cloud:
     s3:
       directory: ${AWS_DIRECTORY}
       base-url: ${AWS_BASE_URL}
+      access-key-id: ${AWS_ACCESS_KEY_ID}
+      secret-key-id: ${AWS_SECRET_KEY_ID}

@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
 
 public interface ContentService {
-    ContentDto create(ContentCreateRequest request, String thumbnail);
+    ContentDto create(ContentCreateRequest request, MultipartFile thumbnail);
     ContentDto update(UUID contentId, ContentUpdateRequest request, String thumbnail);
     void delete(UUID contentId);
     CursorResponseContentDto get(ContentCursorRequest request);
