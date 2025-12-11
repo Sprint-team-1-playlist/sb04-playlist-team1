@@ -271,15 +271,21 @@ public class BasicContentService implements ContentService {
 
         if(file == null || file.isEmpty()) {
             log.debug("[콘텐츠 데이터 관리] file이 없어요.");
-            throw new IllegalArgumentException();
+            throw new ContentBadRequestException("업로드 할 파일이 없어요.");
         }
+
+        String contentType = file.getContentType();
+        if(contentType == null || !contentType.startsWith("image/")) {
+            throw new ContentBadRequestException("이미지 파일만 업로드 할 수 있어요.");
+        }
+
         try {
             String originalFilename = file.getOriginalFilename();
-            String extractFilename = "";
+            String extension = "";
             if(originalFilename != null && originalFilename.contains(".")) {
-                extractFilename = originalFilename.substring(originalFilename.lastIndexOf("."));
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
-            String key = directory + UUID.randomUUID() + extractFilename;
+            String key = directory + UUID.randomUUID() + extension;
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucket)
@@ -298,7 +304,7 @@ public class BasicContentService implements ContentService {
 
         } catch(IOException e) {
             log.error("[콘텐츠 데이터 관리] 썸네일 MultipartFile S3업로드 실패",e);
-            throw new IllegalArgumentException();
+            throw new ContentBadRequestException("파일 업로드 중 오류가 발생했어요.");
         }
     }
 }
