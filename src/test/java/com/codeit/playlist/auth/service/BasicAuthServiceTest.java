@@ -15,6 +15,7 @@ import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtInformation;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
+import com.codeit.playlist.domain.sse.repository.SseEmitterRepository;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.playlist.domain.user.entity.Role;
@@ -86,6 +87,9 @@ public class BasicAuthServiceTest {
 
   @Mock
   KafkaTemplate<String, Playlist> kafkaTemplate;
+
+  @Mock
+  private SseEmitterRepository sseEmitterRepository;
 
   private UUID FIXED_ID;
   private PlaylistUserDetails userDetails;
