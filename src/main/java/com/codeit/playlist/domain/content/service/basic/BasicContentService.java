@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,20 +37,20 @@ public class BasicContentService implements ContentService {
     @Transactional
     @Override
     public ContentDto create(ContentCreateRequest request, String thumbnail) {
-        log.debug("[콘텐츠 데이터 관리] 컨텐츠 생성 시작 : request = {}", request);
+        log.debug("[콘텐츠 데이터 관리] 관리자 권한 컨텐츠 생성 시작 : request = {}", request);
 
         log.debug("[콘텐츠 데이터 관리] 타입 생성 시작 : type = {}", request.type());
         Type type = null;
         if(request.type() == null) {
             throw new ContentBadRequestException("타입을 입력해주세요.");
         }
-        if(request.type().equals(Type.MOVIE.toString())) {
+        if(request.type().equals("movie")) {
             type = Type.MOVIE;
         }
-        if (request.type().equals(Type.SPORT.toString())) {
+        if (request.type().equals("sport")) {
             type = Type.SPORT;
         }
-        if (request.type().equals(Type.TV_SERIES.toString())) {
+        if (request.type().equals("tvSeries")) {
             type = Type.TV_SERIES;
         }
         log.info("타입 생성 완료 : type = {}", type);
@@ -242,5 +243,10 @@ public class BasicContentService implements ContentService {
         List<Tag> tags = tagRepository.findByContentId(searchContent.getId());
         log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 완료, searchContent : {}", searchContent);
         return contentMapper.toDto(searchContent,tags);
+    }
+
+    @Override
+    public String saveImageToS3(MultipartFile file) {
+        return null;
     }
 }
