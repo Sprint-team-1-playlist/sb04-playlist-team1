@@ -102,29 +102,28 @@ jacocoTestReport {
     reports {
         xml.required.set(true)
         html.required.set(true)
+    }
+    // 제외할 패턴들을 한 곳에서 관리
+    def excludePatterns = [
+            // QueryDSL Q 클래스 (QA ~ QZ)
+            "**/Q*/**",
 
-        // 제외할 패턴들을 한 곳에서 관리
-        def excludePatterns = [
-                // QueryDSL Q 클래스 (QA ~ QZ)
-                "**/Q*/**",
+            // 우리가 커버리지에서 제외하고 싶은 패키지
+            "**/mapper/**",
+            "**/entity/**",
+            "**/dto/**",
+            "**/exception/**",
+            "**/config/**",
+            "**/error/**",
+            "**/repository/**"
+    ]
 
-                // 우리가 커버리지에서 제외하고 싶은 패키지
-                "**/mapper/**",
-                "**/entity/**",
-                "**/dto/**",
-                "**/exception/**",
-                "**/config/**",
-                "**/error/**",
-                "**/repository/**"
-        ]
-
-        afterEvaluate {
-            classDirectories.setFrom(
-                    files(classDirectories.files.collect {
-                        fileTree(dir: it, exclude: excludePatterns)
-                    })
-            )
-        }
+    afterEvaluate {
+        classDirectories.setFrom(
+                files(classDirectories.files.collect {
+                    fileTree(dir: it, exclude: excludePatterns)
+                })
+        )
     }
 }
 
