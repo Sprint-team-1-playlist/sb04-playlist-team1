@@ -15,6 +15,7 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.global.error.InvalidCursorException;
+import com.codeit.playlist.global.error.InvalidSortByException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -124,8 +125,7 @@ public class BasicNotificationService implements NotificationService {
         } else if ("createdAt".equals(sortBy)) {
             safeSortBy = "createdAt";
         } else {
-            log.debug("[알림] 지원하지 않는 sortBy 값, 기본값 사용: {}", sortBy);
-            safeSortBy = "createdAt";
+            throw InvalidSortByException.withSortBy(sortBy);
         }
 
 
