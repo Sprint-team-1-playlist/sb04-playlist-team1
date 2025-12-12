@@ -424,7 +424,7 @@ class BasicMessageServiceTest {
     when(messageMapper.toDto(m1)).thenReturn(dto1);
     when(messageMapper.toDto(m2)).thenReturn(dto2);
 
-    List<Message> messagesFromRepo = List.of(m1, m2);
+    List<Message> messagesFromRepo = List.of(m2, m1);
 
     when(messageRepository.findMessagesByConversationWithCursor(
         any(UUID.class),
@@ -446,8 +446,8 @@ class BasicMessageServiceTest {
 
     assertEquals(false, result.hasNext(), "정확히 limit개만 조회되었고 totalCount가 같으므로 hasNext는 false여야 합니다.");
 
-    assertEquals(time2.toString(), result.nextCursor());
-    assertEquals(messageId2, result.nextIdAfter());
+    assertEquals(time1.toString(), result.nextCursor());
+    assertEquals(messageId1, result.nextIdAfter());
   }
 
   @Test

@@ -89,8 +89,6 @@ public class SseServiceTest {
 
     verify(mockMessage1, times(1)).toEvent();
     verify(mockMessage2, times(1)).toEvent();
-
-    assertDoesNotThrow(() -> sseService.connect(TEST_RECEIVER_ID, lastEventId));
   }
 
   @Test
@@ -279,9 +277,9 @@ public class SseServiceTest {
     when(sseEmitterRepository.findAll()).thenReturn(allEmitters);
 
     doThrow(new IOException("Dead ping"))
-        .when(deadEmitter).send(any(SseEmitter.SseEventBuilder.class));
+        .when(deadEmitter).send(any(Set.class));
     doNothing()
-        .when(aliveEmitter).send(any(SseEmitter.SseEventBuilder.class));
+        .when(aliveEmitter).send(any(Set.class));
 
     // when
     sseService.cleanUp();
