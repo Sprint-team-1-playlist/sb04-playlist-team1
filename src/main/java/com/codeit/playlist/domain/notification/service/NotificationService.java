@@ -2,7 +2,6 @@ package com.codeit.playlist.domain.notification.service;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
-import com.codeit.playlist.domain.notification.dto.data.NotificationSortBy;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
 import com.codeit.playlist.domain.notification.entity.Level;
 
@@ -15,7 +14,7 @@ public interface NotificationService {
     NotificationDto saveNotification(UUID receiverId, String title, String content, Level level);
 
     CursorResponseNotificationDto getAllNotifications(UUID receiverId, String cursor, UUID idAfter,
-                                                      int limit, SortDirection sortDirection, NotificationSortBy sortBy);
+                                                      int limit, SortDirection sortDirection, String sortBy);
 
     void markAsReadAndDeleteNotification(UUID notificationId, UUID currentUserId);
 }

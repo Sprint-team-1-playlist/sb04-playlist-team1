@@ -2,7 +2,6 @@ package com.codeit.playlist.domain.notification.service.basic;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
-import com.codeit.playlist.domain.notification.dto.data.NotificationSortBy;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
 import com.codeit.playlist.domain.notification.entity.Level;
 import com.codeit.playlist.domain.notification.entity.Notification;
@@ -16,6 +15,7 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.global.error.InvalidCursorException;
+import com.codeit.playlist.global.error.InvalidSortByException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -110,7 +110,7 @@ public class BasicNotificationService implements NotificationService {
     @Transactional(readOnly = true)
     @Override
     public CursorResponseNotificationDto getAllNotifications(UUID receiverId, String cursor, UUID idAfter,
-                                                             int limit, SortDirection sortDirection, NotificationSortBy sortBy) {
+                                                             int limit, SortDirection sortDirection, String sortBy) {
 
         log.debug("[알림] 알림 목록 조회 서비스 시작: receiverId= {}, cursor= {}, idAfter= {}, limit= {}, sortDirection= {}, sortBy= {}",
                 receiverId, cursor, idAfter, limit, sortDirection, sortBy);
@@ -119,12 +119,14 @@ public class BasicNotificationService implements NotificationService {
                 (sortDirection == null) ? SortDirection.DESCENDING : sortDirection;
 
         //sortBy 보정 + 검증 (createdAt만 허용)
-        NotificationSortBy safeSortByEnum =
-                (sortBy == null) ? NotificationSortBy.createdAt : sortBy;
-
-        String safeSortBy = switch (safeSortByEnum) {
-            case createdAt -> "createdAt";
-        };
+        String safeSortBy;
+        if (sortBy == null || sortBy.isBlank()) {
+            safeSortBy = "createdAt";
+        } else if ("createdAt".equals(sortBy)) {
+            safeSortBy = "createdAt";
+        } else {
+            throw InvalidSortByException.withSortBy(sortBy);
+        }
 
 
         //cursor 파싱

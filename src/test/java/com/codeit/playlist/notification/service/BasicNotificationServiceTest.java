@@ -2,7 +2,6 @@ package com.codeit.playlist.notification.service;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
-import com.codeit.playlist.domain.notification.dto.data.NotificationSortBy;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
 import com.codeit.playlist.domain.notification.entity.Level;
 import com.codeit.playlist.domain.notification.entity.Notification;
@@ -184,7 +183,7 @@ public class BasicNotificationServiceTest {
         UUID idAfter = null;
         int limit = 10;
         SortDirection sortDirection = SortDirection.DESCENDING;
-        NotificationSortBy sortBy = NotificationSortBy.createdAt;
+        String sortBy = "createdAt";
 
         Notification notification1 = Mockito.mock(Notification.class);
         Notification notification2 = Mockito.mock(Notification.class);
@@ -264,7 +263,7 @@ public class BasicNotificationServiceTest {
         UUID idAfter = null;
         int limit = 10;
         SortDirection sortDirection = SortDirection.DESCENDING;
-        NotificationSortBy sortBy = NotificationSortBy.createdAt;
+        String sortBy = "createdAt";
 
         // when & then
         assertThatThrownBy(() ->
@@ -293,7 +292,7 @@ public class BasicNotificationServiceTest {
         UUID idAfter = null;
         int limit = 10;
         SortDirection sortDirection = SortDirection.DESCENDING;
-        NotificationSortBy sortBy = NotificationSortBy.createdAt;
+        String sortBy = "createdAt";
 
         given(notificationRepository.findByReceiverIdWithCursorPaging(
                 eq(receiverId),

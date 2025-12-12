@@ -1,7 +1,6 @@
 package com.codeit.playlist.domain.notification.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
-import com.codeit.playlist.domain.notification.dto.data.NotificationSortBy;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
 import com.codeit.playlist.domain.notification.service.NotificationService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
@@ -36,7 +35,7 @@ public class NotificationController {
             @RequestParam(required = false) UUID idAfter,
             @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit,
             @RequestParam(defaultValue = "DESCENDING") SortDirection sortDirection,
-            @RequestParam(defaultValue = "createdAt") NotificationSortBy sortBy,  //createdAt
+            @RequestParam(defaultValue = "createdAt") String sortBy,  //createdAt
             @AuthenticationPrincipal PlaylistUserDetails userDetails
             ) {
         UUID receiverId = userDetails.getUserDto().id();
