@@ -2,7 +2,6 @@ package com.codeit.playlist.review.repository;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.entity.Content;
-import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.review.entity.Review;
 import com.codeit.playlist.domain.review.repository.ReviewRepository;
 import com.codeit.playlist.domain.user.entity.Role;
@@ -400,7 +399,7 @@ public class ReviewRepositoryTest {
     private Content createTestContent(String title) {
         Content content = new Content(
                 TMDB_ID_SEQ.getAndIncrement(),
-                Type.MOVIE,
+                "MOVIE",
                 title,
                 "설명",
                 "http://example.com",
