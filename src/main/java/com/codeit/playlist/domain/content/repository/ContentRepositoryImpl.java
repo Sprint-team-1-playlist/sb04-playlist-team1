@@ -3,7 +3,6 @@ package com.codeit.playlist.domain.content.repository;
 import com.codeit.playlist.domain.content.dto.request.ContentCursorRequest;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.QContent;
-import com.codeit.playlist.domain.content.entity.Type;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
@@ -31,7 +30,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
                 ascending, request.sortBy(), request.cursor(), request.idAfter());
         // 검색 조건
         if (request.typeEqual() != null) {
-            builder.and(qContent.type.eq(Type.valueOf(request.typeEqual().toUpperCase())));
+            builder.and(qContent.type.eq(request.typeEqual()));
         }
 
         if (request.keywordLike() != null) {
@@ -130,7 +129,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
 
         // 검색 조건만 적용
         if (request.typeEqual() != null) {
-            builder.and(qContent.type.eq(Type.valueOf(request.typeEqual().toUpperCase())));
+            builder.and(qContent.type.eq(request.typeEqual()));
         }
 
         if (request.keywordLike() != null) {
