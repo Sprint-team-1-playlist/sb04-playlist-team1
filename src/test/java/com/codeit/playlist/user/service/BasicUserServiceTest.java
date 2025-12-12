@@ -1,8 +1,28 @@
 package com.codeit.playlist.user.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.codeit.playlist.domain.auth.exception.AuthAccessDeniedException;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.file.S3Uploader;
+import com.codeit.playlist.domain.file.exception.FileTooLargeException;
+import com.codeit.playlist.domain.file.exception.InvalidImageContentException;
+import com.codeit.playlist.domain.file.exception.InvalidImageTypeException;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.security.jwt.JwtRegistry;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
@@ -19,12 +39,18 @@ import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
 import com.codeit.playlist.domain.user.exception.UserLockStateUnchangedException;
 import com.codeit.playlist.domain.user.exception.UserNameRequiredException;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
+import com.codeit.playlist.domain.user.exception.UserProfileAccessDeniedException;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.repository.UserRepositoryCustom;
 import com.codeit.playlist.domain.user.service.basic.BasicUserService;
 import com.codeit.playlist.global.constant.S3Properties;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
+import java.io.ByteArrayInputStream;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,27 +65,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.ByteArrayInputStream;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicUserServiceTest {
@@ -190,7 +195,7 @@ public class BasicUserServiceTest {
 
   @Test
   @DisplayName("회원가입 성공 - adminEmail일 경우 자동 ADMIN 권한 부여")
-  void registerUserSuccessAssignAdminRole(){
+  void registerUserSuccessAssignAdminRole() {
     //Given
     String adminEmail = "admin@test.com";
     ReflectionTestUtils.setField(userService, "adminEmail", adminEmail);
@@ -231,21 +236,21 @@ public class BasicUserServiceTest {
   @Test
   @DisplayName("사용자 조회 성공")
   void findUserSuccess() {
-      when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
-      when(userMapper.toDto(user)).thenReturn(dto);
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+    when(userMapper.toDto(user)).thenReturn(dto);
 
-      UserDto result = userService.find(FIXED_ID);
+    UserDto result = userService.find(FIXED_ID);
 
-      assertEquals(dto.id(), result.id());
-      assertEquals(dto.email(), result.email());
+    assertEquals(dto.id(), result.id());
+    assertEquals(dto.email(), result.email());
   }
 
   @Test
   @DisplayName("사용자 조회 실패 - 존재하지 않는 사용자")
   void findUserFailNotFound() {
-      when(userRepository.findById(FIXED_ID)).thenReturn(Optional.empty());
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.empty());
 
-      assertThrows(UserNotFoundException.class, () -> userService.find(FIXED_ID));
+    assertThrows(UserNotFoundException.class, () -> userService.find(FIXED_ID));
   }
 
   @Test
@@ -325,6 +330,7 @@ public class BasicUserServiceTest {
         userService.changePassword(otherUserId, request)
     );
   }
+
   @Test
   @DisplayName("비밀번호 변경 실패 - 비밀번호 null 또는 공백")
   void changePasswordFail_BlankPassword() {
@@ -437,6 +443,124 @@ public class BasicUserServiceTest {
         sortBy,
         direction
     );
+  }
+
+  @Test
+  @DisplayName("사용자 목록 조회 - 정렬 name")
+  void findUserListSortByName() {
+    // Given
+    String sortBy = "name";
+    SortDirection direction = SortDirection.ASCENDING;
+
+    User user1 = new User("a@test.com", "pw", "유저1", null, Role.USER);
+    User user2 = new User("b@test.com", "pw", "유저2", null, Role.USER);
+
+    setId(user1, UUID.randomUUID());
+    setId(user2, UUID.randomUUID());
+
+    when(userRepositoryCustom.countUsers(null, null, null)).thenReturn(2L);
+    when(userRepositoryCustom.searchUsers(
+        null, null, null, null, null, 1, sortBy, direction
+    )).thenReturn(List.of(user1, user2));
+
+    when(userMapper.toDto(any(User.class))).thenAnswer(inv -> {
+      User u = inv.getArgument(0);
+      return new UserDto(u.getId(), null, u.getEmail(), u.getName(), null, u.getRole(), false);
+    });
+
+    // When
+    CursorResponseUserDto result =
+        userService.findUserList(null, null, null, null, null, 1, sortBy, direction);
+
+    // Then
+    assertEquals("유저1", result.nextCursor());  // name 기준 커서
+  }
+
+  @Test
+  @DisplayName("사용자 목록 조회 - sortBy = createdAt")
+  void findUserListSortByCreatedAt() {
+
+    User user1 = new User("a@test.com", "pw", "유저1", null, Role.USER);
+
+    setId(user1, UUID.randomUUID());
+    setField(user1, "createdAt", Instant.parse("2024-01-01T00:00:00Z"));
+
+    when(userRepositoryCustom.countUsers(null, null, null)).thenReturn(1L);
+    when(userRepositoryCustom.searchUsers(null, null, null,
+        null, null, 1, "createdAt", SortDirection.ASCENDING))
+        .thenReturn(List.of(user1, user1)); // hasNext = true
+
+    when(userMapper.toDto(any(User.class))).thenReturn(dto);
+
+    CursorResponseUserDto result = userService.findUserList(
+        null, null, null, null, null, 1, "createdAt", SortDirection.ASCENDING);
+
+    assertEquals("2024-01-01T00:00:00Z", result.nextCursor());
+  }
+
+  @Test
+  @DisplayName("사용자 목록 조회 - sortBy = isLocked")
+  void findUserListSortByIsLocked() {
+
+    User user1 = new User("a@test.com", "pw", "유저1", null, Role.USER);
+
+    setId(user1, UUID.randomUUID());
+    setField(user1, "locked", true);
+
+    when(userRepositoryCustom.countUsers(null, null, null)).thenReturn(1L);
+    when(userRepositoryCustom.searchUsers(null, null, null,
+        null, null, 1, "isLocked", SortDirection.ASCENDING))
+        .thenReturn(List.of(user1, user1));
+
+    when(userMapper.toDto(any(User.class))).thenReturn(dto);
+
+    CursorResponseUserDto result = userService.findUserList(
+        null, null, null, null, null, 1, "isLocked", SortDirection.ASCENDING);
+
+    assertEquals("true", result.nextCursor());
+  }
+
+  @Test
+  @DisplayName("사용자 목록 조회 - sortBy = role")
+  void findUserListSortByRole() {
+
+    User user1 = new User("a@test.com", "pw", "유저1", null, Role.ADMIN);
+
+    setId(user1, UUID.randomUUID());
+
+    when(userRepositoryCustom.countUsers(null, null, null)).thenReturn(1L);
+    when(userRepositoryCustom.searchUsers(null, null, null,
+        null, null, 1, "role", SortDirection.ASCENDING))
+        .thenReturn(List.of(user1, user1));
+
+    when(userMapper.toDto(any(User.class))).thenReturn(dto);
+
+    CursorResponseUserDto result = userService.findUserList(
+        null, null, null, null, null, 1, "role", SortDirection.ASCENDING);
+
+    assertEquals("ADMIN", result.nextCursor());
+  }
+
+  @Test
+  @DisplayName("사용자 목록 조회 - sortBy = unknown (default 분기)")
+  void findUserListSortByDefault() {
+
+    User user1 = new User("a@test.com", "pw", "유저1", null, Role.USER);
+
+    setId(user1, UUID.randomUUID());
+    setField(user1, "createdAt", Instant.parse("2024-01-01T00:00:00Z"));
+
+    when(userRepositoryCustom.countUsers(null, null, null)).thenReturn(1L);
+    when(userRepositoryCustom.searchUsers(null, null, null,
+        null, null, 1, "unknown", SortDirection.ASCENDING))
+        .thenReturn(List.of(user1, user1));
+
+    when(userMapper.toDto(any(User.class))).thenReturn(dto);
+
+    CursorResponseUserDto result = userService.findUserList(
+        null, null, null, null, null, 1, "unknown", SortDirection.ASCENDING);
+
+    assertEquals("2024-01-01T00:00:00Z", result.nextCursor());
   }
 
   @Test
@@ -600,6 +724,268 @@ public class BasicUserServiceTest {
     verify(s3Uploader, never()).upload(any(), any(), any());
   }
 
+  @Test
+  @DisplayName("프로필 변경 실패 - 권한 없음(본인이 아니고 ADMIN도 아님)")
+  void updateUserFailNoPermission() {
+    UUID targetId = UUID.randomUUID();
+    setId(user, targetId);
+
+    User other = new User("other@test.com", "pw", "다른유저", null, Role.USER);
+    setId(other, UUID.randomUUID());
+
+    when(authentication.getName()).thenReturn(other.getEmail());
+    when(userRepository.findByEmail(other.getEmail())).thenReturn(Optional.of(other));
+    when(userRepository.findById(targetId)).thenReturn(Optional.of(user));
+    when(authentication.getAuthorities()).thenReturn(List.of());
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    assertThrows(UserProfileAccessDeniedException.class,
+        () -> userService.updateUser(targetId, req, null, authentication));
+  }
+
+  @Test
+  @DisplayName("프로필 변경 실패 - 이미지 타입 불허")
+  void updateUserFailInvalidImageType() throws Exception {
+    setId(user, FIXED_ID);
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/gif");
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    assertThrows(InvalidImageTypeException.class,
+        () -> userService.updateUser(FIXED_ID, req, file, authentication));
+  }
+
+  @Test
+  @DisplayName("프로필 변경 실패 - 파일 크기 초과")
+  void updateUserFailFileTooLarge() throws Exception {
+    setId(user, FIXED_ID);
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/png");
+    when(file.getSize()).thenReturn(6L * 1024 * 1024); // MAX_FILE_SIZE 초과
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    assertThrows(FileTooLargeException.class,
+        () -> userService.updateUser(FIXED_ID, req, file, authentication));
+  }
+
+  @Test
+  @DisplayName("프로필 변경 실패 - 잘못된 이미지 헤더")
+  void updateUserFailInvalidImageHeader() throws Exception {
+    setId(user, FIXED_ID);
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/png");
+    when(file.getSize()).thenReturn(1024L);
+    when(file.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[]{0x00, 0x00, 0x00, 0x00}));
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    assertThrows(InvalidImageContentException.class,
+        () -> userService.updateUser(FIXED_ID, req, file, authentication));
+  }
+
+  @Test
+  @DisplayName("프로필 변경 성공 - 이전 이미지 삭제 실패해도 진행됨")
+  void updateUserOldImageDeleteFail() throws Exception {
+    setId(user, FIXED_ID);
+
+    setField(user, "profileImageUrl", "https://s3.com/profile/old.png");
+
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/png");
+    when(file.getSize()).thenReturn(1024L);
+    when(file.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[]{(byte)0x89,(byte)0x50,0x00,0x00}));
+
+    when(s3Properties.getProfileBucket()).thenReturn("bucket");
+    when(s3Uploader.upload(any(), any(), eq(file))).thenReturn("https://new");
+
+    // delete 에서 일부러 예외 발생시키기
+    doThrow(new RuntimeException("delete fail"))
+        .when(s3Uploader).delete(eq("bucket"), anyString());
+
+    when(userMapper.toDto(any(User.class))).thenReturn(
+        new UserDto(
+            FIXED_ID,
+            null,
+            user.getEmail(),
+            "NewName",
+            "https://new",
+            user.getRole(),
+            user.isLocked()
+        )
+    );
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    UserDto result = userService.updateUser(FIXED_ID, req, file, authentication);
+
+    assertEquals("NewName", result.name());
+  }
+
+  @Test
+  @DisplayName("extractKeyFromUrl - null 입력 시 null 반환")
+  void extractKeyNull() {
+    String result = invokeExtractKey(null);
+    assertNull(result);
+  }
+
+  @Test
+  @DisplayName("extractKeyFromUrl - 빈 문자열 입력 시 null 반환")
+  void extractKeyEmpty() {
+    String result = invokeExtractKey("");
+    assertNull(result);
+  }
+
+  @Test
+  @DisplayName("extractKeyFromUrl - 쿼리스트링 포함 정상 케이스")
+  void extractKeyWithQuery() {
+    String url = "https://test.com/profile/img123.png?abc=1";
+    String result = invokeExtractKey(url);
+    assertEquals("img123.png", result);
+  }
+
+  @Test
+  @DisplayName("extractKeyFromUrl - 쿼리스트링 없는 정상 케이스")
+  void extractKeyNoQuery() {
+    String url = "https://test.com/profile/a.png";
+    String result = invokeExtractKey(url);
+    assertEquals("a.png", result);
+  }
+
+  @Test
+  @DisplayName("extractKeyFromUrl - 슬래시 없는 URL은 null 반환")
+  void extractKeyNoSlash() {
+    String url = "abc.png";
+    String result = invokeExtractKey(url);
+    assertNull(result);
+  }
+
+  @Test
+  @DisplayName("프로필 변경 실패 - 이미지 헤더 길이 4 미만")
+  void updateUserFailHeaderLengthLessThan4() throws Exception {
+    setId(user, FIXED_ID);
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/png");
+    when(file.getSize()).thenReturn(1024L);
+
+    when(file.getInputStream())
+        .thenReturn(new ByteArrayInputStream(new byte[]{1, 2}));
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    assertThrows(InvalidImageContentException.class,
+        () -> userService.updateUser(FIXED_ID, req, file, authentication));
+  }
+
+  @Test
+  @DisplayName("프로필 변경 실패 - InputStream IOException 발생")
+  void updateUserFailInputStreamIOException() throws Exception {
+    setId(user, FIXED_ID);
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/png");
+    when(file.getSize()).thenReturn(1024L);
+
+    when(file.getInputStream()).thenThrow(new java.io.IOException());
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    assertThrows(InvalidImageContentException.class,
+        () -> userService.updateUser(FIXED_ID, req, file, authentication));
+  }
+
+  @Test
+  @DisplayName("프로필 변경 성공 - JPEG 이미지")
+  void updateUserWithJpegImage() throws Exception {
+    setId(user, FIXED_ID);
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/jpeg");
+    when(file.getSize()).thenReturn(1024L);
+
+    when(file.getInputStream()).thenReturn(
+        new ByteArrayInputStream(new byte[]{(byte) 0xFF, (byte) 0xD8, 0x00, 0x00})
+    );
+
+    when(s3Properties.getProfileBucket()).thenReturn("bucket");
+    when(s3Uploader.upload(any(), any(), eq(file))).thenReturn("https://jpeg");
+
+    when(userMapper.toDto(any(User.class))).thenReturn(dto);
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    UserDto result = userService.updateUser(FIXED_ID, req, file, authentication);
+
+    assertNotNull(result);
+  }
+
+  @Test
+  @DisplayName("프로필 변경 성공 - 기존 이미지 삭제 성공")
+  void updateUserOldImageDeleteSuccess() throws Exception {
+    setId(user, FIXED_ID);
+    setField(user, "profileImageUrl", "https://s3.com/profile/old.png");
+
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/png");
+    when(file.getSize()).thenReturn(1024L);
+    when(file.getInputStream()).thenReturn(
+        new ByteArrayInputStream(new byte[]{(byte)0x89, (byte)0x50, 0x00, 0x00})
+    );
+
+    when(s3Properties.getProfileBucket()).thenReturn("bucket");
+    when(s3Uploader.upload(any(), any(), eq(file))).thenReturn("https://new");
+
+    when(userMapper.toDto(any(User.class))).thenReturn(dto);
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    UserDto result = userService.updateUser(FIXED_ID, req, file, authentication);
+
+    verify(s3Uploader).delete(eq("bucket"), eq("old.png"));
+    assertNotNull(result);
+  }
+
+
   // 유틸: 테스트에서 ID 값을 강제로 세팅하는 메서드
   private void setId(Object target, UUID id) {
     Class<?> clazz = target.getClass();
@@ -620,5 +1006,36 @@ public class BasicUserServiceTest {
     }
 
     throw new RuntimeException("UUID 타입의 PK 필드를 찾을 수 없습니다.");
+  }
+
+  // 어떤 값이든 넣을수 있는 범용 유틸
+  private void setField(Object target, String fieldName, Object value) {
+    Class<?> clazz = target.getClass();
+
+    while (clazz != null) {
+      try {
+        var field = clazz.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
+        return;
+      } catch (NoSuchFieldException ignore) {
+        clazz = clazz.getSuperclass(); // 부모로 이동
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    throw new RuntimeException("Field not found in class hierarchy: " + fieldName);
+  }
+
+  //private 메서드를 호출하기 위한 유틸 메서드
+  private String invokeExtractKey(String url) {
+    try {
+      var method = BasicUserService.class.getDeclaredMethod("extractKeyFromUrl", String.class);
+      method.setAccessible(true);
+      return (String) method.invoke(userService, url);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }

@@ -2,7 +2,6 @@ package com.codeit.playlist.review.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.review.controller.ReviewController;
-import com.codeit.playlist.domain.review.dto.data.ReviewSortBy;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
 import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
@@ -366,7 +365,7 @@ public class ReviewControllerTest {
                 null,
                 false,
                 0L,
-                ReviewSortBy.createdAt.name(),
+                "createdAt",
                 SortDirection.DESCENDING
         );
 
@@ -376,7 +375,7 @@ public class ReviewControllerTest {
                 isNull(),
                 eq(limit),
                 eq(SortDirection.DESCENDING),
-                eq(ReviewSortBy.createdAt)
+                eq("createdAt")
         )).willReturn(responseDto);
 
         // when & then
@@ -396,7 +395,7 @@ public class ReviewControllerTest {
                 isNull(),
                 eq(limit),
                 eq(SortDirection.DESCENDING),
-                eq(ReviewSortBy.createdAt)
+                eq("createdAt")
         );
     }
 
@@ -445,7 +444,7 @@ public class ReviewControllerTest {
                 any(),
                 anyInt(),
                 any(SortDirection.class),
-                any(ReviewSortBy.class)
+                eq("createdAt")
         )).willThrow(new RuntimeException("테스트용 예외"));
 
         // when & then
@@ -460,7 +459,7 @@ public class ReviewControllerTest {
                 any(),
                 anyInt(),
                 any(SortDirection.class),
-                any(ReviewSortBy.class)
+                eq("createdAt")
         );
     }
 
