@@ -1,7 +1,6 @@
 package com.codeit.playlist.domain.review.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
-import com.codeit.playlist.domain.review.dto.data.ReviewSortBy;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
 import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
@@ -78,7 +77,7 @@ public class ReviewController {
             @RequestParam(required = false) UUID idAfter,
             @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit,
             @RequestParam(defaultValue = "DESCENDING") SortDirection sortDirection,  //DESCENDING, ASCENDING
-            @RequestParam(defaultValue = "createdAt") ReviewSortBy sortBy  //createdAt, rating
+            @RequestParam(defaultValue = "createdAt") String sortBy  //createdAt, rating
     ) {
 
         log.debug("[리뷰] 리뷰 목록 조회 요청: " +
