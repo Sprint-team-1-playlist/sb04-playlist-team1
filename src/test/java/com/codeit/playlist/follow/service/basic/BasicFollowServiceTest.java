@@ -1,5 +1,17 @@
 package com.codeit.playlist.follow.service.basic;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.follow.dto.data.FollowDto;
 import com.codeit.playlist.domain.follow.dto.request.FollowRequest;
@@ -17,6 +29,10 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.lang.reflect.Field;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,23 +44,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-
-import java.lang.reflect.Field;
-import java.time.Instant;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicFollowServiceTest {
@@ -117,7 +116,6 @@ public class BasicFollowServiceTest {
     Follow follow = new Follow(follower, followee);
     setId(follow, UUID.randomUUID());
 
-    // followerId stub 추가 (SecurityContext에서 가져오는 ID)
     when(userRepository.findById(followerId)).thenReturn(Optional.of(follower));
     when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
     when(followRepository.save(any(Follow.class))).thenReturn(follow);
@@ -245,6 +243,40 @@ public class BasicFollowServiceTest {
     assertThrows(FollowNotFoundException.class, () -> followService.delete(followId));
     verify(followRepository, times(1)).findById(followId);
     verify(followRepository, never()).deleteById(any());
+  }
+
+  @Test
+  @DisplayName("팔로우 알림 직렬화 실패 시 예외 발생 없이 log.error 호출되고 Kafka 전송은 하지 않는다")
+  void createFollowNotificationJsonError() throws Exception {
+    // given
+    UUID followeeId = UUID.randomUUID();
+    User followee = new User("followee@test.com", "pw", "followee", null, Role.USER);
+    setId(followee, followeeId);
+
+    FollowRequest followRequest = new FollowRequest(followeeId);
+    Follow follow = new Follow(follower, followee);
+    setId(follow, UUID.randomUUID());
+
+    when(userRepository.findById(followerId)).thenReturn(Optional.of(follower));
+    when(userRepository.findById(followeeId)).thenReturn(Optional.of(followee));
+    when(followRepository.save(any(Follow.class))).thenReturn(follow);
+
+    when(followMapper.toDto(any(Follow.class)))
+        .thenReturn(new FollowDto(follow.getId(), followerId, followeeId));
+
+    when(objectMapper.writeValueAsString(any()))
+        .thenThrow(new com.fasterxml.jackson.core.JsonProcessingException("error"){});
+
+    BasicFollowService spyService = org.mockito.Mockito.spy(followService);
+
+    // when
+    FollowDto dto = spyService.create(followRequest);
+
+    // then
+    assertNotNull(dto);
+
+    verify(kafkaTemplate, never()).send(any(), any());
+
   }
 
   private void setId(Object entity, UUID id) {

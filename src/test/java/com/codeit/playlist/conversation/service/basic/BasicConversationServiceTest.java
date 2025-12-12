@@ -334,6 +334,52 @@ public class BasicConversationServiceTest {
   }
 
   @Test
+  @DisplayName("대화 목록 조회 - ASC 정렬, 유효한 커서, hasNext=false")
+  void findAllAscSortedByCreatedAtWithValidCursor() {
+    // given
+    int limit = 2;
+    Instant cursorTime = Instant.now().minus(2, ChronoUnit.HOURS);
+    String validCursor = cursorTime.toString();
+    UUID idAfter = UUID.randomUUID();
+
+    Conversation conv1 = new Conversation(currentUser, otherUser);
+    Conversation conv2 = new Conversation(currentUser, otherUser);
+    setId(conv1, UUID.randomUUID());
+    setId(conv2, UUID.randomUUID());
+    setCreatedAt(conv1, cursorTime.minus(1, ChronoUnit.HOURS));
+    setCreatedAt(conv2, cursorTime);
+
+    List<Conversation> foundConversations = List.of(conv1, conv2);
+
+    when(conversationRepository.findPageAsc(
+        eq(currentUserId),
+        nullable(String.class),
+        eq(cursorTime),
+        eq(idAfter),
+        any(Pageable.class)
+    )).thenReturn(foundConversations);
+    when(conversationRepository.countAll(currentUserId, null)).thenReturn(2L);
+
+    // 나머지 Mocking (메시지 등)은 생략
+
+    // when
+    CursorResponseConversationDto response = conversationService.findAll(null, validCursor, idAfter, limit, SortDirection.ASCENDING, ConversationSortBy.createdAt);
+
+    // then
+    assertNotNull(response);
+    assertFalse(response.hasNext());
+
+    // parseCursor가 호출되고 그 결과가 findPageAsc에 전달되었는지 확인
+    verify(conversationRepository, times(1)).findPageAsc(
+        any(UUID.class),
+        nullable(String.class),
+        eq(cursorTime),
+        any(UUID.class),
+        any(Pageable.class)
+    );
+  }
+
+  @Test
   @DisplayName("대화 조회 실패 - 현재 사용자가 대화 참여자가 아닌 경우")
   void findByIdFailsWhenNotParticipant() {
     // given
@@ -408,7 +454,6 @@ public class BasicConversationServiceTest {
         () -> conversationService.findByUserId(otherUserId)
     );
   }
-
 
   private void setCreatedAt(BaseEntity entity, Instant time) {
     try {
