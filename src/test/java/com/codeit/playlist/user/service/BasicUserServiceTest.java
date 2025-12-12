@@ -528,6 +528,7 @@ public class BasicUserServiceTest {
 
     setId(user1, UUID.randomUUID());
 
+    when(userRepositoryCustom.countUsers(null, null, null)).thenReturn(1L);
     when(userRepositoryCustom.searchUsers(null, null, null,
         null, null, 1, "role", SortDirection.ASCENDING))
         .thenReturn(List.of(user1, user1));
@@ -549,6 +550,7 @@ public class BasicUserServiceTest {
     setId(user1, UUID.randomUUID());
     setField(user1, "createdAt", Instant.parse("2024-01-01T00:00:00Z"));
 
+    when(userRepositoryCustom.countUsers(null, null, null)).thenReturn(1L);
     when(userRepositoryCustom.searchUsers(null, null, null,
         null, null, 1, "unknown", SortDirection.ASCENDING))
         .thenReturn(List.of(user1, user1));
@@ -880,6 +882,108 @@ public class BasicUserServiceTest {
     assertNull(result);
   }
 
+  @Test
+  @DisplayName("프로필 변경 실패 - 이미지 헤더 길이 4 미만")
+  void updateUserFailHeaderLengthLessThan4() throws Exception {
+    setId(user, FIXED_ID);
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/png");
+    when(file.getSize()).thenReturn(1024L);
+
+    when(file.getInputStream())
+        .thenReturn(new ByteArrayInputStream(new byte[]{1, 2}));
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    assertThrows(InvalidImageContentException.class,
+        () -> userService.updateUser(FIXED_ID, req, file, authentication));
+  }
+
+  @Test
+  @DisplayName("프로필 변경 실패 - InputStream IOException 발생")
+  void updateUserFailInputStreamIOException() throws Exception {
+    setId(user, FIXED_ID);
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/png");
+    when(file.getSize()).thenReturn(1024L);
+
+    when(file.getInputStream()).thenThrow(new java.io.IOException());
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    assertThrows(InvalidImageContentException.class,
+        () -> userService.updateUser(FIXED_ID, req, file, authentication));
+  }
+
+  @Test
+  @DisplayName("프로필 변경 성공 - JPEG 이미지")
+  void updateUserWithJpegImage() throws Exception {
+    setId(user, FIXED_ID);
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/jpeg");
+    when(file.getSize()).thenReturn(1024L);
+
+    when(file.getInputStream()).thenReturn(
+        new ByteArrayInputStream(new byte[]{(byte) 0xFF, (byte) 0xD8, 0x00, 0x00})
+    );
+
+    when(s3Properties.getProfileBucket()).thenReturn("bucket");
+    when(s3Uploader.upload(any(), any(), eq(file))).thenReturn("https://jpeg");
+
+    when(userMapper.toDto(any(User.class))).thenReturn(dto);
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    UserDto result = userService.updateUser(FIXED_ID, req, file, authentication);
+
+    assertNotNull(result);
+  }
+
+  @Test
+  @DisplayName("프로필 변경 성공 - 기존 이미지 삭제 성공")
+  void updateUserOldImageDeleteSuccess() throws Exception {
+    setId(user, FIXED_ID);
+    setField(user, "profileImageUrl", "https://s3.com/profile/old.png");
+
+    when(authentication.getName()).thenReturn(user.getEmail());
+    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getContentType()).thenReturn("image/png");
+    when(file.getSize()).thenReturn(1024L);
+    when(file.getInputStream()).thenReturn(
+        new ByteArrayInputStream(new byte[]{(byte)0x89, (byte)0x50, 0x00, 0x00})
+    );
+
+    when(s3Properties.getProfileBucket()).thenReturn("bucket");
+    when(s3Uploader.upload(any(), any(), eq(file))).thenReturn("https://new");
+
+    when(userMapper.toDto(any(User.class))).thenReturn(dto);
+
+    UserUpdateRequest req = new UserUpdateRequest("NewName");
+
+    UserDto result = userService.updateUser(FIXED_ID, req, file, authentication);
+
+    verify(s3Uploader).delete(eq("bucket"), eq("old.png"));
+    assertNotNull(result);
+  }
 
 
   // 유틸: 테스트에서 ID 값을 강제로 세팅하는 메서드
