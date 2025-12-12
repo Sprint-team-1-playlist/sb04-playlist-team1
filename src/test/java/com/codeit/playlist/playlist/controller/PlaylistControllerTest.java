@@ -3,7 +3,6 @@ package com.codeit.playlist.playlist.controller;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.playlist.controller.PlaylistController;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
-import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
 import com.codeit.playlist.domain.playlist.dto.response.CursorResponsePlaylistDto;
@@ -317,7 +316,7 @@ public class PlaylistControllerTest {
     void getPlaylistsSuccess() throws Exception {
         // given
         int limit = 10;
-        PlaylistSortBy sortBy = PlaylistSortBy.updatedAt;
+        String sortBy = "updatedAt";
         SortDirection sortDirection = SortDirection.DESCENDING;
 
         UUID playlistId = UUID.randomUUID();
@@ -338,7 +337,7 @@ public class PlaylistControllerTest {
                 UUID.randomUUID(),
                 true,
                 100L,
-                sortBy.name(),
+                sortBy,
                 sortDirection
         );
 
@@ -350,7 +349,7 @@ public class PlaylistControllerTest {
         mockMvc.perform(get("/api/playlists")
                         .with(authentication(createAuthentication(userId)))
                         .param("limit", String.valueOf(limit))
-                        .param("sortBy", sortBy.name())
+                        .param("sortBy", sortBy)
                         .param("sortDirection", sortDirection.name()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].id").value(playlistId.toString()))

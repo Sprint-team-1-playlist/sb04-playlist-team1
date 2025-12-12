@@ -2,7 +2,6 @@ package com.codeit.playlist.domain.playlist.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
-import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
 import com.codeit.playlist.domain.playlist.dto.response.CursorResponsePlaylistDto;
@@ -99,7 +98,7 @@ public class PlaylistController {
             @RequestParam(required = false) UUID idAfter,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit,
             @RequestParam(defaultValue = "DESCENDING") SortDirection sortDirection,  //DESENDING, ASCENDING
-            @RequestParam(defaultValue = "updatedAt") PlaylistSortBy sortBy  //updatedAt, subscribeCount
+            @RequestParam(defaultValue = "updatedAt") String sortBy  //updatedAt, subscribeCount
             ) {
         log.debug("[플레이리스트] 플레이리스트 목록 조회 요청: " +
                 "keywordLike = {}, ownerIdEqual = {}, subscriberIdEqual = {}, cursor = {}, idAfter = {}, limit = {}, sortBy = {}, sortDirection = {}",
