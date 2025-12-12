@@ -15,7 +15,6 @@ import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.global.config.JpaConfig;
 import com.codeit.playlist.global.config.QuerydslConfig;
-import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.hibernate.Hibernate;
@@ -29,7 +28,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -38,7 +36,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.codeit.playlist.domain.playlist.entity.QPlaylist.playlist;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -232,7 +229,7 @@ public class PlaylistRepositoryTest {
         Playlist p = new Playlist(owner, "아무 제목", "아무 설명");
         playlistRepository.save(p);
 
-        String keywordLike = "%없는키워드%";   // 매칭 안 되는 키워드
+        String keywordLike = "없는키워드";   // 매칭 안 되는 키워드
         UUID ownerIdEqual = owner.getId();
         UUID subscriberIdEqual = null;
 
@@ -269,7 +266,7 @@ public class PlaylistRepositoryTest {
 
     @Test
     @DisplayName("논리삭제 - 이미 삭제되어 deletedAt이 not null인 경우 0을 반환한다.")
-    void failWithsoftDeleteByIdAlreadyDeleted() {
+    void failWithSoftDeleteByIdAlreadyDeleted() {
         //given
         User owner = createTestUser("testmail@test.com");
         entityManager.persist(owner);
@@ -349,15 +346,21 @@ public class PlaylistRepositoryTest {
     @DisplayName("findAllDeletedBefore - 삭제된지 7일이 지나지 않은 경우 결과에 포함되지 않는다")
     void findAllDeletedBeforeNotOldEnough() {
         // given
-        User owner = createTestUser("email@test.com");
-        entityManager.persist(owner);
+        User saved = createTestUser("email@test.com");
+        User owner = userRepository.save(saved);
 
-        Playlist playlist = new Playlist(owner, "recent", "desc");
-        entityManager.persist(playlist);
+        Playlist playlistSaved = new Playlist(owner, "recent", "desc");
+        Playlist playlist = playlistRepository.save(playlistSaved);
 
-        // deletedAt 강제 세팅 (ReflectionTestUtils 사용)
-        ReflectionTestUtils.setField(playlist, "deletedAt",
-                Instant.now().minus(3, ChronoUnit.DAYS)); // 7일 이전 X
+        EntityManager em = entityManager.getEntityManager();
+
+        Instant deletedAt = Instant.now().minus(3, ChronoUnit.DAYS);
+
+        // deletedAt 강제 세팅
+        em.createQuery("UPDATE Playlist p SET p.deletedAt = :t WHERE p.id = :id")
+                .setParameter("t", deletedAt)
+                .setParameter("id", playlist.getId())
+                .executeUpdate();
 
         entityManager.flush();
         entityManager.clear();
@@ -536,8 +539,8 @@ public class PlaylistRepositoryTest {
     }
 
     @Test
-    @DisplayName("createCursorCondition 성공 - updatedAt DESC 기준 커서 이후 데이터만 조회된다")
-    void createCursorConditionSuccessUpdatedAtDesc() {
+    @DisplayName("searchPlaylists 성공 - updatedAt DESC 기준 커서 이후 데이터만 조회된다")
+    void searchPlaylistsCursorUpdatedAtDesc() {
         // given
         User owner = userRepository.save(createTestUser("owner@test.com"));
 
@@ -545,59 +548,35 @@ public class PlaylistRepositoryTest {
         Playlist p2 = playlistRepository.save(new Playlist(owner, "플리2", "설명"));
         Playlist p3 = playlistRepository.save(new Playlist(owner, "플리3", "설명"));
 
-        entityManager.flush();
-
         Instant base = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
-        entityManager.getEntityManager().createQuery(
-                        "UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
-                .setParameter("t", base.minus(3, ChronoUnit.DAYS))
-                .setParameter("id", p1.getId())
-                .executeUpdate();
+        updatePlaylistUpdatedAt(p1.getId(), base.minus(3, ChronoUnit.DAYS));
+        updatePlaylistUpdatedAt(p2.getId(), base.minus(2, ChronoUnit.DAYS));
+        updatePlaylistUpdatedAt(p3.getId(), base.minus(1, ChronoUnit.DAYS));
 
-        entityManager.getEntityManager().createQuery(
-                        "UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
-                .setParameter("t", base.minus(2, ChronoUnit.DAYS))
-                .setParameter("id", p2.getId())
-                .executeUpdate();
-
-        entityManager.getEntityManager().createQuery(
-                        "UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
-                .setParameter("t", base.minus(1, ChronoUnit.DAYS))
-                .setParameter("id", p3.getId())
-                .executeUpdate();
-
+        entityManager.flush();
         entityManager.clear();
 
-        boolean hasCursor = true;
-        UUID cursorId = p2.getId();
-        boolean asc = false;
-        String sortBy = "updatedAt";
+        Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        BooleanExpression condition = ReflectionTestUtils.invokeMethod(
-                customRepository,
-                "createCursorCondition",
-                hasCursor, cursorId, asc, sortBy
+        Slice<Playlist> slice = customRepository.searchPlaylists(
+                null, owner.getId(), null,
+                true, p2.getId(),
+                false, // asc=false => DESC
+                "updatedAt",
+                pageable
         );
 
         // then
-        assertThat(condition).isNotNull();
-
-        List<Playlist> result = queryFactory
-                .selectFrom(playlist)
-                .where(condition)
-                .orderBy(playlist.updatedAt.desc(), playlist.id.desc())
-                .fetch();
-
-        assertThat(result)
+        assertThat(slice.getContent())
                 .extracting(Playlist::getId)
                 .containsExactly(p1.getId());
     }
 
     @Test
-    @DisplayName("createCursorCondition 성공 - subscribeCount DESC 기준 커서 이후 데이터만 조회된다")
-    void createCursorConditionSuccessSubscribeCountDesc() {
+    @DisplayName("searchPlaylists 성공 - subscribeCount DESC 기준 커서 이후 데이터만 조회된다")
+    void searchPlaylistsCursorSubscribeCountDesc() {
         // given
         User owner = userRepository.save(createTestUser("owner@test.com"));
 
@@ -606,96 +585,91 @@ public class PlaylistRepositoryTest {
         Playlist p2 = playlistRepository.save(new Playlist(owner, "플리2", "설명"));
         Playlist p3 = playlistRepository.save(new Playlist(owner, "플리3", "설명"));
 
+        updatePlaylistSubscriberCount(p1.getId(), 10L);
+        updatePlaylistSubscriberCount(p2.getId(), 20L);
+        updatePlaylistSubscriberCount(p3.getId(), 30L);
+
         entityManager.flush();
-
-        // subscriberCount 직접 세팅 (Reflection 또는 UPDATE 사용)
-        entityManager.getEntityManager().createQuery(
-                        "UPDATE Playlist p SET p.subscriberCount = :c WHERE p.id = :id")
-                .setParameter("c", 10L)
-                .setParameter("id", p1.getId())
-                .executeUpdate();
-
-        entityManager.getEntityManager().createQuery(
-                        "UPDATE Playlist p SET p.subscriberCount = :c WHERE p.id = :id")
-                .setParameter("c", 20L)
-                .setParameter("id", p2.getId())
-                .executeUpdate();
-
-        entityManager.getEntityManager().createQuery(
-                        "UPDATE Playlist p SET p.subscriberCount = :c WHERE p.id = :id")
-                .setParameter("c", 30L)
-                .setParameter("id", p3.getId())
-                .executeUpdate();
-
         entityManager.clear();
 
-        boolean hasCursor = true;
-        UUID cursorId = p2.getId();  // subscriberCount = 20
-        boolean asc = false;         // DESC
-        String sortBy = "subscribeCount";
+        Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        BooleanExpression condition = ReflectionTestUtils.invokeMethod(
-                customRepository,
-                "createCursorCondition",
-                hasCursor, cursorId, asc, sortBy
+        Slice<Playlist> slice = customRepository.searchPlaylists(
+                null, owner.getId(), null,
+                true, p2.getId(),
+                false,
+                "subscribeCount",
+                pageable
         );
 
         // then
-        assertThat(condition).isNotNull();
-
-        // DESC 정렬: subscriberCount DESC, 그다음 id DESC
-        List<Playlist> result = queryFactory
-                .selectFrom(playlist)
-                .where(condition)
-                .orderBy(playlist.subscriberCount.desc(), playlist.id.desc())
-                .fetch();
-
-        // DESC 기준 cursorCount = 20 → subscriberCount < 20 → p1만
-        assertThat(result)
+        assertThat(slice.getContent())
                 .extracting(Playlist::getId)
                 .containsExactly(p1.getId());
     }
 
 
     @Test
-    @DisplayName("createCursorCondition 실패 - hasCursor가 false이면 null을 반환한다")
-    void createCursorConditionReturnsNullWhenHasCursorFalse() {
-        // given
-        boolean hasCursor = false;
-        UUID cursorId = UUID.randomUUID();
-        boolean asc = true;
-        String sortBy = "updatedAt";
+    @DisplayName("searchPlaylists 실패 - hasCursor가 false이면 커서 조건이 적용되지 않는다")
+    void searchPlaylistsNoCursorDoesNotFilter() {
+        //given
+        User owner = userRepository.save(createTestUser("owner@test.com"));
 
-        // when
-        BooleanExpression condition = ReflectionTestUtils.invokeMethod(
-                customRepository,
-                "createCursorCondition",
-                hasCursor, cursorId, asc, sortBy
+        Playlist p1 = playlistRepository.save(new Playlist(owner, "플리1", "설명"));
+        Playlist p2 = playlistRepository.save(new Playlist(owner, "플리2", "설명"));
+        Playlist p3 = playlistRepository.save(new Playlist(owner, "플리3", "설명"));
+
+        Instant base = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+        updatePlaylistUpdatedAt(p1.getId(), base.minus(3, ChronoUnit.DAYS));
+        updatePlaylistUpdatedAt(p2.getId(), base.minus(2, ChronoUnit.DAYS));
+        updatePlaylistUpdatedAt(p3.getId(), base.minus(1, ChronoUnit.DAYS));
+
+        entityManager.flush();
+        entityManager.clear();
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        //when
+        Slice<Playlist> slice = customRepository.searchPlaylists(
+                null, owner.getId(), null,
+                false, p2.getId(), // hasCursor=false
+                false,
+                "updatedAt",
+                pageable
         );
 
-        // then
-        assertThat(condition).isNull();
+        //then
+        assertThat(slice.getContent())
+                .extracting(Playlist::getId)
+                .containsExactly(p3.getId(), p2.getId(), p1.getId());
     }
 
     @Test
-    @DisplayName("createCursorCondition 실패 - cursorId에 해당하는 Playlist가 없으면 null을 반환한다")
-    void createCursorConditionReturnsNullWhenCursorPlaylistNotFound() {
+    @DisplayName("searchPlaylists 실패 - cursorId에 해당하는 Playlist가 없으면 커서 조건이 적용되지 않는다")
+    void searchPlaylistsCursorNotFoundDoesNotFilter() {
         // given
-        boolean hasCursor = true;
-        UUID cursorId = UUID.randomUUID(); // DB에 없는 ID
-        boolean asc = true;
-        String sortBy = "updatedAt";
+        User owner = userRepository.save(createTestUser("owner@test.com"));
 
-        // when
-        BooleanExpression condition = ReflectionTestUtils.invokeMethod(
-                customRepository,
-                "createCursorCondition",
-                hasCursor, cursorId, asc, sortBy
+        Playlist p1 = playlistRepository.save(new Playlist(owner, "플리1", "설명"));
+        Playlist p2 = playlistRepository.save(new Playlist(owner, "플리2", "설명"));
+
+        entityManager.flush();
+        entityManager.clear();
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        //when
+        Slice<Playlist> slice = customRepository.searchPlaylists(
+                null, owner.getId(), null,
+                true, UUID.randomUUID(), // 없는 커서
+                false,
+                "updatedAt",
+                pageable
         );
 
-        // then
-        assertThat(condition).isNull();
+        //then
+        assertThat(slice.getContent()).hasSize(2);
     }
 
 
@@ -706,11 +680,22 @@ public class PlaylistRepositoryTest {
         User owner = createTestUser("owner@test.com");
         owner = userRepository.save(owner);
 
-        Playlist playlist = createPlaylist(owner, "테스트 제목");
+        Playlist playlist = playlistRepository.saveAndFlush(createPlaylist(owner, "테스트 제목"));
 
-        ReflectionTestUtils.setField(playlist, "subscriberCount", subscriberCount);
+        EntityManager em = entityManager.getEntityManager();
 
-        return playlistRepository.saveAndFlush(playlist);
+        em.createQuery(
+                        "UPDATE Playlist p SET p.subscriberCount = :c WHERE p.id = :id")
+                .setParameter("c", subscriberCount)
+                .setParameter("id", playlist.getId())
+                .executeUpdate();
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // 최신 값으로 다시 로딩해서 반환
+        return playlistRepository.findById(playlist.getId())
+                .orElseThrow();
     }
 
     private Playlist createPlaylist(User owner, String title) {
@@ -725,4 +710,25 @@ public class PlaylistRepositoryTest {
     public static Content createTestContent(String title) {
         return new Content(TMDB_ID_SEQ.getAndIncrement(), Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
     }
+
+    private void updatePlaylistUpdatedAt(UUID id, Instant t) {
+
+        EntityManager em = entityManager.getEntityManager();
+
+        em.createQuery("UPDATE Playlist p SET p.updatedAt = :t WHERE p.id = :id")
+                .setParameter("t", t)
+                .setParameter("id", id)
+                .executeUpdate();
+    }
+
+    private void updatePlaylistSubscriberCount(UUID id, long c) {
+
+        EntityManager em = entityManager.getEntityManager();
+
+        em.createQuery("UPDATE Playlist p SET p.subscriberCount = :c WHERE p.id = :id")
+                .setParameter("c", c)
+                .setParameter("id", id)
+                .executeUpdate();
+    }
+
 }
