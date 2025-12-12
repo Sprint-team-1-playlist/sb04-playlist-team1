@@ -3,7 +3,6 @@ package com.codeit.playlist.playlist.repository;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
-import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.entity.PlaylistContent;
 import com.codeit.playlist.domain.playlist.entity.Subscribe;
@@ -96,7 +95,7 @@ public class PlaylistRepositoryTest {
                 false,               // hasCursor
                 null,                // cursorId
                 true,                // asc
-                PlaylistSortBy.updatedAt.name(),
+                "updatedAt",
                 pageable
         );
 
@@ -149,7 +148,7 @@ public class PlaylistRepositoryTest {
                 null, null, null,
                 false, null,
                 false,                 // DESC
-                PlaylistSortBy.updatedAt.name(),           //정렬 기준
+                "updatedAt",           //정렬 기준
                 pageable
         );
 
@@ -184,7 +183,7 @@ public class PlaylistRepositoryTest {
                 false,
                 null,
                 true,
-                PlaylistSortBy.updatedAt.name(),
+                "updatedAt",
                 pageable
         );
 

@@ -6,7 +6,6 @@ import com.codeit.playlist.domain.content.repository.TagRepository;
 import com.codeit.playlist.domain.follow.repository.FollowRepository;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
-import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
 import com.codeit.playlist.domain.playlist.dto.response.CursorResponsePlaylistDto;
@@ -337,7 +336,7 @@ public class BasicPlaylistServiceTest {
         String cursor = null;    // 첫 페이지
         UUID idAfter = null;
         int limit = 5;
-        PlaylistSortBy sortBy = PlaylistSortBy.updatedAt;
+        String sortBy = "updatedAt";
         SortDirection sortDirection = SortDirection.DESCENDING;
 
         Playlist playlist1 = mock(Playlist.class);
@@ -396,7 +395,7 @@ public class BasicPlaylistServiceTest {
         assertThat(result.nextCursor()).isEqualTo(lastId.toString());
         assertThat(result.nextIdAfter()).isEqualTo(lastId);
         assertThat(result.totalCount()).isEqualTo(10L);
-        assertThat(result.sortBy()).isEqualTo(sortBy.name());
+        assertThat(result.sortBy()).isEqualTo(sortBy);
         assertThat(result.sortDirection()).isEqualTo(SortDirection.DESCENDING);
 
         verify(playlistRepository).searchPlaylists(
@@ -406,7 +405,7 @@ public class BasicPlaylistServiceTest {
                 eq(false),       // cursor/idAfter 없으므로 hasCursor=false
                 isNull(),        // cursorId=null
                 eq(false),       // DESCENDING → asc=false
-                eq(sortBy.name()),
+                eq(sortBy),
                 any()
         );
         verify(playlistRepository).countPlaylists(keywordLike, ownerId, subscriberId);
@@ -435,7 +434,7 @@ public class BasicPlaylistServiceTest {
                 invalidCursor,  // 잘못된 커서
                 null,
                 limit,
-                PlaylistSortBy.updatedAt,
+                "updatedAt",
                 SortDirection.ASCENDING
         );
 
@@ -454,7 +453,7 @@ public class BasicPlaylistServiceTest {
                 eq(false),
                 isNull(),
                 eq(true),
-                eq(PlaylistSortBy.updatedAt.name()),
+                eq("updatedAt"),
                 any()
         );
     }
