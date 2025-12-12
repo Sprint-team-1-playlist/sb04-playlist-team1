@@ -11,7 +11,6 @@ import com.codeit.playlist.domain.user.repository.UserRepositoryCustomImpl;
 import com.codeit.playlist.global.error.InvalidCursorException;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -35,11 +34,8 @@ class UserRepositoryCustomImplTest {
   @TestConfiguration
   static class QuerydslTestConfig {
 
-    @PersistenceContext
-    private EntityManager em;
-
     @Bean
-    public JPAQueryFactory jpaQueryFactory() {
+    public JPAQueryFactory jpaQueryFactory(EntityManager em) {
       return new JPAQueryFactory(em);
     }
   }
@@ -126,6 +122,7 @@ class UserRepositoryCustomImplTest {
 
     assertThat(result).hasSize(1);
     assertThat(result.get(0).isLocked()).isTrue();
+    assertThat(result.get(0).getEmail()).isEqualTo("a@test.com");
   }
 
   @Test
