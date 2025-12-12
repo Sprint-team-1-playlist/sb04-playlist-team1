@@ -53,3 +53,10 @@ loadtest:
     prefix: tester
     count: 50
     password: abcd1234?
+
+cloud:
+  aws:
+    s3:
+      directory: ${AWS_DIRECTORY}
+      base-url: ${AWS_BASE_URL}
+      content-bucket: ${CONTENT_BUCKET}
