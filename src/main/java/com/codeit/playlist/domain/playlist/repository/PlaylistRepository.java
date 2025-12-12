@@ -22,12 +22,12 @@ public interface PlaylistRepository extends JpaRepository<Playlist, UUID>, Playl
 
     // Soft delete
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-        update Playlist p 
-           set p.deletedAt = CURRENT_TIMESTAMP 
-         where p.id = :playlistId 
-           and p.deletedAt is null
-    """)
+    @Query(value = """
+        update playlists
+           set deleted_at = now() 
+         where id = :playlistId 
+           and deleted_at is null
+    """, nativeQuery = true)
     int softDeleteById(@Param("playlistId") UUID playlistId);
 
     // 7일 지난 soft delete 대상 조회

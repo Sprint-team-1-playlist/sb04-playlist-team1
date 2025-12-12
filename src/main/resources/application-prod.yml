@@ -18,26 +18,15 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
       ssl:
         enabled: true
-      lettuce:
-        pool:
-          max-active: 20
-          max-idle: 10
-          min-idle: 5
-          max-wait: 60000
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     properties:
       security.protocol: SASL_SSL
       sasl.mechanism: PLAIN
-      sasl.jaas.config: >
-          org.apache.kafka.common.security.plain.PlainLoginModule required
-          username="${KAFKA_USERNAME}"
-          password="${KAFKA_PASSWORD}";
+      sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${KAFKA_USERNAME}\" password=\"${KAFKA_PASSWORD}\";"
 
     consumer:
       group-id: playlist-group
@@ -51,22 +40,12 @@ spring:
 
 playlist:
   jwt:
-    access-token:
-      secret: ${JWT_ACCESS_TOKEN_SECRET}
-      expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000} # 1시간
-    refresh-token:
-      secret: ${JWT_REFRESH_TOKEN_SECRET}
-      expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7일
     cookie:
       secure: true
 
-cloud:
-  aws:
-    s3:
-      content-bucket: ${CONTENT_BUCKET}
-      profile-bucket: ${PROFILE_BUCKET}
-      logs-bucket: ${LOGS_BUCKET}
-      region: ${AWS_REGION}
+oauth2:
+  redirect:
+    base-url: ${OAUTH2_REDIRECT_BASE_URL}
 
 logging:
   level:
@@ -75,20 +54,3 @@ logging:
     org.hibernate.SQL: warn
     org.hibernate.orm.jdbc.bind: warn
     org.springframework.security: info
-
-management:
-  endpoint:
-    health:
-      show-details: always
-
-  cookie:
-    secure: ${COOKIE_SECURE:true}
-
-# api
-api:
-  tmdb:
-    key: ${TMDB_API_KEY}
-    base-url: ${TMDB_BASE_URL}
-  sportsdb:
-    key: ${SPORTSDB_API_KEY}
-    base-url: ${SPORTSDB_BASE_URL}

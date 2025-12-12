@@ -64,15 +64,6 @@ public class BasicContentServiceTest {
                 3,
                 4);
 
-        Content content2 = new Content(
-                Type.MOVIE,
-                "오가미 츠미키와 기일상",
-                "매우 재밌는 만화",
-                "exampleUrl",
-                3.0,
-                2,
-                3
-        );
 
         String thumbnail = "testThumbnail.jpg";
 
@@ -99,8 +90,9 @@ public class BasicContentServiceTest {
     void updateContentsSuccess() {
         // given
         UUID contentId = UUID.randomUUID();
-
+        Long tmdbId = 1L;
         Content content = new Content(
+                tmdbId,
                 Type.MOVIE,
                 "오가미 츠미키와 기일상",
                 "매우 재밌는 만화",
@@ -151,7 +143,9 @@ public class BasicContentServiceTest {
     void deleteContentSuccess() {
         // given
         UUID contentId = UUID.randomUUID();
+        Long tmdbId = 1L;
         Content content = new Content(
+                tmdbId,
                 Type.MOVIE,
                 "오가미 츠미키와 기일상",
                 "매우 재밌는 만화",
@@ -182,8 +176,10 @@ public class BasicContentServiceTest {
         UUID contentId = UUID.randomUUID();
         String thumbnail = "testThumbnail.jpg";
         List<String> tags = List.of();
+        Long tmdbId = 1L;
         // given
         Content content = new Content(
+                tmdbId,
                 Type.MOVIE,
                 "오가미 츠미키와 기일상",
                 "매우 재밌는 만화",

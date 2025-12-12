@@ -16,24 +16,13 @@ import com.codeit.playlist.domain.user.dto.request.UserUpdateRequest;
 import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
-import com.codeit.playlist.domain.user.exception.EmailAlreadyExistsException;
-import com.codeit.playlist.domain.user.exception.NewPasswordRequired;
-import com.codeit.playlist.domain.user.exception.PasswordMustCharacters;
-import com.codeit.playlist.domain.user.exception.UserLockStateUnchangedException;
-import com.codeit.playlist.domain.user.exception.UserNameRequiredException;
-import com.codeit.playlist.domain.user.exception.UserNotFoundException;
-import com.codeit.playlist.domain.user.exception.UserProfileAccessDeniedException;
+import com.codeit.playlist.domain.user.exception.*;
 import com.codeit.playlist.domain.user.mapper.UserMapper;
 import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.user.repository.UserRepositoryCustom;
 import com.codeit.playlist.domain.user.service.UserService;
 import com.codeit.playlist.global.constant.S3Properties;
 import com.codeit.playlist.global.redis.TemporaryPasswordStore;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,6 +33,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -242,6 +237,8 @@ public class BasicUserService implements UserService {
     }
     user.updateUsername(request.name());
 
+    String oldProfileImageUrl = user.getProfileImageUrl();
+
     if (image != null && !image.isEmpty()) {
       String contentType = image.getContentType();
       if (!ALLOWED_IMAGE_TYPES.contains(contentType)) {
@@ -269,7 +266,7 @@ public class BasicUserService implements UserService {
       }
 
       String extension = contentType.equals("image/png") ? ".png" : ".jpg";
-      String key = "profile/" + UUID.randomUUID() + extension;
+      String key = UUID.randomUUID() + extension;
 
       String imageUrl = s3Uploader.upload(
           s3Properties.getProfileBucket(),
@@ -278,11 +275,37 @@ public class BasicUserService implements UserService {
       );
 
       user.updateProfileImageUrl(imageUrl);
+
+      if (oldProfileImageUrl != null) {
+        String oldKey = extractKeyFromUrl(oldProfileImageUrl);
+        if (oldKey != null) {
+          try {
+            s3Uploader.delete(s3Properties.getProfileBucket(), oldKey);
+          } catch (RuntimeException e) {
+            log.warn("[프로필 관리] 기존 프로필 이미지 삭제 실패 : userId = {}, key = {}", userId, oldKey, e);
+          }
+        }
+      }
     }
 
     UserDto userDto = userMapper.toDto(user);
     log.info("[프로필 관리] 프로필 변경 완료 : userId = {}", userId);
 
     return userDto;
+  }
+
+  private String extractKeyFromUrl(String url) {
+    if (url == null || url.isEmpty()) {
+      return null;
+    }
+    try {
+      int queryIdx = url.indexOf('?');
+      String pathUrl = queryIdx != -1 ? url.substring(0, queryIdx) : url;
+      int idx = pathUrl.lastIndexOf('/');
+      return idx != -1 ? pathUrl.substring(idx + 1) : null;
+    } catch (Exception e) {
+      log.warn("[프로필 관리] URL에서 키 추출 실패 : url = {}", url, e);
+      return null;
+    }
   }
 }

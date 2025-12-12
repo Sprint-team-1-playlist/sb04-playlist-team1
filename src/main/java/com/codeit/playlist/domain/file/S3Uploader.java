@@ -13,8 +13,6 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.File;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 /*
  * 콘텐츠와 프로필 이미지는 GetObject 요청에 대해서만 Public 함
@@ -37,7 +35,7 @@ public class S3Uploader {
 
             s3Client.putObject(request, RequestBody.fromBytes(file.getBytes()));
 
-            return generateFileUrl(bucket, key);
+            return generatePublicUrl(bucket, key);
         } catch (Exception e) {
             log.error("[S3] S3에 파일 업로드 실패: key={}, bucket={}, errorMessage={}", key, bucket, e.getMessage(), e);
             throw FailUploadToS3Exception.withBucket(bucket);
@@ -73,8 +71,7 @@ public class S3Uploader {
         }
     }
 
-    private String generateFileUrl(String bucket, String key) {
-        String encodedKey = URLEncoder.encode(key, StandardCharsets.UTF_8).replace("+", "%20");
-        return "https://" + bucket + ".s3." + s3Properties.getRegion() + ".amazonaws.com/" + encodedKey;
+    private String generatePublicUrl(String bucket, String key) {
+        return "https://" + bucket + ".s3." + s3Properties.getRegion() + ".amazonaws.com/" + key;
     }
 }
