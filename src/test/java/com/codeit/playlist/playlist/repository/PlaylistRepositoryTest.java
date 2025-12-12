@@ -1,7 +1,6 @@
 package com.codeit.playlist.playlist.repository;
 
 import com.codeit.playlist.domain.content.entity.Content;
-import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.entity.PlaylistContent;
@@ -707,7 +706,7 @@ public class PlaylistRepositoryTest {
     }
 
     public static Content createTestContent(String title) {
-        return new Content(TMDB_ID_SEQ.getAndIncrement(), Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
+        return new Content(TMDB_ID_SEQ.getAndIncrement(), "movie", title, "설명", "abc.com", 0L, 0, 0);
     }
 
     private void updatePlaylistUpdatedAt(UUID id, Instant t) {
