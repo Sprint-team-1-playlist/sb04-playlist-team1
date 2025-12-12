@@ -4,7 +4,6 @@ import com.codeit.playlist.domain.content.api.mapper.TheMovieMapper;
 import com.codeit.playlist.domain.content.api.response.TheMovieResponse;
 import com.codeit.playlist.domain.content.api.service.TheMovieApiService;
 import com.codeit.playlist.domain.content.entity.Content;
-import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.content.service.TagService;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +48,7 @@ public class ContentTasklet implements Tasklet {
 
         for(int i = 0; i< movieResponseList.size(); i++) {
             TheMovieResponse movieResponse = movieResponseList.get(i);
-            Content content = theMovieMapper.toContent(movieResponse, Type.MOVIE);
+            Content content = theMovieMapper.toContent(movieResponse, "movie");
             String thumbnailUrl = movieResponse.thumbnailUrl();
             if(thumbnailUrl != null && !thumbnailUrl.isBlank()) {
                 content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);

@@ -7,7 +7,6 @@ import com.codeit.playlist.domain.content.dto.request.ContentUpdateRequest;
 import com.codeit.playlist.domain.content.dto.response.CursorResponseContentDto;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
-import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.exception.ContentBadRequestException;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.mapper.ContentMapper;
@@ -57,20 +56,10 @@ public class BasicContentService implements ContentService {
         log.debug("[콘텐츠 데이터 관리] 관리자 권한 컨텐츠 생성 시작 : request = {}", request);
 
         log.debug("[콘텐츠 데이터 관리] 타입 생성 시작 : type = {}", request.type());
-        Type type = null;
+
         if(request.type() == null) {
             throw new ContentBadRequestException("타입을 입력해주세요.");
         }
-        if(request.type().equals("movie")) {
-            type = Type.MOVIE;
-        } else if(request.type().equals("sport")) {
-            type = Type.SPORT;
-        } else if(request.type().equals("tvSeries")) {
-            type = Type.TV_SERIES;
-        } else {
-            throw new ContentBadRequestException("유효하지 않은 타입입니다. : " + request.type());
-        }
-        log.info("타입 생성 완료 : type = {}", type);
 
         if(thumbnail == null || thumbnail.isEmpty()) {
             throw new ContentBadRequestException("썸네일은 필수입니다.");
@@ -81,7 +70,7 @@ public class BasicContentService implements ContentService {
 
         Content content = new Content(
                 uuid,
-                type,
+                request.type(),
                 request.title(),
                 request.description(),
                 strThumbnail,
