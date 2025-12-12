@@ -49,9 +49,6 @@ public class BasicPlaylistService implements PlaylistService {
     private final KafkaTemplate<String, String> kafkaTemplate;    //  Kafka 발행
     private final TagRepository tagRepository;
 
-    private static final String SORT_UPDATED_AT = "updatedAt";
-    private static final String SORT_SUBSCRIBE_COUNT = "subscribeCount";
-
     //플레이리스트 생성
     @Override
     public PlaylistDto createPlaylist(PlaylistCreateRequest request, UUID ownerId) {
