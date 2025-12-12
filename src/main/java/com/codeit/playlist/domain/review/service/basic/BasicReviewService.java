@@ -4,7 +4,6 @@ import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
-import com.codeit.playlist.domain.review.dto.data.ReviewSortBy;
 import com.codeit.playlist.domain.review.dto.data.ReviewDto;
 import com.codeit.playlist.domain.review.dto.request.ReviewCreateRequest;
 import com.codeit.playlist.domain.review.dto.request.ReviewUpdateRequest;
@@ -124,14 +123,23 @@ public class BasicReviewService implements ReviewService {
     @Override
     public CursorResponseReviewDto findReviews(UUID contentId, String cursor,
                                                UUID idAfter, int limit,
-                                               SortDirection sortDirection, ReviewSortBy sortBy) {
+                                               SortDirection sortDirection, String sortBy) {
         log.debug("[리뷰] 목록 조회 서비스 호출: " +
                         "contentId= {}, cursor= {}, idAfter= {}, limit= {}, sortDirection= {}, sortBy= {}",
                 contentId, cursor, idAfter, limit, sortDirection, sortBy);
 
         int pageSize = Math.min(Math.max(limit, 1), 50);
 
-        String sortByValue = sortBy.name();  // "createdAt" 또는 "rating"
+        String sortByValue;  // "createdAt" 또는 "rating"
+
+        if (sortBy == null || sortBy.isBlank()) {
+            sortByValue = "createdAt";
+        } else if ("createdAt".equals(sortBy) || "rating".equals(sortBy)) {
+            sortByValue = sortBy;
+        } else {
+            log.debug("[리뷰] 지원하지 않는 sortBy 값, 기본값 사용: {}", sortBy);
+            sortByValue = "createdAt";
+        }
 
         //커서 해석 (cursor가 메인)
         UUID effectiveIdAfter = null;
