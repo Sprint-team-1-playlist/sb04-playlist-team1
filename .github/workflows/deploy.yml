@@ -130,4 +130,4 @@ jobs:
           task-definition: task-definition.json
           service: ${{ secrets.SERVICE_NAME }}
           cluster: ${{ secrets.CLUSTER_NAME }}
-          wait-for-service-stability: true  
+          wait-for-service-stability: true
