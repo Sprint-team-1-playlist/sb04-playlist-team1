@@ -20,7 +20,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -101,6 +104,90 @@ public class NotificationRepositoryTest {
         long count = notificationRepository.countByReceiver_Id(receiver.getId());
         assertThat(count).isEqualTo(5L);
     }
+
+    @Test
+    @DisplayName("알림 커서 조회 성공 - 오름차순(ASC) 첫 페이지와 다음 페이지, 총 개수 확인")
+    void findByReceiverIdWithCursorPagingAscendingSuccess() {
+
+        // given
+        User receiver = createTestUser("receiver@test.com");
+        em.persist(receiver);
+
+        Instant base = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+
+        // createdAt 오래된 → 최신 순으로 5개 생성
+        for (int i = 0; i < 5; i++) {
+            Notification n = createTestNotification(
+                    receiver,
+                    "ASC-알림-" + i,
+                    base.minus(4 - i, ChronoUnit.MINUTES)
+            );
+            em.persist(n);
+        }
+
+        User otherUser = createTestUser("other@test.com");
+        em.persist(otherUser);
+
+        Notification otherNotification = createTestNotification(
+                otherUser,
+                "다른 유저 ASC 알림",
+                base.minus(10, ChronoUnit.MINUTES)
+        );
+        em.persist(otherNotification);
+
+        em.flush();
+        em.clear();
+
+        Pageable pageable = PageRequest.of(
+                0,
+                3,
+                Sort.by(Sort.Direction.ASC, "createdAt")
+                        .and(Sort.by(Sort.Direction.ASC, "id"))
+        );
+
+        // when - 첫 페이지
+        Slice<Notification> firstSlice =
+                notificationRepository.findByReceiverIdWithCursorPaging(receiver.getId(), null, null, pageable);
+
+        Notification lastOfFirst = firstSlice.getContent().get(2);
+        Instant cursorCreatedAt = lastOfFirst.getCreatedAt();
+        UUID cursorId = lastOfFirst.getId();
+
+        // when - 두 번째 페이지
+        Slice<Notification> secondSlice =
+                notificationRepository.findByReceiverIdWithCursorPaging(receiver.getId(), cursorCreatedAt, cursorId, pageable);
+
+        // then
+        assertThat(firstSlice.getContent()).hasSize(3);
+        assertThat(firstSlice.hasNext()).isTrue();
+        assertThat(firstSlice.getContent())
+                .extracting(Notification::getReceiver)
+                .allSatisfy(user -> assertThat(user.getId()).isEqualTo(receiver.getId()));
+
+        List<Instant> firstTimes = firstSlice.getContent().stream()
+                .map(Notification::getCreatedAt)
+                .collect(Collectors.toList());
+
+        assertThat(firstTimes)
+                .isSortedAccordingTo(Comparator.naturalOrder());
+
+        assertThat(secondSlice.getContent()).hasSize(2);
+        assertThat(secondSlice.hasNext()).isFalse();
+        assertThat(secondSlice.getContent())
+                .extracting(Notification::getReceiver)
+                .allSatisfy(user -> assertThat(user.getId()).isEqualTo(receiver.getId()));
+
+        List<Instant> secondTimes = secondSlice.getContent().stream()
+                .map(Notification::getCreatedAt)
+                .collect(Collectors.toList());
+
+        assertThat(secondTimes)
+                .isSortedAccordingTo(Comparator.naturalOrder());
+
+        long count = notificationRepository.countByReceiver_Id(receiver.getId());
+        assertThat(count).isEqualTo(5L);
+    }
+
 
     @Test
     @DisplayName("알림 커서 조회 실패 - 커서가 범위를 벗어나면 빈 결과와 hasNext=false 반환")
