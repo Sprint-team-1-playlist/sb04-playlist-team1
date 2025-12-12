@@ -134,7 +134,7 @@ public class BasicReviewService implements ReviewService {
 
         if (sortBy == null || sortBy.isBlank()) {
             sortByValue = "createdAt";
-        } else if ("createdAt".equals(sortBy) || "subscribeCount".equals(sortBy)) {
+        } else if ("createdAt".equals(sortBy) || "rating".equals(sortBy)) {
             sortByValue = sortBy;
         } else {
             log.debug("[리뷰] 지원하지 않는 sortBy 값, 기본값 사용: {}", sortBy);
