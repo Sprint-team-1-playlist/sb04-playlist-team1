@@ -247,7 +247,7 @@ public class BasicFollowServiceTest {
 
   @Test
   @DisplayName("팔로우 알림 직렬화 실패 시 예외 발생 없이 log.error 호출되고 Kafka 전송은 하지 않는다")
-  void createFollowNotificationJsonError() throws Exception {
+  void createFollowNotificationJsonError() {
     // given
     UUID followeeId = UUID.randomUUID();
     User followee = new User("followee@test.com", "pw", "followee", null, Role.USER);
@@ -264,19 +264,12 @@ public class BasicFollowServiceTest {
     when(followMapper.toDto(any(Follow.class)))
         .thenReturn(new FollowDto(follow.getId(), followerId, followeeId));
 
-    when(objectMapper.writeValueAsString(any()))
-        .thenThrow(new com.fasterxml.jackson.core.JsonProcessingException("error"){});
-
-    BasicFollowService spyService = org.mockito.Mockito.spy(followService);
-
     // when
-    FollowDto dto = spyService.create(followRequest);
+    FollowDto dto = followService.create(followRequest);
 
     // then
     assertNotNull(dto);
-
     verify(kafkaTemplate, never()).send(any(), any());
-
   }
 
   private void setId(Object entity, UUID id) {

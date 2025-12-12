@@ -360,7 +360,25 @@ public class BasicConversationServiceTest {
     )).thenReturn(foundConversations);
     when(conversationRepository.countAll(currentUserId, null)).thenReturn(2L);
 
-    // 나머지 Mocking (메시지 등)은 생략
+    Message m1 = new Message(conv1, currentUser, otherUser, "msg1");
+    setId(m1, UUID.randomUUID());
+    Message m2 = new Message(conv2, currentUser, otherUser, "msg2");
+    setId(m2, UUID.randomUUID());
+    when(messageRepository.findLatestMessagesByConversations(foundConversations))
+        .thenReturn(List.of(m1, m2));
+    when(userMapper.toUserSummary(otherUser)).thenReturn(otherUserSummary);
+    when(messageMapper.toDto(any(Message.class))).thenAnswer(i -> {
+      Message m = i.getArgument(0);
+      return new DirectMessageDto(m.getId(), m.getConversation().getId(),
+          m.getCreatedAt(), otherUserSummary, otherUserSummary, m.getContent());
+    });
+    when(readStatusRepository.hasUnread(any(), any())).thenReturn(false);
+    when(conversationMapper.toDto(eq(conv1), eq(otherUserSummary),
+        any(DirectMessageDto.class), anyBoolean()))
+        .thenReturn(new ConversationDto(conv1.getId(), otherUserSummary, null, false));
+    when(conversationMapper.toDto(eq(conv2), eq(otherUserSummary),
+        any(DirectMessageDto.class), anyBoolean()))
+        .thenReturn(new ConversationDto(conv2.getId(), otherUserSummary, null, false));
 
     // when
     CursorResponseConversationDto response = conversationService.findAll(null, validCursor, idAfter, limit, SortDirection.ASCENDING, ConversationSortBy.createdAt);
@@ -371,10 +389,10 @@ public class BasicConversationServiceTest {
 
     // parseCursor가 호출되고 그 결과가 findPageAsc에 전달되었는지 확인
     verify(conversationRepository, times(1)).findPageAsc(
-        any(UUID.class),
+        eq(currentUserId),
         nullable(String.class),
         eq(cursorTime),
-        any(UUID.class),
+        eq(idAfter),
         any(Pageable.class)
     );
   }

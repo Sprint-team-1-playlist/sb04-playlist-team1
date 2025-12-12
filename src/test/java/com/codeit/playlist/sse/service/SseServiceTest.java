@@ -1,4 +1,4 @@
-package com.codeit.playlist.sse;
+package com.codeit.playlist.sse.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -279,9 +279,9 @@ public class SseServiceTest {
     when(sseEmitterRepository.findAll()).thenReturn(allEmitters);
 
     doThrow(new IOException("Dead ping"))
-        .when(deadEmitter).send(any(Set.class));
+        .when(deadEmitter).send(any(SseEmitter.SseEventBuilder.class));
     doNothing()
-        .when(aliveEmitter).send(any(Set.class));
+        .when(aliveEmitter).send(any(SseEmitter.SseEventBuilder.class));
 
     // when
     sseService.cleanUp();

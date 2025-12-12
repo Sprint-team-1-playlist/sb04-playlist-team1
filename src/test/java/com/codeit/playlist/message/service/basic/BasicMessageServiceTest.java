@@ -371,7 +371,8 @@ class BasicMessageServiceTest {
     when(messageMapper.toDto(m1)).thenReturn(dto1);
     when(messageMapper.toDto(m2)).thenReturn(dto2);
 
-    List<Message> messagesFromRepo = List.of(m1, m2, m3);
+    // DESC 가정(최신→과거)에 맞춰 정렬
+    List<Message> messagesFromRepo = List.of(m3, m2, m1);
 
     when(messageRepository.findMessagesByConversationWithCursor(
         any(UUID.class),
@@ -396,9 +397,9 @@ class BasicMessageServiceTest {
     assertEquals(time2.toString(), result.nextCursor());
     assertEquals(messageId2, result.nextIdAfter());
 
-    verify(messageMapper, times(1)).toDto(m1);
+    verify(messageMapper, times(1)).toDto(m3);
     verify(messageMapper, times(1)).toDto(m2);
-    verify(messageMapper, never()).toDto(m3);
+    verify(messageMapper, never()).toDto(m1);
   }
 
   @Test
