@@ -6,7 +6,6 @@ import com.codeit.playlist.domain.follow.repository.FollowRepository;
 import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.codeit.playlist.domain.notification.entity.Level;
 import com.codeit.playlist.domain.playlist.dto.data.PlaylistDto;
-import com.codeit.playlist.domain.playlist.dto.data.PlaylistSortBy;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistCreateRequest;
 import com.codeit.playlist.domain.playlist.dto.request.PlaylistUpdateRequest;
 import com.codeit.playlist.domain.playlist.dto.response.CursorResponsePlaylistDto;
@@ -49,6 +48,9 @@ public class BasicPlaylistService implements PlaylistService {
     private final ObjectMapper objectMapper;                       // Kafka payload 직렬화
     private final KafkaTemplate<String, String> kafkaTemplate;    //  Kafka 발행
     private final TagRepository tagRepository;
+
+    private static final String SORT_UPDATED_AT = "updatedAt";
+    private static final String SORT_SUBSCRIBE_COUNT = "subscribeCount";
 
     //플레이리스트 생성
     @Override
@@ -159,7 +161,7 @@ public class BasicPlaylistService implements PlaylistService {
     @Override
     public CursorResponsePlaylistDto findPlaylists(String keywordLike, UUID ownerIdEqual,
                                                    UUID subscriberIdEqual, String cursor,
-                                                   UUID idAfter, int limit, PlaylistSortBy sortBy,
+                                                   UUID idAfter, int limit, String sortBy,
                                                    SortDirection sortDirection) {
         log.debug("[플레이리스트] 목록 조회 서비스 호출: keywordLike= {}, ownerIdEqual= {}, subscriberIdEqual= {}, " +
                         "cursor= {}, idAfter= {}, limit= {}, sortBy= {}, sortDirection= {}",
@@ -167,7 +169,15 @@ public class BasicPlaylistService implements PlaylistService {
 
         boolean asc = (sortDirection == SortDirection.ASCENDING);
 
-        String sortByValue = (sortBy != null ? sortBy.name() : PlaylistSortBy.updatedAt.name());
+        String sortByValue;
+        if (sortBy == null || sortBy.isBlank()) {
+            sortByValue = "updatedAt";
+        } else if ("updatedAt".equals(sortBy) || "subscribeCount".equals(sortBy)) {
+            sortByValue = sortBy;
+        } else {
+            log.debug("[플레이리스트] 지원하지 않는 sortBy 값, 기본값 사용: {}", sortBy);
+            sortByValue = "updatedAt";
+        }
 
         //커서 해석 (cursor가 메인)
         UUID effectiveIdAfter = null;
