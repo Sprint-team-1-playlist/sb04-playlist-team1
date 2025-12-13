@@ -41,7 +41,7 @@ spring:
 playlist:
   jwt:
     cookie:
-      secure: true
+      secure: false
 
 oauth2:
   redirect:
