@@ -22,49 +22,56 @@ import java.time.YearMonth;
 public class TheSportApiService {
     private final WebClient webClient;
 
-    private Mono<TheSportListResponse> callTheSportApi(LocalDate localDate) {
+    private Mono<TheSportListResponse> callTheSportApi(int leagueId, String season) {
         log.info("[콘텐츠 데이터 관리] TheSport API Mono 빌드 시작");
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .scheme("https")
                         .host("www.thesportsdb.com")
-                        .path("/api/v1/json/123/eventstv.php")
-                        .queryParam("d", localDate.toString())
+                        .path("/api/v1/json/123/eventsseason.php")
+                        .queryParam("id", leagueId)
+                        .queryParam("s", season)
                         .build())
                 .retrieve()
                 .onStatus(s -> s.value() == 429, clientResponse -> clientResponse.createException().flatMap(Mono::error))
                 .bodyToMono(TheSportListResponse.class)
                 .retryWhen(
-                        Retry.backoff(3, Duration.ofSeconds(3))
+                        Retry.backoff(5, Duration.ofSeconds(5))
+                                .maxBackoff(Duration.ofMinutes(1))
                                 .filter(exception -> exception instanceof WebClientResponseException webException && webException.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS)
                                 .transientErrors(true)
                 )
+                .doOnNext(response -> log.debug("season : {}, totalEvents : {}", season, response.events() == null ? 0 : response.events().size()))
                 .doOnError(WebClientResponseException.class,
                         e -> log.error("[콘텐츠 데이터 관리] TheSports API Mono 빌드 에러 발생", e));
     }
 
-    private Flux<TheSportResponse> fluxingTheSportApi(LocalDate localDate) {
+    private Flux<TheSportResponse> fluxingTheSportApi(YearMonth yearMonth) {
         log.info("[콘텐츠 데이터 관리] TheSport API Flux 빌드 시작");
-        return callTheSportApi(localDate)
+        int leagueId = 4328;
+        String season = circulateSoccerSeason(yearMonth);
+        return callTheSportApi(leagueId, season)
                 .flatMapMany(theSportResponse -> {
-                    if(theSportResponse.tvevents() == null || theSportResponse.tvevents().isEmpty()) {
+                    if(theSportResponse.events() == null || theSportResponse.events().isEmpty()) {
                         return Flux.empty();
                     }
-                    return Flux.fromIterable(theSportResponse.tvevents());
-                        }
-                );
+                    return Flux.fromIterable(theSportResponse.events());
+                        })
+                .doOnNext(e -> log.debug("[콘텐츠 데이터 관리] dateEvent : {}", e.dateEvent()))
+//                .filter(response -> response.dateEvent() != null && !response.dateEvent().isBlank())
+//                .filter(response -> YearMonth.from(LocalDate.parse(response.dateEvent())).equals(yearMonth))
+                .onErrorResume(WebClientResponseException.TooManyRequests.class, e -> {
+                    log.warn("[콘텐츠 데이터 관리] 429 Too many Requests");
+                    return Flux.empty();
+                });
+    }
+
+    private String circulateSoccerSeason(YearMonth yearMonth) {
+        int year = yearMonth.getYear();
+        return yearMonth.getMonthValue() >= 8 ? (year + "-" + (year + 1)) : ((year - 1) + "-" + year);
     }
 
     public Flux<TheSportResponse> getApiSport(int year, int month) {
-        YearMonth yearMonth = YearMonth.of(year, month);
-        LocalDate startDate = yearMonth.atDay(1);
-        int days = yearMonth.lengthOfMonth();
-
-        return Flux.range(0, days)
-                .map(startDate::plusDays) // startDate부터 plusDay해줌
-                .concatMap(date ->
-                        fluxingTheSportApi(date) // 날짜별로 호출함
-                                .delaySubscription(Duration.ofMillis(600))
-                );
+        return fluxingTheSportApi(YearMonth.of(year, month));
     }
 }
