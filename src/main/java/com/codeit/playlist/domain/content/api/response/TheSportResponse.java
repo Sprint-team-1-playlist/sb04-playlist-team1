@@ -3,18 +3,12 @@ package com.codeit.playlist.domain.content.api.response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record TheSportResponse(
-    @JsonProperty("id") String id,
-    @JsonProperty("idEvent") String idEvent,
-    @JsonProperty("inDivision") String inDivision,
-    @JsonProperty("strSport") String strSport,
-    @JsonProperty("strEvent") String strEvent,
-    @JsonProperty("idChannel") String idChannel,
-    @JsonProperty("strEventCountry") String strEventCountry,
-    @JsonProperty("strLogo") String strLogo,
-    @JsonProperty("strChannel") String strChannel,
-    @JsonProperty("strSeason") String strSeason,
-    @JsonProperty("strTime") String strTime,
+    @JsonProperty("idEvent") String idEvent, // id
+    @JsonProperty("strEvent") String strEvent, // 이름
+    @JsonProperty("strFilename") String strFilename, // 설명
+    @JsonProperty("strSport") String strSport, // 태그
+    @JsonProperty("strHomeTeam") String strHomeTeam, // 태그2
     @JsonProperty("dateEvent") String dateEvent,
-    @JsonProperty("strTimeStamp") String strTimeStamp
+    @JsonProperty("strPoster") String strPoster
 ) {
 }

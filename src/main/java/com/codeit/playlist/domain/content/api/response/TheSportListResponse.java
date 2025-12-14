@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public record TheSportListResponse(
-        @JsonProperty("tvevents")
-        List<TheSportResponse> tvevents
+        @JsonProperty("events")
+        List<TheSportResponse> events
 ) {
 }
