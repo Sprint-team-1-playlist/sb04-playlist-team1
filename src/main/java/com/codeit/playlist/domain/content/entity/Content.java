@@ -86,10 +86,6 @@ public class Content extends BaseUpdatableEntity {
         this.thumbnailUrl = thumbnailUrl;
     }
 
-    public void setApiId(Long apiId) {
-        this.apiId = apiId;
-    }
-
     /**
      * 컨텐츠 편의 메서드(리뷰용)
      */

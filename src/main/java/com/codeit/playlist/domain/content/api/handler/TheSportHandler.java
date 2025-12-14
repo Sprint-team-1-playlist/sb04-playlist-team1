@@ -39,15 +39,20 @@ public class TheSportHandler {
                 continue;
             }
 
-            Long sportId = Long.valueOf(theSportResponse.idEvent());
-            if(contentRepository.existsByApiId(sportId)) {
+            final Long sportId;
+            try {
+                sportId = Long.valueOf(theSportResponse.idEvent());
+            } catch(RuntimeException e) {
+                log.warn("[콘텐츠 데이터 관리] sportResponse idEvent 파싱 실패, idEvent={},",theSportResponse.idEvent(), e);
+                continue;
+            }
+
+            if(contentRepository.existsByTypeAndApiId("sport", sportId)) {
                 log.debug("[콘텐츠 데이터 관리] sportResponse idEvent가 이미 존재합니다.");
                 continue;
             }
 
             Content content = theSportsMapper.sportsResponseToContent(theSportResponse, "sport");
-            Long apiId = Long.valueOf(theSportResponse.idEvent());
-            content.setApiId(apiId);
             contentRepository.save(content);
         }
     }
