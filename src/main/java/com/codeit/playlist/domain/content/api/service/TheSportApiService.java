@@ -4,6 +4,7 @@ import com.codeit.playlist.domain.content.api.response.TheSportListResponse;
 import com.codeit.playlist.domain.content.api.response.TheSportResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,16 +22,19 @@ import java.time.YearMonth;
 public class TheSportApiService {
     private final WebClient webClient;
 
+    @Value("${SPORTDB_API_KEY}")
+    private String apiKey;
+
     private Mono<TheSportListResponse> callTheSportApi(int leagueId, String season) {
         log.info("[콘텐츠 데이터 관리] TheSport API Mono 빌드 시작");
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .scheme("https")
                         .host("www.thesportsdb.com")
-                        .path("/api/v1/json/123/eventsseason.php")
+                        .path("/api/v1/json/{apiKey}/eventsseason.php")
                         .queryParam("id", leagueId)
                         .queryParam("s", season)
-                        .build())
+                        .build(apiKey))
                 .retrieve()
                 .onStatus(s -> s.value() == 429, clientResponse -> clientResponse.createException().flatMap(Mono::error))
                 .bodyToMono(TheSportListResponse.class)
