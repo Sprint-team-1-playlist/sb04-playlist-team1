@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.YearMonth;
 
 @Slf4j
@@ -60,8 +61,8 @@ public class TheSportApiService {
                     }
                     return Flux.fromIterable(theSportResponse.events());
                         })
-//                .filter(response -> response.dateEvent() != null && !response.dateEvent().isBlank())
-//                .filter(response -> YearMonth.from(LocalDate.parse(response.dateEvent())).equals(yearMonth))
+                .filter(response -> response.dateEvent() != null && !response.dateEvent().isBlank())
+                .filter(response -> YearMonth.from(LocalDate.parse(response.dateEvent())).equals(yearMonth))
                 .onErrorResume(WebClientResponseException.TooManyRequests.class, e -> {
                     log.warn("[콘텐츠 데이터 관리] 429 Too many Requests");
                     return Flux.empty();
