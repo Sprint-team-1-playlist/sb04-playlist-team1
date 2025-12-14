@@ -1,6 +1,7 @@
 package com.codeit.playlist.global.config;
 
 import com.codeit.playlist.domain.content.batch.ContentTasklet;
+import com.codeit.playlist.domain.content.batch.SportContentTasklet;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -15,10 +16,11 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 public class BatchConfig {
     @Bean
-    public Job contentJob(JobRepository jobRepository, Step contentStep) {
+    public Job contentJob(JobRepository jobRepository, Step contentStep, Step sportStep) {
         log.info("[콘텐츠 데이터 관리] contentJob 시작, contentStep : {}", contentStep);
         return new JobBuilder("contentJob",jobRepository)
                 .start(contentStep)
+                .next(sportStep)
                 .build();
     }
 
@@ -26,6 +28,13 @@ public class BatchConfig {
     public Step contentStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, ContentTasklet contentTasklet) {
         return new StepBuilder("contentStep", jobRepository)
                 .tasklet(contentTasklet, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step sportStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, SportContentTasklet sportContentTasklet) {
+        return new StepBuilder("sportStep", jobRepository)
+                .tasklet(sportContentTasklet, transactionManager)
                 .build();
     }
 }
