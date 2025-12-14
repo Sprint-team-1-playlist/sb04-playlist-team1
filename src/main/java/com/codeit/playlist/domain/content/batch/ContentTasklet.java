@@ -64,7 +64,7 @@ public class ContentTasklet implements Tasklet {
             }
 
             Long tmdbId = movieResponse.tmdbId();
-            if(contentRepository.existsByTmdbId(tmdbId)) { // tmdbId가 이미 있음
+            if(contentRepository.existsByApiId(tmdbId)) { // tmdbId가 이미 있음
                 existCount++;
                 continue;
             }
