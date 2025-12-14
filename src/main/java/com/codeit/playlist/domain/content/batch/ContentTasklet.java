@@ -59,11 +59,11 @@ public class ContentTasklet implements Tasklet {
                 continue;
             }
 
-            if(movieResponse.tmdbId() == null) { // tmdb id가 없음
+            if(movieResponse.apiId() == null) { // tmdb id가 없음
                 continue;
             }
 
-            Long tmdbId = movieResponse.tmdbId();
+            Long tmdbId = movieResponse.apiId();
             if(contentRepository.existsByApiId(tmdbId)) { // tmdbId가 이미 있음
                 existCount++;
                 continue;
