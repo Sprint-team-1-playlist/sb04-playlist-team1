@@ -56,7 +56,6 @@ public class TheSportApiService {
                     }
                     return Flux.fromIterable(theSportResponse.events());
                         })
-                .doOnNext(e -> log.debug("[콘텐츠 데이터 관리] dateEvent : {}", e.dateEvent()))
 //                .filter(response -> response.dateEvent() != null && !response.dateEvent().isBlank())
 //                .filter(response -> YearMonth.from(LocalDate.parse(response.dateEvent())).equals(yearMonth))
                 .onErrorResume(WebClientResponseException.TooManyRequests.class, e -> {
