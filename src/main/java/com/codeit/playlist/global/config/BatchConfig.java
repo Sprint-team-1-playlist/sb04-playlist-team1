@@ -1,6 +1,6 @@
 package com.codeit.playlist.global.config;
 
-import com.codeit.playlist.domain.content.batch.ContentTasklet;
+import com.codeit.playlist.domain.content.batch.MovieTasklet;
 import com.codeit.playlist.domain.content.batch.SportContentTasklet;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -25,7 +25,7 @@ public class BatchConfig {
     }
 
     @Bean
-    public Step contentStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, ContentTasklet contentTasklet) {
+    public Step contentStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, MovieTasklet contentTasklet) {
         return new StepBuilder("contentStep", jobRepository)
                 .tasklet(contentTasklet, transactionManager)
                 .build();

@@ -21,7 +21,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ContentTasklet implements Tasklet {
+public class MovieTasklet implements Tasklet {
     private final TheMovieApiService theMovieApiService;
     private final TmdbMapper theMovieMapper;
     private final ContentRepository contentRepository;
