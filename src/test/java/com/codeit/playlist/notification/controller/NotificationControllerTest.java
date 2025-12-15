@@ -2,12 +2,13 @@ package com.codeit.playlist.notification.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.notification.controller.NotificationController;
-import com.codeit.playlist.domain.notification.dto.data.NotificationSortBy;
 import com.codeit.playlist.domain.notification.dto.response.CursorResponseNotificationDto;
 import com.codeit.playlist.domain.notification.service.NotificationService;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
 import com.codeit.playlist.domain.user.dto.data.UserDto;
 import com.codeit.playlist.global.config.JpaConfig;
+import com.codeit.playlist.global.error.GlobalExceptionHandler;
+import com.codeit.playlist.global.error.InvalidSortByException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +23,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -54,6 +56,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                         classes = com.codeit.playlist.domain.security.jwt.JwtAuthenticationFilter.class
                 )
         })
+@Import({GlobalExceptionHandler.class})
 @AutoConfigureMockMvc
 @ImportAutoConfiguration(exclude = JpaConfig.class)
 public class NotificationControllerTest {
@@ -135,7 +138,7 @@ public class NotificationControllerTest {
                 isNull(),
                 eq(10),
                 eq(SortDirection.DESCENDING),
-                eq(NotificationSortBy.createdAt)
+                eq("createdAt")
         )).willReturn(responseDto);
 
         // when & then
@@ -155,7 +158,7 @@ public class NotificationControllerTest {
                 isNull(),
                 eq(10),
                 eq(SortDirection.DESCENDING),
-                eq(NotificationSortBy.createdAt)
+                eq("createdAt")
         );
     }
 
@@ -166,6 +169,15 @@ public class NotificationControllerTest {
         UUID userId = UUID.randomUUID();
         Authentication authentication = createAuthentication(userId);
 
+        given(notificationService.getAllNotifications(
+                eq(userId),
+                any(),
+                any(),
+                anyInt(),
+                any(SortDirection.class),
+                eq("wrongField")
+        )).willThrow(InvalidSortByException.withSortBy("wrongField"));
+
         // when & then
         mockMvc.perform(get("/api/notifications")
                         .param("limit", "10")
@@ -174,7 +186,14 @@ public class NotificationControllerTest {
                         .with(authentication(authentication)))
                 .andExpect(status().isBadRequest());
 
-        then(notificationService).shouldHaveNoInteractions();
+        then(notificationService).should().getAllNotifications(
+                eq(userId),
+                any(),
+                any(),
+                anyInt(),
+                any(SortDirection.class),
+                eq("wrongField")
+        );
 
     }
 
@@ -207,7 +226,7 @@ public class NotificationControllerTest {
                 any(),
                 anyInt(),
                 any(),
-                any(NotificationSortBy.class)
+                eq("createdAt")
         )).willThrow(new RuntimeException("테스트 예외"));
 
         // when & then
@@ -224,7 +243,7 @@ public class NotificationControllerTest {
                 any(),
                 anyInt(),
                 any(),
-                any(NotificationSortBy.class)
+                eq("createdAt")
         );
     }
 

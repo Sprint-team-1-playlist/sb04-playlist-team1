@@ -2,7 +2,6 @@ package com.codeit.playlist.review.repository;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.entity.Content;
-import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.review.entity.Review;
 import com.codeit.playlist.domain.review.repository.ReviewRepository;
 import com.codeit.playlist.domain.user.entity.Role;
@@ -20,6 +19,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -185,6 +185,207 @@ public class ReviewRepositoryTest {
         assertThat(slice.hasNext()).isFalse();
     }
 
+    /**커서 기준 where 조건 생성용 테스트(cursor와 idAfter를 조합해 사용하는 메서드)**/
+    @Test
+    @DisplayName("createCursorCondition 성공 - createdAt ASC 기준 커서 이후만 조회")
+    void findReviewsWithCursorCreatedAtAscSuccess() {
+        // given
+        User user = createTestUser("cursor-createdAt@test.com");
+        Content content = createTestContent("테스트용 컨텐츠");
+
+        em.persist(user);
+        em.persist(content);
+
+        Instant base = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+
+        // r1 < r2 < r3 (오래된 순)
+        Review r1 = createReview(user, content, 3, "리뷰1");
+        Review r2 = createReview(user, content, 4, "리뷰2");
+        Review r3 = createReview(user, content, 5, "리뷰3");
+
+        em.persist(r1);
+        em.persist(r2);
+        em.persist(r3);
+        em.flush();
+
+        // createdAt: r1(가장 오래됨) < r2 < r3(가장 최신)
+        em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
+                .setParameter("t", base.minus(3, ChronoUnit.DAYS))
+                .setParameter("id", r1.getId())
+                .executeUpdate();
+
+        em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
+                .setParameter("t", base.minus(2, ChronoUnit.DAYS))
+                .setParameter("id", r2.getId())
+                .executeUpdate();
+
+        em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
+                .setParameter("t", base.minus(1, ChronoUnit.DAYS))
+                .setParameter("id", r3.getId())
+                .executeUpdate();
+
+        em.clear();
+
+        int limit = 10;
+
+        // when
+        // 정렬: createdAt ASC
+        Slice<Review> slice = reviewRepository.findReviews(
+                content.getId(),
+                null,
+                r1.getId(),
+                limit,
+                SortDirection.ASCENDING,
+                "createdAt"
+        );
+
+        // then
+        List<Review> contentList = slice.getContent();
+
+        assertThat(contentList)
+                .extracting(Review::getId)
+                .containsExactly(r2.getId(), r3.getId());
+
+        assertThat(contentList.get(0).getCreatedAt())
+                .isBefore(contentList.get(1).getCreatedAt());
+
+        assertThat(slice.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("createCursorCondition 성공 - rating ASC 기준 커서 이후만 조회")
+    void findReviewsWithCursorRatingAscSuccess() {
+        // given
+        User user = createTestUser("cursor-rating@test.com");
+        Content content = createTestContent("컨텐츠용 테스트");
+
+        em.persist(user);
+        em.persist(content);
+
+        // r1(3점), r2(4점), r3(5점)
+        Review r1 = createReview(user, content, 3, "3점 리뷰");
+        Review r2 = createReview(user, content, 4, "4점 리뷰");
+        Review r3 = createReview(user, content, 5, "5점 리뷰");
+
+        em.persist(r1);
+        em.persist(r2);
+        em.persist(r3);
+        em.flush();
+        em.clear();
+
+        int limit = 10;
+
+        // when
+        // 정렬: rating ASC → r1(3점), r2(4점), r3(5점)
+        Slice<Review> slice = reviewRepository.findReviews(
+                content.getId(),
+                null,
+                r1.getId(),
+                limit,
+                SortDirection.ASCENDING,
+                "rating"
+        );
+
+        // then
+        List<Review> contentList = slice.getContent();
+
+        assertThat(contentList)
+                .extracting(Review::getRating)
+                .containsExactly(4, 5);
+
+        assertThat(slice.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("createCursorCondition 실패 - cursorId에 해당하는 리뷰가 없으면 커서 조건이 무시된다")
+    void findReviewsWithCursorReviewNotFoundFallsBackToFirstPage() {
+        // given
+        User user = createTestUser("test@test.com");
+        Content content = createTestContent("테스트 컨텐츠");
+
+        em.persist(user);
+        em.persist(content);
+
+        Instant base = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+
+        Review r1 = createReview(user, content, 3, "리뷰1");
+        Review r2 = createReview(user, content, 4, "리뷰2");
+
+        em.persist(r1);
+        em.persist(r2);
+        em.flush();
+
+        em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
+                .setParameter("t", base.minus(2, ChronoUnit.DAYS))
+                .setParameter("id", r1.getId())
+                .executeUpdate();
+
+        em.createQuery("UPDATE Review r SET r.createdAt = :t WHERE r.id = :id")
+                .setParameter("t", base.minus(1, ChronoUnit.DAYS))
+                .setParameter("id", r2.getId())
+                .executeUpdate();
+
+        em.clear();
+
+        int limit = 10;
+
+        UUID nonexistentId = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
+        // when
+        Slice<Review> slice = reviewRepository.findReviews(
+                content.getId(),
+                null,
+                nonexistentId,           // review 테이블에 없는 cursorId
+                limit,
+                SortDirection.DESCENDING, // createdAt DESC 기준
+                "createdAt"
+        );
+
+        // then
+        //그냥 첫 페이지 전체가 조회됨
+        assertThat(slice.getContent())
+                .extracting(Review::getId)
+                .containsExactlyInAnyOrder(r1.getId(), r2.getId());
+
+        assertThat(slice.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("createCursorCondition 실패 - 지원하지 않는 sortBy 값이면 커서 조건이 적용되지 않는다")
+    void findReviewsWithUnsupportedSortByIgnoresCursorCondition() {
+        // given
+        User user = createTestUser("test1@test.com");
+        Content content = createTestContent("테스트 컨텐츠");
+
+        em.persist(user);
+        em.persist(content);
+
+        Review r1 = createReview(user, content, 3, "리뷰1");
+        Review r2 = createReview(user, content, 4, "리뷰2");
+
+        em.persist(r1);
+        em.persist(r2);
+        em.flush();
+        em.clear();
+
+        int limit = 10;
+
+        // when
+        Slice<Review> slice = reviewRepository.findReviews(
+                content.getId(),
+                null,
+                r1.getId(),
+                limit,
+                SortDirection.DESCENDING,
+                "unknown"          // 지원하지 않는 sortBy
+        );
+
+        // then
+        assertThat(slice.getContent()).hasSize(2);
+        assertThat(slice.hasNext()).isFalse();
+    }
+
+
     private User createTestUser(String email) {
         User user = new User(email, "password", "test-user", null, Role.USER);
 
@@ -198,7 +399,7 @@ public class ReviewRepositoryTest {
     private Content createTestContent(String title) {
         Content content = new Content(
                 TMDB_ID_SEQ.getAndIncrement(),
-                Type.MOVIE,
+                "MOVIE",
                 title,
                 "설명",
                 "http://example.com",

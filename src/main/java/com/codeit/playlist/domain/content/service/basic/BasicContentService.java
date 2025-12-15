@@ -7,17 +7,19 @@ import com.codeit.playlist.domain.content.dto.request.ContentUpdateRequest;
 import com.codeit.playlist.domain.content.dto.response.CursorResponseContentDto;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
-import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.exception.ContentBadRequestException;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.mapper.ContentMapper;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.content.repository.TagRepository;
 import com.codeit.playlist.domain.content.service.ContentService;
+import com.codeit.playlist.domain.file.S3Uploader;
+import com.codeit.playlist.global.constant.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,38 +34,33 @@ public class BasicContentService implements ContentService {
     private final ContentRepository contentRepository;
     private final TagRepository tagRepository;
     private final ContentMapper contentMapper;
+    private final S3Uploader s3Uploader;
+    private final S3Properties s3Properties;
 
     @Transactional
     @Override
-    public ContentDto create(ContentCreateRequest request, String thumbnail) {
-        log.debug("[콘텐츠 데이터 관리] 컨텐츠 생성 시작 : request = {}", request);
+    public ContentDto create(ContentCreateRequest request, MultipartFile thumbnail) {
+        log.debug("[콘텐츠 데이터 관리] 관리자 권한 컨텐츠 생성 시작 : request = {}", request);
 
         log.debug("[콘텐츠 데이터 관리] 타입 생성 시작 : type = {}", request.type());
-        Type type = null;
+
         if(request.type() == null) {
             throw new ContentBadRequestException("타입을 입력해주세요.");
         }
-        if(request.type().equals(Type.MOVIE.toString())) {
-            type = Type.MOVIE;
-        }
-        if (request.type().equals(Type.SPORT.toString())) {
-            type = Type.SPORT;
-        }
-        if (request.type().equals(Type.TV_SERIES.toString())) {
-            type = Type.TV_SERIES;
-        }
-        log.info("타입 생성 완료 : type = {}", type);
 
-        if(thumbnail == null || thumbnail.isBlank()) {
+        if(thumbnail == null || thumbnail.isEmpty()) {
             throw new ContentBadRequestException("썸네일은 필수입니다.");
         }
+
+        String strThumbnail = saveImageToS3(thumbnail);
         Long uuid = UUID.randomUUID().getLeastSignificantBits();
+
         Content content = new Content(
                 uuid,
-                type,
+                request.type(),
                 request.title(),
                 request.description(),
-                thumbnail,
+                strThumbnail,
                 0,
                 0,
                 0);
@@ -242,5 +239,29 @@ public class BasicContentService implements ContentService {
         List<Tag> tags = tagRepository.findByContentId(searchContent.getId());
         log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 완료, searchContent : {}", searchContent);
         return contentMapper.toDto(searchContent,tags);
+    }
+
+    @Override
+    public String saveImageToS3(MultipartFile file) {
+        log.debug("[콘텐츠 데이터 관리] 썸네일 MultipartFile S3업로드 시작");
+
+        if(file == null || file.isEmpty()) {
+            log.debug("[콘텐츠 데이터 관리] file이 없어요.");
+            throw new ContentBadRequestException("업로드 할 파일이 없어요.");
+        }
+
+        String contentType = file.getContentType();
+        if(contentType == null || !contentType.startsWith("image/")) {
+            throw new ContentBadRequestException("이미지 파일만 업로드 할 수 있어요.");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if(originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        String key = UUID.randomUUID() + extension;
+
+        return s3Uploader.upload(s3Properties.getContentBucket(), key, file);
     }
 }
