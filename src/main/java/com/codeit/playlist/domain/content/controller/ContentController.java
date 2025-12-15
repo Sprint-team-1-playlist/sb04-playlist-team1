@@ -42,10 +42,10 @@ public class ContentController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/{contentId}")
+    @PatchMapping(value = "/{contentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ContentDto> update(@PathVariable UUID contentId,
-                                             @RequestBody ContentUpdateRequest request,
-                                             @RequestBody String thumbnail) {
+                                             @RequestPart("request") ContentUpdateRequest request,
+                                             @RequestPart("thumbnailUrl") MultipartFile thumbnail) {
         ContentDto updateContents = contentService.update(contentId, request, thumbnail);
         return ResponseEntity.ok(updateContents);
     }
