@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface TagService {
 //    void saveMovieTag();
-    void saveMovieTagToContent(Content content, List<Integer> genreIds);
+    void saveTmdbTagToContent(Content content, List<Integer> genreIds);
 }
