@@ -81,9 +81,9 @@ public class TvSeriesTasklet implements Tasklet {
                 tagService.saveTvSeriesTagToContent(resultContent, tvSeriesResponse.genreIds());
             }
         }
-        log.debug("[콘텐츠 데이터 관리] TMDB TvSport API에서 한글이 한글자도 없는 콘텐츠 횟수 : {}", languageCount);
-        log.debug("[콘텐츠 데이터 관리] TMDB TvSport API가 이만큼 비어있어요. count : {}", invalidCount);
-        log.debug("[콘텐츠 데이터 관리] TMDB TvSport API content가 이만큼 없어요. count : {}", existCount);
+        log.debug("[콘텐츠 데이터 관리] TMDB TvSeries API에서 한글이 한글자도 없는 콘텐츠 횟수 : {}", languageCount);
+        log.debug("[콘텐츠 데이터 관리] TMDB TvSeries API가 이만큼 비어있어요. count : {}", invalidCount);
+        log.debug("[콘텐츠 데이터 관리] TMDB TvSeries API content가 이만큼 없어요. count : {}", existCount);
         log.info("[콘텐츠 데이터 관리] TvSeries API 콘텐츠와 태그 수집 완료");
         return RepeatStatus.FINISHED;
     }
