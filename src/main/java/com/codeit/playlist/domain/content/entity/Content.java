@@ -4,8 +4,6 @@ import com.codeit.playlist.domain.base.BaseUpdatableEntity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,15 +19,14 @@ public class Content extends BaseUpdatableEntity {
     /**
      * TMDB ID
      */
-    @Column(unique = true)
-    private Long tmdbId;
+    @Column(name = "api_id", nullable = false)
+    private Long apiId;
 
     /**
      * 컨텐츠 타입
      */
-    @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
-    private Type type;
+    private String type;
 
     /**
      * 컨텐츠 제목
@@ -73,10 +70,10 @@ public class Content extends BaseUpdatableEntity {
         this.thumbnailUrl = thumbnailUrl;
     }
 
-    public static Content createSportsContent(String title, String description, String thumbnailUrl) {
+    public static Content createSportsContent(String type, String description, String thumbnailUrl) {
         Content content = new Content();
-        content.type = Type.SPORT;
-        content.title = title;
+        content.type = type;
+        content.title = "sport";
         content.description = description;
         content.thumbnailUrl = thumbnailUrl;
         content.averageRating = 0.0;

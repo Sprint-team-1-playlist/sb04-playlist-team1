@@ -19,7 +19,6 @@ import static org.mockito.Mockito.when;
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
-import com.codeit.playlist.domain.conversation.dto.data.ConversationSortBy;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
@@ -270,7 +269,7 @@ public class BasicConversationServiceTest {
         .thenReturn(new ConversationDto(conv2.getId(), otherUserSummary, null, false));
 
     // when
-    CursorResponseConversationDto response = conversationService.findAll(null, null, null, limit, SortDirection.ASCENDING, ConversationSortBy.createdAt);
+    CursorResponseConversationDto response = conversationService.findAll(null, null, null, limit, SortDirection.ASCENDING, "createdAt");
 
     // then
     assertNotNull(response);
@@ -291,7 +290,7 @@ public class BasicConversationServiceTest {
 
     // when & then
     assertThrows(InvalidCursorException.class,
-        () -> conversationService.findAll(null, invalidCursor, null, 10, SortDirection.ASCENDING, ConversationSortBy.createdAt));
+        () -> conversationService.findAll(null, invalidCursor, null, 10, SortDirection.ASCENDING, "createdAt"));
     verify(conversationRepository, never()).findPageAsc(any(), any(), any(), any(), any());
   }
 
@@ -331,6 +330,70 @@ public class BasicConversationServiceTest {
     assertEquals(conversationId, result.id());
     assertTrue(result.hasUnread());
     verify(readStatusRepository, times(1)).hasUnread(conversationId, currentUserId);
+  }
+
+  @Test
+  @DisplayName("대화 목록 조회 - ASC 정렬, 유효한 커서, hasNext=false")
+  void findAllAscSortedByCreatedAtWithValidCursor() {
+    // given
+    int limit = 2;
+    Instant cursorTime = Instant.now().minus(2, ChronoUnit.HOURS);
+    String validCursor = cursorTime.toString();
+    UUID idAfter = UUID.randomUUID();
+
+    Conversation conv1 = new Conversation(currentUser, otherUser);
+    Conversation conv2 = new Conversation(currentUser, otherUser);
+    setId(conv1, UUID.randomUUID());
+    setId(conv2, UUID.randomUUID());
+    setCreatedAt(conv1, cursorTime.minus(1, ChronoUnit.HOURS));
+    setCreatedAt(conv2, cursorTime);
+
+    List<Conversation> foundConversations = List.of(conv1, conv2);
+
+    when(conversationRepository.findPageAsc(
+        eq(currentUserId),
+        nullable(String.class),
+        eq(cursorTime),
+        eq(idAfter),
+        any(Pageable.class)
+    )).thenReturn(foundConversations);
+    when(conversationRepository.countAll(currentUserId, null)).thenReturn(2L);
+
+    Message m1 = new Message(conv1, currentUser, otherUser, "msg1");
+    setId(m1, UUID.randomUUID());
+    Message m2 = new Message(conv2, currentUser, otherUser, "msg2");
+    setId(m2, UUID.randomUUID());
+    when(messageRepository.findLatestMessagesByConversations(foundConversations))
+        .thenReturn(List.of(m1, m2));
+    when(userMapper.toUserSummary(otherUser)).thenReturn(otherUserSummary);
+    when(messageMapper.toDto(any(Message.class))).thenAnswer(i -> {
+      Message m = i.getArgument(0);
+      return new DirectMessageDto(m.getId(), m.getConversation().getId(),
+          m.getCreatedAt(), otherUserSummary, otherUserSummary, m.getContent());
+    });
+    when(readStatusRepository.hasUnread(any(), any())).thenReturn(false);
+    when(conversationMapper.toDto(eq(conv1), eq(otherUserSummary),
+        any(DirectMessageDto.class), anyBoolean()))
+        .thenReturn(new ConversationDto(conv1.getId(), otherUserSummary, null, false));
+    when(conversationMapper.toDto(eq(conv2), eq(otherUserSummary),
+        any(DirectMessageDto.class), anyBoolean()))
+        .thenReturn(new ConversationDto(conv2.getId(), otherUserSummary, null, false));
+
+    // when
+    CursorResponseConversationDto response = conversationService.findAll(null, validCursor, idAfter, limit, SortDirection.ASCENDING, "createdAt");
+
+    // then
+    assertNotNull(response);
+    assertFalse(response.hasNext());
+
+    // parseCursor가 호출되고 그 결과가 findPageAsc에 전달되었는지 확인
+    verify(conversationRepository, times(1)).findPageAsc(
+        eq(currentUserId),
+        nullable(String.class),
+        eq(cursorTime),
+        eq(idAfter),
+        any(Pageable.class)
+    );
   }
 
   @Test
@@ -408,7 +471,6 @@ public class BasicConversationServiceTest {
         () -> conversationService.findByUserId(otherUserId)
     );
   }
-
 
   private void setCreatedAt(BaseEntity entity, Instant time) {
     try {

@@ -3,6 +3,7 @@ package com.codeit.playlist.message.service.basic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -18,7 +19,6 @@ import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundExc
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
-import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.entity.Message;
@@ -45,6 +45,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -163,6 +164,47 @@ class BasicMessageServiceTest {
   }
 
   @Test
+  @DisplayName("메시지 저장 성공 - 현재 유저가 conversation.user2일 때 sender/receiver 할당 확인")
+  void senderReceiverSelectionWhenUserIsUser2() {
+    // given
+    Principal user2Auth = setupUser2AsCurrentPrincipal();
+    DirectMessageSendRequest sendRequest = new DirectMessageSendRequest("User2 says hello!");
+
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+    when(messageRepository.save(any(Message.class))).thenAnswer(invocation -> {
+      Message m = invocation.getArgument(0);
+      setId(m, UUID.randomUUID());
+      setCreatedAt(m, Instant.now());
+      return m;
+    });
+    when(messageMapper.toDto(any(Message.class))).thenAnswer(invocation -> {
+      Message m = invocation.getArgument(0);
+      return new DirectMessageDto(
+          m.getId(),
+          conversationId,
+          m.getCreatedAt(),
+          new UserSummary(m.getSender().getId(), m.getSender().getName(), m.getSender().getProfileImageUrl()),
+          new UserSummary(m.getReceiver().getId(), m.getReceiver().getName(), m.getReceiver().getProfileImageUrl()),
+          m.getContent()
+      );
+    });
+
+    // when
+    DirectMessageDto result = messageService.save(conversationId, sendRequest, user2Auth);
+
+    // then
+    assertEquals(user2.getId(), result.sender().userId(), "user2가 발신자여야 합니다.");
+    assertEquals(user1.getId(), result.receiver().userId(), "user1이 수신자여야 합니다.");
+
+    ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+    verify(messageRepository, times(1)).save(messageCaptor.capture());
+
+    Message capturedMessage = messageCaptor.getValue();
+    assertEquals(user2.getId(), capturedMessage.getSender().getId(), "저장된 메시지의 발신자는 user2여야 합니다.");
+    assertEquals(user1.getId(), capturedMessage.getReceiver().getId(), "저장된 메시지의 수신자는 user1이어야 합니다.");
+  }
+
+  @Test
   @DisplayName("대화방이 존재하지 않으면 예외 발생")
   void saveMessageConversationNotFound() {
 
@@ -176,6 +218,66 @@ class BasicMessageServiceTest {
     verify(messageRepository, never()).save(any());
     verify(messageMapper, never()).toDto(any());
     verify(eventPublisher, never()).publishEvent(any());
+  }
+
+  @Test
+  @DisplayName("메시지 저장 성공 - 30자 초과 메시지에 대해 알림 미리보기가 '...'로 잘리는지 확인")
+  void saveMessageLongContentNotificationPreview() throws Exception {
+    // given
+    String longContent = "This is a very long message content that definitely exceeds thirty characters in length.";
+    String expectedPreview = "This is a very long message co...";
+    DirectMessageSendRequest sendRequest = new DirectMessageSendRequest(longContent);
+
+    Message savedMessage = new Message(conversation, user1, user2, sendRequest.content());
+    setId(savedMessage, UUID.randomUUID());
+    setCreatedAt(savedMessage, Instant.now());
+
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+    when(messageRepository.save(any(Message.class))).thenReturn(savedMessage);
+    when(messageMapper.toDto(any(Message.class))).thenReturn(mock(DirectMessageDto.class));
+
+    String kafkaPayload = "{\"content\":\"" + expectedPreview + "\", ...}";
+    when(objectMapper.writeValueAsString(any())).thenReturn(kafkaPayload);
+
+    ArgumentCaptor<String> payloadCaptor = ArgumentCaptor.forClass(String.class);
+
+    // when
+    messageService.save(conversationId, sendRequest, authentication);
+
+    // then
+    verify(kafkaTemplate, times(1)).send(org.mockito.ArgumentMatchers.eq("playlist.NotificationDto"), payloadCaptor.capture());
+
+    ArgumentCaptor<com.codeit.playlist.domain.notification.dto.data.NotificationDto> notificationDtoCaptor = ArgumentCaptor.forClass(com.codeit.playlist.domain.notification.dto.data.NotificationDto.class);
+    verify(objectMapper, times(1)).writeValueAsString(notificationDtoCaptor.capture());
+
+    assertEquals(expectedPreview, notificationDtoCaptor.getValue().content());
+  }
+
+  @Test
+  @DisplayName("메시지 저장 성공 - 알림 직렬화 실패 시 예외 처리 확인 (Kafka 전송 안 됨)")
+  void saveMessageJsonProcessingException() throws Exception {
+    // given
+    DirectMessageSendRequest sendRequest = new DirectMessageSendRequest("Short message");
+
+    Message savedMessage = new Message(conversation, user1, user2, sendRequest.content());
+    setId(savedMessage, UUID.randomUUID());
+    setCreatedAt(savedMessage, Instant.now());
+
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+    when(messageRepository.save(any(Message.class))).thenReturn(savedMessage);
+    when(messageMapper.toDto(any(Message.class))).thenReturn(mock(DirectMessageDto.class));
+
+    when(objectMapper.writeValueAsString(any())).thenThrow(new com.fasterxml.jackson.core.JsonProcessingException("Test serialization failure") {});
+
+    // when
+    DirectMessageDto result = messageService.save(conversationId, sendRequest, authentication);
+
+    // then
+    assertNotNull(result);
+    verify(kafkaTemplate, never()).send(any(), any());
+
+    verify(messageRepository, times(1)).save(any(Message.class));
+    verify(eventPublisher, times(1)).publishEvent(any(DirectMessageSentEvent.class));
   }
 
   @Test
@@ -244,82 +346,107 @@ class BasicMessageServiceTest {
   }
 
   @Test
-  @DisplayName("대화 메시지 커서 기반 조회 성공")
-  void findAllMessagesSuccess() {
+  @DisplayName("DM 목록 조회 성공 - 다음 페이지 존재 시, limit+1개 조회 후 limit개로 잘리는지 확인 (hasNext=true)")
+  void findAllMessagesSuccessWithNextPage() {
     // given
+    int limit = 2;
+
+    UUID messageId1 = UUID.randomUUID();
+    UUID messageId2 = UUID.randomUUID();
+    UUID messageId3 = UUID.randomUUID();
+
+    Instant time1 = Instant.now().minus(10, ChronoUnit.MINUTES);
+    Instant time2 = Instant.now().minus(5, ChronoUnit.MINUTES);
+    Instant time3 = Instant.now().minus(1, ChronoUnit.MINUTES);
+
+    Message m1 = createMessage(messageId1, time1, "Hello 1");
+    Message m2 = createMessage(messageId2, time2, "Hello 2");
+    Message m3 = createMessage(messageId3, time3, "Hello 3");
+
+    DirectMessageDto dto1 = createDto(messageId1, time1, "Hello 1");
+    DirectMessageDto dto2 = createDto(messageId2, time2, "Hello 2");
+
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+    when(messageMapper.toDto(m1)).thenReturn(dto1);
+    when(messageMapper.toDto(m2)).thenReturn(dto2);
+
+    // DESC 가정(최신→과거)에 맞춰 정렬
+    List<Message> messagesFromRepo = List.of(m3, m2, m1);
+
+    when(messageRepository.findMessagesByConversationWithCursor(
+        any(UUID.class),
+        nullable(Instant.class),
+        nullable(UUID.class),
+        any(Pageable.class)
+    )).thenReturn(messagesFromRepo);
+
+    long totalCount = 5L;
+    when(messageRepository.countByConversationId(conversationId)).thenReturn(totalCount);
+
+    // when
+    CursorResponseDirectMessageDto result = messageService.findAll(conversationId, null, null, limit, SortDirection.DESCENDING, "createdAt", authentication);
+
+    // then
+    assertNotNull(result);
+
+    assertEquals(limit, result.data().size(), "조회된 메시지 수는 limit과 같아야 합니다.");
+
+    assertEquals(true, result.hasNext(), "limit+1개가 조회되었으므로 hasNext는 true여야 합니다.");
+
+    assertEquals(time2.toString(), result.nextCursor());
+    assertEquals(messageId2, result.nextIdAfter());
+
+    verify(messageMapper, times(1)).toDto(m3);
+    verify(messageMapper, times(1)).toDto(m2);
+    verify(messageMapper, never()).toDto(m1);
+  }
+
+  @Test
+  @DisplayName("DM 목록 조회 성공 - 다음 페이지 없음 시, 정확히 limit개 조회 후 그대로 반환되는지 확인 (hasNext=false)")
+  void findAllMessagesSuccessNoNextPage_ExactLimit() {
+    // given
+    int limit = 2;
+
     UUID messageId1 = UUID.randomUUID();
     UUID messageId2 = UUID.randomUUID();
 
     Instant time1 = Instant.now().minus(10, ChronoUnit.MINUTES);
     Instant time2 = Instant.now().minus(5, ChronoUnit.MINUTES);
 
-    Message m1 = new Message(conversation, user1, user2, "Hello 1");
-    setId(m1, messageId1);
-    setCreatedAt(m1, time1);
+    Message m1 = createMessage(messageId1, time1, "Hello 1");
+    Message m2 = createMessage(messageId2, time2, "Hello 2");
 
-    Message m2 = new Message(conversation, user1, user2, "Hello 2");
-    setId(m2, messageId2);
-    setCreatedAt(m2, time2);
-
-    DirectMessageDto dto1 = new DirectMessageDto(
-        messageId1,
-        conversationId,
-        time1,
-        new UserSummary(user1.getId(), user1.getName(), user1.getProfileImageUrl()),
-        new UserSummary(user2.getId(), user2.getName(), user2.getProfileImageUrl()),
-        "Hello 1"
-    );
-
-    DirectMessageDto dto2 = new DirectMessageDto(
-        messageId2,
-        conversationId,
-        time2,
-        new UserSummary(user1.getId(), user1.getName(), user1.getProfileImageUrl()),
-        new UserSummary(user2.getId(), user2.getName(), user2.getProfileImageUrl()),
-        "Hello 2"
-    );
+    DirectMessageDto dto1 = createDto(messageId1, time1, "Hello 1");
+    DirectMessageDto dto2 = createDto(messageId2, time2, "Hello 2");
 
     when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
-
     when(messageMapper.toDto(m1)).thenReturn(dto1);
     when(messageMapper.toDto(m2)).thenReturn(dto2);
 
-    List<Message> messages = List.of(m1, m2);
+    List<Message> messagesFromRepo = List.of(m2, m1);
 
-    int limit = 2;
     when(messageRepository.findMessagesByConversationWithCursor(
         any(UUID.class),
         nullable(Instant.class),
         nullable(UUID.class),
         any(Pageable.class)
-    )).thenReturn(messages);
+    )).thenReturn(messagesFromRepo);
 
-    long totalCount = 5L;
+    long totalCount = (long) messagesFromRepo.size();
     when(messageRepository.countByConversationId(conversationId)).thenReturn(totalCount);
 
-    String cursor = null;
-    UUID idAfter = null;
-
     // when
-    CursorResponseDirectMessageDto result = messageService.findAll(conversationId, cursor, idAfter, limit, SortDirection.DESCENDING, MessageSortBy.createdAt, authentication);
+    CursorResponseDirectMessageDto result = messageService.findAll(conversationId, null, null, limit, SortDirection.DESCENDING, "createdAt", authentication);
 
     // then
     assertNotNull(result);
-    assertEquals(2, result.data().size());
-    assertEquals(time2.toString(), result.nextCursor());
-    assertEquals(messageId2, result.nextIdAfter());
-    assertEquals(true, result.hasNext());
-    assertEquals(MessageSortBy.createdAt, result.sortBy());
-    assertEquals(SortDirection.DESCENDING, result.sortDirection());
-    assertEquals(totalCount, result.totalCount());
 
-    verify(messageRepository, times(1))
-        .findMessagesByConversationWithCursor(any(UUID.class), nullable(Instant.class), nullable(UUID.class), any(Pageable.class));
+    assertEquals(limit, result.data().size(), "조회된 메시지 수는 limit과 같아야 합니다.");
 
-    verify(messageRepository, times(1)).countByConversationId(conversationId);
+    assertEquals(false, result.hasNext(), "정확히 limit개만 조회되었고 totalCount가 같으므로 hasNext는 false여야 합니다.");
 
-    verify(messageMapper, times(1)).toDto(m1);
-    verify(messageMapper, times(1)).toDto(m2);
+    assertEquals(time1.toString(), result.nextCursor());
+    assertEquals(messageId1, result.nextIdAfter());
   }
 
   @Test
@@ -331,7 +458,7 @@ class BasicMessageServiceTest {
 
     // when & then
     assertThrows(ConversationNotFoundException.class, () ->
-        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt, authentication)
+        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, "createdAt", authentication)
     );
 
     verify(messageRepository, never())
@@ -362,7 +489,7 @@ class BasicMessageServiceTest {
 
     // when & then
     assertThrows(NotConversationParticipantException.class, () ->
-        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt, strangerAuth)
+        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, "createdAt", strangerAuth)
     );
 
     verify(messageRepository, never())
@@ -380,11 +507,45 @@ class BasicMessageServiceTest {
 
     // when & then
     assertThrows(InvalidCursorException.class, () ->
-        messageService.findAll(conversationId, invalidCursor, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt, authentication)
+        messageService.findAll(conversationId, invalidCursor, null, 10, SortDirection.DESCENDING, "createdAt", authentication)
     );
 
     verify(messageRepository, never())
         .findMessagesByConversationWithCursor(any(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("커서 기반 조회 성공 - 유효한 cursor가 Instant로 파싱되는지 확인")
+  void findAllMessagesWithValidCursor() {
+    // given
+    when(conversationRepository.findById(conversationId))
+        .thenReturn(Optional.of(conversation));
+
+    final Instant fixedValidTime = Instant.parse("2025-12-10T10:00:00.123456789Z");
+    String validCursor = fixedValidTime.toString();
+
+    int limit = 10;
+    List<Message> messages = List.of();
+
+    when(messageRepository.findMessagesByConversationWithCursor(
+        any(UUID.class),
+        any(Instant.class),
+        nullable(UUID.class),
+        any(Pageable.class)
+    )).thenReturn(messages);
+    when(messageRepository.countByConversationId(conversationId)).thenReturn(0L);
+
+    // when
+    messageService.findAll(conversationId, validCursor, null, limit, SortDirection.DESCENDING, "createdAt", authentication);
+
+    // then
+    verify(messageRepository, times(1))
+        .findMessagesByConversationWithCursor(
+            any(UUID.class),
+            argThat(instant -> instant.equals(fixedValidTime)),
+            nullable(UUID.class),
+            any(Pageable.class)
+        );
   }
 
   @Test
@@ -414,7 +575,7 @@ class BasicMessageServiceTest {
 
   @Test
   @DisplayName("DM 읽음 처리 실패 - Conversation 없음")
-  void markMessageAsReadFail_ConversationNotFound() {
+  void markMessageAsReadFailConversationNotFound() {
     // given
     UUID messageId = UUID.randomUUID();
     when(conversationRepository.findById(conversationId)).thenReturn(Optional.empty());
@@ -428,7 +589,7 @@ class BasicMessageServiceTest {
 
   @Test
   @DisplayName("DM 읽음 처리 실패 - 현재 유저가 대화 참여자가 아님")
-  void markMessageAsReadFail_NotParticipant() {
+  void markMessageAsReadFailNotParticipant() {
     // given
     UUID messageId = UUID.randomUUID();
     UUID strangerId = UUID.randomUUID();
@@ -458,7 +619,7 @@ class BasicMessageServiceTest {
 
   @Test
   @DisplayName("DM 읽음 처리 실패 - Message 없음")
-  void markMessageAsReadFail_MessageNotFound() {
+  void markMessageAsReadFailMessageNotFound() {
     // given
     UUID messageId = UUID.randomUUID();
     when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
@@ -474,7 +635,7 @@ class BasicMessageServiceTest {
 
   @Test
   @DisplayName("DM 읽음 처리 실패 - 최신 메시지가 아님")
-  void markMessageAsReadFail_InvalidMessage() {
+  void markMessageAsReadFailInvalidMessage() {
     // given
     UUID messageId = UUID.randomUUID();
     Message oldMessage = new Message(conversation, user1, user2, "Old message");
@@ -487,6 +648,29 @@ class BasicMessageServiceTest {
     when(messageRepository.findById(messageId)).thenReturn(Optional.of(oldMessage));
     when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation))
         .thenReturn(Optional.of(latestMessage));
+
+    // when & then
+    assertThrows(
+        InvalidMessageReadOperationException.class,
+        () -> messageService.markMessageAsRead(conversationId, messageId, authentication)
+    );
+    verify(messageRepository, times(1)).findById(messageId);
+    verify(messageRepository, times(1)).findFirstByConversationOrderByCreatedAtDesc(conversation);
+  }
+
+  @Test
+  @DisplayName("DM 읽음 처리 실패 - 대화방에 메시지가 전혀 없을 때")
+  void markMessageAsReadFailWhenNoMessagesInConversation() {
+    // given
+    UUID messageId = UUID.randomUUID();
+    Message message = new Message(conversation, user1, user2, "The only message");
+    setId(message, messageId);
+
+    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+    when(messageRepository.findById(messageId)).thenReturn(Optional.of(message));
+
+    when(messageRepository.findFirstByConversationOrderByCreatedAtDesc(conversation))
+        .thenReturn(Optional.empty()); // 대화방에 최신 메시지가 없음
 
     // when & then
     assertThrows(
@@ -515,5 +699,41 @@ class BasicMessageServiceTest {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private Message createMessage(UUID id, Instant time, String content) {
+    Message message = new Message(conversation, user1, user2, content);
+    setId(message, id);
+    setCreatedAt(message, time);
+    return message;
+  }
+
+  private DirectMessageDto createDto(UUID id, Instant time, String content) {
+    return new DirectMessageDto(
+        id,
+        conversationId,
+        time,
+        new UserSummary(user1.getId(), user1.getName(), user1.getProfileImageUrl()),
+        new UserSummary(user2.getId(), user2.getName(), user2.getProfileImageUrl()),
+        content
+    );
+  }
+
+  //user2를 인증된 사용자로 설정
+  private Principal setupUser2AsCurrentPrincipal() {
+    UUID user2Id = user2.getId();
+
+    PlaylistUserDetails userDetails = mock(PlaylistUserDetails.class);
+    when(userDetails.getUserDto()).thenReturn(
+        new com.codeit.playlist.domain.user.dto.data.UserDto(
+            user2Id, Instant.now(),
+            user2.getEmail(), user2.getName(), null, user2.getRole(), false
+        )
+    );
+
+    Authentication auth = mock(Authentication.class);
+    when(auth.getPrincipal()).thenReturn(userDetails);
+
+    return auth;
   }
 }

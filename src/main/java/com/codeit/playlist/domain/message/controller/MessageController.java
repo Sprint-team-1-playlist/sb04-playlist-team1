@@ -35,7 +35,7 @@ public class MessageController {
       @RequestParam(required = false) UUID idAfter,
       @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit,
       @RequestParam(defaultValue = "DESCENDING") SortDirection sortDirection,
-      @RequestParam(defaultValue = "createdAt") MessageSortBy sortBy,
+      @RequestParam(defaultValue = "createdAt") String sortBy,
       Principal principal) {
 
     log.debug("[Message] DM 목록 조회 요청: {}", conversationId);

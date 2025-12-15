@@ -7,24 +7,20 @@ import com.codeit.playlist.domain.content.dto.request.ContentUpdateRequest;
 import com.codeit.playlist.domain.content.dto.response.CursorResponseContentDto;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.entity.Tag;
-import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.exception.ContentBadRequestException;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.mapper.ContentMapper;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.content.repository.TagRepository;
 import com.codeit.playlist.domain.content.service.ContentService;
+import com.codeit.playlist.domain.file.S3Uploader;
+import com.codeit.playlist.global.constant.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,18 +34,8 @@ public class BasicContentService implements ContentService {
     private final ContentRepository contentRepository;
     private final TagRepository tagRepository;
     private final ContentMapper contentMapper;
-
-    private final S3Client s3Client;
-
-    @Value("${cloud.aws.s3.content-bucket}")
-    private String bucket;
-
-    @Value("${cloud.aws.s3.directory}")
-    private String directory;
-
-    @Value("${cloud.aws.s3.base-url}")
-    private String baseUrl;
-
+    private final S3Uploader s3Uploader;
+    private final S3Properties s3Properties;
 
     @Transactional
     @Override
@@ -57,20 +43,10 @@ public class BasicContentService implements ContentService {
         log.debug("[콘텐츠 데이터 관리] 관리자 권한 컨텐츠 생성 시작 : request = {}", request);
 
         log.debug("[콘텐츠 데이터 관리] 타입 생성 시작 : type = {}", request.type());
-        Type type = null;
+
         if(request.type() == null) {
             throw new ContentBadRequestException("타입을 입력해주세요.");
         }
-        if(request.type().equals("movie")) {
-            type = Type.MOVIE;
-        } else if(request.type().equals("sport")) {
-            type = Type.SPORT;
-        } else if(request.type().equals("tvSeries")) {
-            type = Type.TV_SERIES;
-        } else {
-            throw new ContentBadRequestException("유효하지 않은 타입입니다. : " + request.type());
-        }
-        log.info("타입 생성 완료 : type = {}", type);
 
         if(thumbnail == null || thumbnail.isEmpty()) {
             throw new ContentBadRequestException("썸네일은 필수입니다.");
@@ -81,7 +57,7 @@ public class BasicContentService implements ContentService {
 
         Content content = new Content(
                 uuid,
-                type,
+                request.type(),
                 request.title(),
                 request.description(),
                 strThumbnail,
@@ -279,32 +255,13 @@ public class BasicContentService implements ContentService {
             throw new ContentBadRequestException("이미지 파일만 업로드 할 수 있어요.");
         }
 
-        try {
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if(originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String key = directory + UUID.randomUUID() + extension;
-
-            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(key)
-                    .contentType(file.getContentType())
-                    .build();
-
-            s3Client.putObject(
-                    putObjectRequest,
-                    RequestBody.fromInputStream(file.getInputStream(), file.getSize())
-            );
-
-            String url = baseUrl + key;
-            log.info("[콘텐츠 데이터 관리] MultipartFile S3 업로드 완료, url : {}", url);
-            return url;
-
-        } catch(IOException e) {
-            log.error("[콘텐츠 데이터 관리] 썸네일 MultipartFile S3업로드 실패",e);
-            throw new ContentBadRequestException("파일 업로드 중 오류가 발생했어요.");
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if(originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
+        String key = UUID.randomUUID() + extension;
+
+        return s3Uploader.upload(s3Properties.getContentBucket(), key, file);
     }
 }

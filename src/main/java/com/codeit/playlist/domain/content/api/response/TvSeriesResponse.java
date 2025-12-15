@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-public record TheMovieResponse(
+public record TvSeriesResponse(
         @JsonProperty("id") Long apiId,
-        @JsonProperty("title") String title,
+        @JsonProperty("name") String title,
         @JsonProperty("overview") String description,
         @JsonProperty("poster_path") String thumbnailUrl,
         @JsonProperty("genre_ids") List<Integer> genreIds

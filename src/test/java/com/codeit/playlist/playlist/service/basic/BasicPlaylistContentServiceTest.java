@@ -1,9 +1,9 @@
 package com.codeit.playlist.playlist.service.basic;
 
 import com.codeit.playlist.domain.content.entity.Content;
-import com.codeit.playlist.domain.content.entity.Type;
 import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
+import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
 import com.codeit.playlist.domain.playlist.entity.Playlist;
 import com.codeit.playlist.domain.playlist.entity.PlaylistContent;
 import com.codeit.playlist.domain.playlist.exception.PlaylistAccessDeniedException;
@@ -16,24 +16,33 @@ import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
 import com.codeit.playlist.domain.playlist.service.basic.BasicPlaylistContentService;
 import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicPlaylistContentServiceTest {
@@ -57,6 +66,12 @@ public class BasicPlaylistContentServiceTest {
 
     @Mock
     private SubscribeRepository subscribeRepository;
+
+    @Mock
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @InjectMocks
     private BasicPlaylistContentService basicPlaylistContentService;
@@ -182,6 +197,121 @@ public class BasicPlaylistContentServiceTest {
     }
 
     @Test
+    @DisplayName("addContentToPlaylist 실패 - save 중 DataIntegrityViolationException이면 PlaylistContentAlreadyExistsException 발생")
+    void addContentToPlaylistFailWithDataIntegrityViolation() {
+        // given
+        Playlist playlist = mock(Playlist.class);
+        User owner = mock(User.class);
+        Content content = mock(Content.class);
+
+        given(playlist.getOwner()).willReturn(owner);
+        given(owner.getId()).willReturn(OWNER_ID);
+
+        given(playlistRepository.findByIdAndDeletedAtIsNull(PLAYLIST_ID))
+                .willReturn(Optional.of(playlist));
+        given(contentRepository.findById(CONTENT_ID))
+                .willReturn(Optional.of(content));
+        given(playlistContentRepository.existsByPlaylist_IdAndContent_Id(PLAYLIST_ID, CONTENT_ID))
+                .willReturn(false);
+
+        // save 시 DB unique 제약조건 위반 가정
+        willThrow(new DataIntegrityViolationException("duplicate"))
+                .given(playlistContentRepository)
+                .save(any(PlaylistContent.class));
+
+        // when & then
+        assertThatThrownBy(() ->
+                basicPlaylistContentService.addContentToPlaylist(PLAYLIST_ID, CONTENT_ID, OWNER_ID)
+        )
+                .isInstanceOf(PlaylistContentAlreadyExistsException.class);
+
+        // 알림 관련 의존성은 호출되지 않아야 함
+        then(subscribeRepository).shouldHaveNoInteractions();
+        then(kafkaTemplate).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("addContentToPlaylist 성공 - 구독자가 있으면 각 구독자에게 알림 이벤트를 발행한다")
+    void addContentToPlaylistSuccessWithSubscribers() throws Exception {
+        // given
+        Playlist playlist = mock(Playlist.class);
+        User owner = mock(User.class);
+        Content content = mock(Content.class);
+
+        given(playlist.getOwner()).willReturn(owner);
+        given(owner.getId()).willReturn(OWNER_ID);
+        given(playlist.getTitle()).willReturn("내 플레이리스트");
+        given(content.getTitle()).willReturn("새 콘텐츠");
+
+        given(playlistRepository.findByIdAndDeletedAtIsNull(PLAYLIST_ID))
+                .willReturn(Optional.of(playlist));
+        given(contentRepository.findById(CONTENT_ID))
+                .willReturn(Optional.of(content));
+        given(playlistContentRepository.existsByPlaylist_IdAndContent_Id(PLAYLIST_ID, CONTENT_ID))
+                .willReturn(false);
+
+        // 구독자 2명 존재
+        UUID subscriber1 = UUID.randomUUID();
+        UUID subscriber2 = UUID.randomUUID();
+        given(subscribeRepository.findSubscriberIdByPlaylistId(PLAYLIST_ID))
+                .willReturn(List.of(subscriber1, subscriber2));
+
+        given(objectMapper.writeValueAsString(any(NotificationDto.class)))
+                .willReturn("serialized-notification");
+
+
+        given(kafkaTemplate.send(eq("playlist.NotificationDto"), anyString()))
+                .willReturn(null);
+
+        // when
+        basicPlaylistContentService.addContentToPlaylist(PLAYLIST_ID, CONTENT_ID, OWNER_ID);
+
+        // then
+        then(playlistContentRepository).should().save(any(PlaylistContent.class));
+        then(objectMapper).should(times(2))
+                .writeValueAsString(any(NotificationDto.class));
+        then(kafkaTemplate).should(times(2))
+                .send(eq("playlist.NotificationDto"), anyString());
+    }
+
+    @Test
+    @DisplayName("addContentToPlaylist 성공 - 알림 직렬화 실패(JsonProcessingException) 시 해당 구독자 알림 전송을 건너뛴다")
+    void addContentToPlaylistWhenNotificationSerializationFails() throws Exception {
+        // given
+        Playlist playlist = mock(Playlist.class);
+        User owner = mock(User.class);
+        Content content = mock(Content.class);
+
+        given(playlist.getOwner()).willReturn(owner);
+        given(owner.getId()).willReturn(OWNER_ID);
+        given(playlist.getTitle()).willReturn("내 플레이리스트");
+        given(content.getTitle()).willReturn("새 콘텐츠");
+
+        given(playlistRepository.findByIdAndDeletedAtIsNull(PLAYLIST_ID))
+                .willReturn(Optional.of(playlist));
+        given(contentRepository.findById(CONTENT_ID))
+                .willReturn(Optional.of(content));
+        given(playlistContentRepository.existsByPlaylist_IdAndContent_Id(PLAYLIST_ID, CONTENT_ID))
+                .willReturn(false);
+
+        UUID subscriberId = UUID.randomUUID();
+        given(subscribeRepository.findSubscriberIdByPlaylistId(PLAYLIST_ID))
+                .willReturn(List.of(subscriberId));
+
+        given(objectMapper.writeValueAsString(any(NotificationDto.class)))
+                .willThrow(new JsonProcessingException("serialize fail") {});
+
+        // when
+        basicPlaylistContentService.addContentToPlaylist(PLAYLIST_ID, CONTENT_ID, OWNER_ID);
+
+        // then
+        then(playlistContentRepository).should().save(any(PlaylistContent.class));
+        then(objectMapper).should().writeValueAsString(any(NotificationDto.class));
+        then(kafkaTemplate).shouldHaveNoInteractions();
+    }
+
+
+    @Test
     @DisplayName("removeContentFromPlaylist 성공 - 소유자가 정상적으로 콘텐츠를 삭제하면 delete가 호출된다")
     void removeContentFromPlaylistSuccess() {
         // given
@@ -284,7 +414,7 @@ public class BasicPlaylistContentServiceTest {
     }
 
     private Content createContent(String title) {
-        Content content = new Content(TMDB_ID_SEQ.getAndIncrement(), Type.MOVIE, title, "설명", "abc.com", 0L, 0, 0);
+        Content content = new Content(TMDB_ID_SEQ.getAndIncrement(), "movie", title, "설명", "abc.com", 0L, 0, 0);
         return content;
     }
 
