@@ -92,7 +92,7 @@ public class BasicContentService implements ContentService {
                 .orElseThrow(() -> ContentNotFoundException.withId(contentId));
 
         String updateThumbnail = content.getThumbnailUrl(); // thumbnail이 들어오지 않는다면, 기존 값을 유지함
-        if(thumbnail != null || !thumbnail.isEmpty()) {
+        if(thumbnail != null && !thumbnail.isEmpty()) { // 만약 썸네일이 들어왔다면, 저장함
             updateThumbnail = saveImageToS3(thumbnail);
         }
 
