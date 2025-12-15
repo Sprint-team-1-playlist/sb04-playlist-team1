@@ -81,7 +81,6 @@ public class TvSeriesApiService {
                 });
     }
 
-    @Transactional
     public Flux<TvSeriesResponse> getApiTv(String query) {
         return fluxingTvSeriesApi(query, "/3/discover/tv");
     }
