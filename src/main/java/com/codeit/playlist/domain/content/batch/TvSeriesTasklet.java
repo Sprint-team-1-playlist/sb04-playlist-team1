@@ -51,7 +51,7 @@ public class TvSeriesTasklet implements Tasklet {
             TvSeriesResponse tvSeriesResponse = tvSeriesResponseList.get(i);
             Content content = tvSeriesMapper.toContent(tvSeriesResponse, "tvSeries");
             String thumbnailUrl = tvSeriesResponse.thumbnailUrl();
-            if(thumbnailUrl != null || !thumbnailUrl.isBlank()) {
+            if(thumbnailUrl != null && !thumbnailUrl.isBlank()) {
                 content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
             }
 
