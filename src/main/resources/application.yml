@@ -133,3 +133,6 @@ playlist:
       expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7일
     cookie:
       secure: true
+
+server:
+  forward-headers-strategy: framework

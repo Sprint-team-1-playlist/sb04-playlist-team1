@@ -1,5 +1,8 @@
 package com.codeit.playlist.global.error;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,9 +11,6 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
@@ -37,11 +37,28 @@ public class GlobalExceptionHandler {
         Map<String, Object> details = new HashMap<>();
         e.getBindingResult().getFieldErrors().forEach(fieldError -> {
             String fieldName = fieldError.getField();
-            Object rejectedValue = fieldError.getRejectedValue();
-            details.put(fieldName, rejectedValue);
+            String simpleName = fieldName.contains(".")
+                ? fieldName.substring(fieldName.lastIndexOf('.') + 1)
+                : fieldName;
+
+            // 민감 정보 필드 목록
+            Set<String> sensitiveFields = Set.of(
+                "password", "username", "email",
+                "token", "accesstoken", "refreshtoken",
+                "apikey", "secretkey", "secret"
+            );
+
+            if (sensitiveFields.contains(simpleName.toLowerCase())) {
+                details.put(fieldName, "[REDACTED]");
+            } else {
+                // 그 외 필드는 rejectedValue 허용
+                details.put(fieldName, fieldError.getRejectedValue());
+            }
         });
 
-        DomainException domainException = new DomainException(details);
+        DomainException domainException =
+            new DomainException(details);
+
         log.error("요청 유효성 커스텀 예외 발생: code={}, message={}", domainException.getErrorCode(), domainException.getMessage(), domainException);
 
         return ResponseEntity.status(domainException.getStatus())
