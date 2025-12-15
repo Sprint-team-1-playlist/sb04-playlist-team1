@@ -36,16 +36,17 @@ public class GlobalExceptionHandler {
         Map<String, Object> details = new HashMap<>();
         e.getBindingResult().getFieldErrors().forEach(fieldError -> {
             String fieldName = fieldError.getField();
+            String simpleName = fieldName.contains(".")
+                ? fieldName.substring(fieldName.lastIndexOf('.') + 1)
+                : fieldName;
 
             // 민감 정보는 값 노출 금지
-            if ("password".equalsIgnoreCase(fieldName)) {
+
+            if ("password".equalsIgnoreCase(simpleName)
+                || "username".equalsIgnoreCase(simpleName)
+                || "email".equalsIgnoreCase(simpleName)) {
                 details.put(fieldName, "invalid");
-            }
-            else if ("username".equalsIgnoreCase(fieldName)
-                || "email".equalsIgnoreCase(fieldName)) {
-                details.put(fieldName, "invalid");
-            }
-            else {
+            } else {
                 // 그 외 필드는 rejectedValue 허용
                 details.put(fieldName, fieldError.getRejectedValue());
             }
