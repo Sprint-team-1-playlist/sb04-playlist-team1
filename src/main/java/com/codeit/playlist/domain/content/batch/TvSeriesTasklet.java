@@ -78,7 +78,7 @@ public class TvSeriesTasklet implements Tasklet {
             Content resultContent = contentRepository.save(content);
 
             if(tvSeriesResponse.genreIds() != null && !tvSeriesResponse.genreIds().isEmpty()) {
-                tagService.saveTmdbTagToContent(resultContent, tvSeriesResponse.genreIds());
+                tagService.saveTvSeriesTagToContent(resultContent, tvSeriesResponse.genreIds());
             }
         }
         log.debug("[콘텐츠 데이터 관리] TMDB TvSport API에서 한글이 한글자도 없는 콘텐츠 횟수 : {}", languageCount);
