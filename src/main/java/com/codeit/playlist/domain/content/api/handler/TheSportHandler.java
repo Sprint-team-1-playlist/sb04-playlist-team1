@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -56,13 +57,17 @@ public class TheSportHandler {
 
             Content content = theSportsMapper.sportsResponseToContent(theSportResponse, "sport");
 
-            List<String> tags = List.of(
+            List<String> tags = Stream.of(
                     theSportResponse.strSport(),
                     theSportResponse.strHomeTeam(),
-                    theSportResponse.strAwayTeam()
-            );
+                    theSportResponse.strAwayTeam())
+                    .filter(tag -> tag != null && !tag.isBlank())
+                    .toList();
+
             contentRepository.save(content);
-            tagService.saveTheSportTagToContent(content, tags);
+            if(!tags.isEmpty()) {
+                tagService.saveTheSportTagToContent(content, tags);
+            }
         }
     }
 }
