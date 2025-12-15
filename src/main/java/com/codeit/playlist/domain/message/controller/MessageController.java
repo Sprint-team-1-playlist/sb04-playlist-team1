@@ -1,7 +1,6 @@
 package com.codeit.playlist.domain.message.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
-import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.service.MessageService;
 import jakarta.validation.constraints.Max;
