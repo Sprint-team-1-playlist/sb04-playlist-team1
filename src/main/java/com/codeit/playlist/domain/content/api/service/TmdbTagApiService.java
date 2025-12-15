@@ -2,6 +2,9 @@ package com.codeit.playlist.domain.content.api.service;
 
 import com.codeit.playlist.domain.content.api.response.TheMovieTagListResponse;
 import com.codeit.playlist.domain.content.api.response.TheMovieTagResponse;
+import com.codeit.playlist.domain.content.api.response.TvSeriesListResponse;
+import com.codeit.playlist.domain.content.api.response.TvSeriesTagListResponse;
+import com.codeit.playlist.domain.content.api.response.TvSeriesTagResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +55,37 @@ public class TmdbTagApiService {
                                     TheMovieTagResponse::name,
                                     (existing, replacement) -> existing) // 수정
                             );
+                });
+    }
+
+    private Mono<TvSeriesTagListResponse> callTvSeriesTagApi(String path) {
+        log.info("[콘텐츠 데이터 관리] TvSeries API Tag 수집 시작");
+        return webClient.get().uri(
+                uriBuilder -> uriBuilder
+                        .scheme("https")
+                        .host("api.themoviedb.org")
+                        .path(path)
+                        .queryParam("api_key", apiKey)
+                        .queryParam("language", "ko-KR")
+                        .build())
+                .retrieve()
+                .bodyToMono(TvSeriesTagListResponse.class)
+                .timeout(Duration.ofSeconds(10))
+                .doOnError(WebClientResponseException.class,
+                        e -> log.error("[콘텐츠 데이터 관리] TvSeries API Tag List 수집 오류, status : {}, body : {}", e.getStatusCode(), e.getResponseBodyAsString()));
+    }
+
+    public Mono<Map<Integer, String>> getApiTvSeriesTag() {
+        return callTvSeriesTagApi("/3/genre/tv/list")
+                .map(response -> {
+                    if(response.genres() == null) {
+                        return Map.of();
+                    }
+                    return response.genres().stream()
+                            .collect(Collectors.toMap(
+                                    TvSeriesTagResponse::id,
+                                    TvSeriesTagResponse::name,
+                                    (existing, replacement) -> existing));
                 });
     }
 }

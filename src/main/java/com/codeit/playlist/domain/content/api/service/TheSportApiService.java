@@ -14,9 +14,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.DateTimeParseException;
 
 @Slf4j
 @Service
@@ -63,15 +61,6 @@ public class TheSportApiService {
                     return Flux.fromIterable(theSportResponse.events());
                         })
                 .filter(response -> response.dateEvent() != null && !response.dateEvent().isBlank())
-                .filter(response -> {
-                    try {
-                        LocalDate date = LocalDate.parse(response.dateEvent());
-                        return YearMonth.from(date).equals(yearMonth);
-                    } catch(DateTimeParseException e) {
-                        log.warn("[콘텐츠 데이터 관리] TheSport DateEvent 파싱 실패, idEvent={}, dateEvent={}", response.idEvent(), response.dateEvent());
-                        return false;
-                    }
-                })
                 .onErrorResume(WebClientResponseException.TooManyRequests.class, e -> {
                     log.warn("[콘텐츠 데이터 관리] 429 Too many Requests");
                     return Flux.empty();

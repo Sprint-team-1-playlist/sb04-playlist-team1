@@ -241,8 +241,7 @@ public class BasicContentService implements ContentService {
         return contentMapper.toDto(searchContent,tags);
     }
 
-    @Override
-    public String saveImageToS3(MultipartFile file) {
+    private String saveImageToS3(MultipartFile file) {
         log.debug("[콘텐츠 데이터 관리] 썸네일 MultipartFile S3업로드 시작");
 
         if(file == null || file.isEmpty()) {

@@ -1,6 +1,6 @@
 package com.codeit.playlist.domain.content.batch;
 
-import com.codeit.playlist.domain.content.api.mapper.TheMovieMapper;
+import com.codeit.playlist.domain.content.api.mapper.TmdbMapper;
 import com.codeit.playlist.domain.content.api.response.TheMovieResponse;
 import com.codeit.playlist.domain.content.api.service.TheMovieApiService;
 import com.codeit.playlist.domain.content.entity.Content;
@@ -20,9 +20,9 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ContentTasklet implements Tasklet {
+public class MovieTasklet implements Tasklet {
     private final TheMovieApiService theMovieApiService;
-    private final TheMovieMapper theMovieMapper;
+    private final TmdbMapper theMovieMapper;
     private final ContentRepository contentRepository;
     private final TagService tagService;
 
@@ -31,7 +31,7 @@ public class ContentTasklet implements Tasklet {
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
         log.info("[콘텐츠 데이터 관리] TMDB The Movie API 데이터 배치 수집 시작");
 
-        String query = "language=ko-KR&year=2025";
+        String query = "language=ko-KR";
         int invalidCount = 0;
         int existCount = 0;
         int languageCount = 0;
@@ -50,14 +50,6 @@ public class ContentTasklet implements Tasklet {
             TheMovieResponse movieResponse = movieResponseList.get(i);
             Content content = theMovieMapper.toContent(movieResponse, "movie");
             String thumbnailUrl = movieResponse.thumbnailUrl();
-            if(thumbnailUrl != null && !thumbnailUrl.isBlank()) {
-                content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
-            }
-
-            if(movieResponse.description() == null || movieResponse.description().isBlank()) { // 설명이 없음
-                invalidCount++;
-                continue;
-            }
 
             if(movieResponse.apiId() == null) { // tmdb id가 없음
                 continue;
@@ -69,25 +61,29 @@ public class ContentTasklet implements Tasklet {
                 continue;
             }
 
-            if(movieResponse.title() == null || !isKorean(movieResponse.title())) { // 한글이 한글자도 없음, false
-                languageCount++;
+            if(thumbnailUrl != null && !thumbnailUrl.isBlank()) {
+                content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
+            }
+
+            if(movieResponse.description() == null || movieResponse.description().isBlank()) { // 설명이 없음
+                invalidCount++;
                 continue;
             }
+
+            if(movieResponse.title() == null) { // 타이틀이 없음
+                continue;
+            }
+
             Content resultContent = contentRepository.save(content); // 썸네일까지 set된 content
 
             if(movieResponse.genreIds() != null && !movieResponse.genreIds().isEmpty()) {
                 tagService.saveMovieTagToContent(resultContent, movieResponse.genreIds());
             }
         }
-        log.info("[콘텐츠 데이터 관리] TMDB The Movie API에서 한글이 한글자도 없는 콘텐츠 횟수 : {}", languageCount);
-        log.info("[콘텐츠 데이터 관리] TMDB The Movie API가 이만큼 비어있었어요. count : {}", invalidCount);
-        log.info("[콘텐츠 데이터 관리] TMDB The Movie API contents가 이만큼 없어요. count : {}", existCount);
-        log.info("[콘텐츠 데이터 관리] The Movie API 콘텐츠와 태그 수집 완료");
+        log.debug("[콘텐츠 데이터 관리] TMDB The Movie API에서 한글이 한글자도 없는 콘텐츠 횟수 : {}", languageCount);
+        log.debug("[콘텐츠 데이터 관리] TMDB The Movie API가 이만큼 비어있었어요. count : {}", invalidCount);
+        log.debug("[콘텐츠 데이터 관리] TMDB The Movie API contents가 이만큼 없어요. count : {}", existCount);
+        log.debug("[콘텐츠 데이터 관리] The Movie API 콘텐츠와 태그 수집 완료");
         return RepeatStatus.FINISHED;
-    }
-
-    private boolean isKorean(String title) {
-        boolean result = title.matches(".*[가-힣].*"); // true
-        return result;
     }
 }

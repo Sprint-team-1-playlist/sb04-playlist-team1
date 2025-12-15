@@ -15,5 +15,4 @@ public interface ContentService {
     void delete(UUID contentId);
     CursorResponseContentDto get(ContentCursorRequest request);
     ContentDto search(UUID contentId);
-    String saveImageToS3(MultipartFile file);
 }
