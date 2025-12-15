@@ -2,7 +2,6 @@ package com.codeit.playlist.watching.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.watching.controller.WatchingController;
-import com.codeit.playlist.domain.watching.dto.data.WatchingSortBy;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
 import com.codeit.playlist.domain.watching.service.WatchingService;
 import com.codeit.playlist.watching.fixture.WatchingSessionFixtures;
@@ -38,7 +37,7 @@ class WatchingControllerTest {
         UUID idAfter = UUID.randomUUID();
         int limit = 10;
         SortDirection sortDirection = SortDirection.ASCENDING;
-        WatchingSortBy sortBy = WatchingSortBy.createdAt;
+        String sortBy = "createdAt";
 
         // when
         watchingController.getWatchingSessionsByContent(

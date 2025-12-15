@@ -14,7 +14,6 @@ import com.codeit.playlist.domain.user.repository.UserRepository;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
 import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
 import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
-import com.codeit.playlist.domain.watching.dto.data.WatchingSortBy;
 import com.codeit.playlist.domain.watching.dto.response.CursorResponseWatchingSessionDto;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.domain.watching.service.WatchingService;
@@ -45,7 +44,7 @@ public class BasicWatchingService implements WatchingService {
                                                                          UUID idAfter,
                                                                          int limit,
                                                                          SortDirection sortDirection,
-                                                                         WatchingSortBy sortBy) {
+                                                                         String sortBy) {
         log.debug("[실시간 같이 보기] 실시간 시청자 조회 시작: " +
                         "contentId = {}, watcherNameLike = {}, cursor={}, idAfter={}, limit={}, sortDirection={}, sortBy={}",
                 contentId, watcherNameLike, cursor, idAfter, limit, sortDirection, sortBy);
