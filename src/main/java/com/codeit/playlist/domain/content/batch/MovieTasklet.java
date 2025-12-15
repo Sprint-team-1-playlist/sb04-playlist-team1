@@ -78,7 +78,7 @@ public class MovieTasklet implements Tasklet {
             Content resultContent = contentRepository.save(content); // 썸네일까지 set된 content
 
             if(movieResponse.genreIds() != null && !movieResponse.genreIds().isEmpty()) {
-                tagService.saveTmdbTagToContent(resultContent, movieResponse.genreIds());
+                tagService.saveMovieTagToContent(resultContent, movieResponse.genreIds());
             }
         }
         log.debug("[콘텐츠 데이터 관리] TMDB The Movie API에서 한글이 한글자도 없는 콘텐츠 횟수 : {}", languageCount);
