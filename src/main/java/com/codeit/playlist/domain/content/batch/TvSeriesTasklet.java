@@ -65,7 +65,7 @@ public class TvSeriesTasklet implements Tasklet {
             }
 
             Long tmdbId = tvSeriesResponse.apiId();
-            if(contentRepository.existsByApiId(tmdbId)) {
+            if(contentRepository.existsByTypeAndApiId("tvSeries", tmdbId)) {
                 existCount++;
                 continue;
             }
