@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
@@ -26,7 +25,7 @@ public class TvSeriesApiService {
     private String apikey;
 
     private final int firstPage = 1;
-    private final int maxPage = 2;
+    private final int maxPage = 5;
 
     private Mono<TvSeriesListResponse> callTheTvSeriesApi(String query, String path, int page) {
         log.info("[콘텐츠 데이터 관리] TvSeries API Mono 빌드 시작");
