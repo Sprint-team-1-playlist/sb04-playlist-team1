@@ -35,6 +35,9 @@ public interface ContentMapper {
         if(key == null || key.isBlank()) {
             return null;
         }
+        if(key.startsWith("http://") || key.startsWith("https://")) {
+            return key;
+        }
         return "https://" + s3Properties.getContentBucket() + ".s3." + s3Properties.getRegion() + ".amazonaws.com/" + key;
     }
 }
