@@ -19,7 +19,6 @@ import static org.mockito.Mockito.when;
 import com.codeit.playlist.domain.base.BaseEntity;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
-import com.codeit.playlist.domain.conversation.dto.data.ConversationSortBy;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
@@ -270,7 +269,7 @@ public class BasicConversationServiceTest {
         .thenReturn(new ConversationDto(conv2.getId(), otherUserSummary, null, false));
 
     // when
-    CursorResponseConversationDto response = conversationService.findAll(null, null, null, limit, SortDirection.ASCENDING, ConversationSortBy.createdAt);
+    CursorResponseConversationDto response = conversationService.findAll(null, null, null, limit, SortDirection.ASCENDING, "createdAt");
 
     // then
     assertNotNull(response);
@@ -291,7 +290,7 @@ public class BasicConversationServiceTest {
 
     // when & then
     assertThrows(InvalidCursorException.class,
-        () -> conversationService.findAll(null, invalidCursor, null, 10, SortDirection.ASCENDING, ConversationSortBy.createdAt));
+        () -> conversationService.findAll(null, invalidCursor, null, 10, SortDirection.ASCENDING, "createdAt"));
     verify(conversationRepository, never()).findPageAsc(any(), any(), any(), any(), any());
   }
 
@@ -381,7 +380,7 @@ public class BasicConversationServiceTest {
         .thenReturn(new ConversationDto(conv2.getId(), otherUserSummary, null, false));
 
     // when
-    CursorResponseConversationDto response = conversationService.findAll(null, validCursor, idAfter, limit, SortDirection.ASCENDING, ConversationSortBy.createdAt);
+    CursorResponseConversationDto response = conversationService.findAll(null, validCursor, idAfter, limit, SortDirection.ASCENDING, "createdAt");
 
     // then
     assertNotNull(response);
