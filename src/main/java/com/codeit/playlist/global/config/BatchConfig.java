@@ -2,6 +2,7 @@ package com.codeit.playlist.global.config;
 
 import com.codeit.playlist.domain.content.batch.MovieTasklet;
 import com.codeit.playlist.domain.content.batch.SportContentTasklet;
+import com.codeit.playlist.domain.content.batch.TvSeriesTasklet;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -16,18 +17,19 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 public class BatchConfig {
     @Bean
-    public Job contentJob(JobRepository jobRepository, Step contentStep, Step sportStep) {
-        log.info("[콘텐츠 데이터 관리] contentJob 시작, contentStep : {}", contentStep);
+    public Job contentJob(JobRepository jobRepository, Step movieStep, Step sportStep, Step tvSeriesStep) {
+        log.info("[콘텐츠 데이터 관리] contentJob 시작, contentStep : {}", movieStep);
         return new JobBuilder("contentJob",jobRepository)
-                .start(contentStep)
+                .start(movieStep)
                 .next(sportStep)
+                .next(tvSeriesStep)
                 .build();
     }
 
     @Bean
-    public Step contentStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, MovieTasklet contentTasklet) {
-        return new StepBuilder("contentStep", jobRepository)
-                .tasklet(contentTasklet, transactionManager)
+    public Step movieStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, MovieTasklet movieTasklet) {
+        return new StepBuilder("movieStep", jobRepository)
+                .tasklet(movieTasklet, transactionManager)
                 .build();
     }
 
@@ -35,6 +37,13 @@ public class BatchConfig {
     public Step sportStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, SportContentTasklet sportContentTasklet) {
         return new StepBuilder("sportStep", jobRepository)
                 .tasklet(sportContentTasklet, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step tvSeriesStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, TvSeriesTasklet tvSeriesTasklet) {
+        return new StepBuilder("tvSeriesStep", jobRepository)
+                .tasklet(tvSeriesTasklet, transactionManager)
                 .build();
     }
 }
