@@ -1,5 +1,6 @@
 package com.codeit.playlist.domain.content.batch;
 
+import com.codeit.playlist.domain.content.api.handler.ApiHandler;
 import com.codeit.playlist.domain.content.api.mapper.TmdbMapper;
 import com.codeit.playlist.domain.content.api.response.TheMovieResponse;
 import com.codeit.playlist.domain.content.api.service.TheMovieApiService;
@@ -25,6 +26,7 @@ public class ContentTasklet implements Tasklet {
     private final TmdbMapper theMovieMapper;
     private final ContentRepository contentRepository;
     private final TagService tagService;
+    private final ApiHandler apiHandler;
 
     @Override
     @Transactional
@@ -69,25 +71,20 @@ public class ContentTasklet implements Tasklet {
                 continue;
             }
 
-            if(movieResponse.title() == null || !isKorean(movieResponse.title())) { // 한글이 한글자도 없음, false
+            if(movieResponse.title() == null || !apiHandler.isKorean(movieResponse.title())) { // 한글이 한글자도 없음, false
                 languageCount++;
                 continue;
             }
             Content resultContent = contentRepository.save(content); // 썸네일까지 set된 content
 
             if(movieResponse.genreIds() != null && !movieResponse.genreIds().isEmpty()) {
-                tagService.saveMovieTagToContent(resultContent, movieResponse.genreIds());
+                tagService.saveTmdbTagToContent(resultContent, movieResponse.genreIds());
             }
         }
-        log.info("[콘텐츠 데이터 관리] TMDB The Movie API에서 한글이 한글자도 없는 콘텐츠 횟수 : {}", languageCount);
-        log.info("[콘텐츠 데이터 관리] TMDB The Movie API가 이만큼 비어있었어요. count : {}", invalidCount);
-        log.info("[콘텐츠 데이터 관리] TMDB The Movie API contents가 이만큼 없어요. count : {}", existCount);
-        log.info("[콘텐츠 데이터 관리] The Movie API 콘텐츠와 태그 수집 완료");
+        log.debug("[콘텐츠 데이터 관리] TMDB The Movie API에서 한글이 한글자도 없는 콘텐츠 횟수 : {}", languageCount);
+        log.debug("[콘텐츠 데이터 관리] TMDB The Movie API가 이만큼 비어있었어요. count : {}", invalidCount);
+        log.debug("[콘텐츠 데이터 관리] TMDB The Movie API contents가 이만큼 없어요. count : {}", existCount);
+        log.debug("[콘텐츠 데이터 관리] The Movie API 콘텐츠와 태그 수집 완료");
         return RepeatStatus.FINISHED;
-    }
-
-    private boolean isKorean(String title) {
-        boolean result = title.matches(".*[가-힣].*"); // true
-        return result;
     }
 }
