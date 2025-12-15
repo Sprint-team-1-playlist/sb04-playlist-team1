@@ -1,6 +1,7 @@
 package com.codeit.playlist.domain.content.api.mapper;
 
 import com.codeit.playlist.domain.content.api.response.TheMovieResponse;
+import com.codeit.playlist.domain.content.api.response.TvSeriesResponse;
 import com.codeit.playlist.domain.content.entity.Content;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -13,4 +14,11 @@ public interface TmdbMapper {
     @Mapping(target = "description", source = "theMovieResponse.description")
     @Mapping(target = "thumbnailUrl", source = "theMovieResponse.thumbnailUrl")
     Content toContent(TheMovieResponse theMovieResponse, String type);
+
+    @Mapping(target = "apiId", source = "tvSeriesResponse.apiId")
+    @Mapping(target = "type", source = "type")
+    @Mapping(target = "title", source = "tvSeriesResponse.title")
+    @Mapping(target = "description", source = "tvSeriesResponse.description")
+    @Mapping(target = "thumbnailUrl", source = "tvSeriesResponse.thumbnailUrl")
+    Content toContent(TvSeriesResponse tvSeriesResponse, String type);
 }
