@@ -24,7 +24,7 @@ import java.time.format.DateTimeParseException;
 public class TheSportApiService {
     private final WebClient webClient;
 
-    @Value("${SPORTDB_API_KEY}")
+    @Value("${SPORTSDB_API_KEY}")
     private String apiKey;
 
     private Mono<TheSportListResponse> callTheSportApi(int leagueId, String season) {
