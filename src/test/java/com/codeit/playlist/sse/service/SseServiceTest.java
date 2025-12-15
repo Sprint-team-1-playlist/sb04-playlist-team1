@@ -132,13 +132,12 @@ public class SseServiceTest {
 
 
     // when
-    sseService.send(receiverIds, TEST_EVENT_NAME, TEST_DATA);
+    assertDoesNotThrow(() -> sseService.send(receiverIds, TEST_EVENT_NAME, TEST_DATA));
 
     // then
     verify(sseMessageRepository, times(1)).save(any(SseMessage.class));
     verify(emitter1, times(1)).send(eq(mockEvent));
     verify(emitter2, times(1)).send(eq(mockEvent));
-    assertDoesNotThrow(() -> sseService.send(receiverIds, TEST_EVENT_NAME, TEST_DATA));
   }
 
   @Test
@@ -147,10 +146,7 @@ public class SseServiceTest {
     // given
     Collection<UUID> emptyReceiverIds = Collections.emptyList();
 
-    // when
-    sseService.send(emptyReceiverIds, TEST_EVENT_NAME, TEST_DATA);
-
-    // then
+    // when & then
     verify(sseMessageRepository, never()).save(any());
     verify(sseEmitterRepository, never()).findAllByReceiverIdsIn(any());
     assertDoesNotThrow(() -> sseService.send(emptyReceiverIds, TEST_EVENT_NAME, TEST_DATA));
