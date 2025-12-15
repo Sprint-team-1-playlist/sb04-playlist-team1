@@ -1,6 +1,5 @@
 package com.codeit.playlist.domain.content.batch;
 
-import com.codeit.playlist.domain.content.api.handler.ApiHandler;
 import com.codeit.playlist.domain.content.api.mapper.TmdbMapper;
 import com.codeit.playlist.domain.content.api.response.TvSeriesResponse;
 import com.codeit.playlist.domain.content.api.service.TvSeriesApiService;
@@ -26,13 +25,12 @@ public class TvSeriesTasklet implements Tasklet {
     private final TmdbMapper tvSeriesMapper;
     private final ContentRepository contentRepository;
     private final TagService tagService;
-    private final ApiHandler apiHandler;
 
     @Override
     @Transactional
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
         log.info("[콘텐츠 데이터 관리] TMDB TvSeries API 데이터 배치 수집 시작");
-        String query = "language=ko-KR&year=2025";
+        String query = "language=ko-KR";
         int invalidCount = 0;
         int existCount = 0;
         int languageCount = 0;
@@ -55,22 +53,22 @@ public class TvSeriesTasklet implements Tasklet {
                 content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
             }
 
-            if(tvSeriesResponse.description() == null || tvSeriesResponse.description().isBlank()) {
-                invalidCount++;
-                continue;
-            }
-
-            if(tvSeriesResponse.apiId() == null) {
+            if(tvSeriesResponse.apiId() == null) { // id가 없음
                 continue;
             }
 
             Long tmdbId = tvSeriesResponse.apiId();
-            if(contentRepository.existsByTypeAndApiId("tvSeries", tmdbId)) {
+            if(contentRepository.existsByTypeAndApiId("tvSeries", tmdbId)) { // 이미 있음
                 existCount++;
                 continue;
             }
 
-            if(tvSeriesResponse.title() == null || !apiHandler.isKorean(tvSeriesResponse.title())) {
+            if(tvSeriesResponse.description() == null || tvSeriesResponse.description().isBlank()) { // 설명이 없음
+                invalidCount++;
+                continue;
+            }
+
+            if(tvSeriesResponse.title() == null) { // 타이틀이 없음
                 languageCount++;
                 continue;
             }

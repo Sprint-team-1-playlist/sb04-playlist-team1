@@ -1,6 +1,5 @@
 package com.codeit.playlist.domain.content.batch;
 
-import com.codeit.playlist.domain.content.api.handler.ApiHandler;
 import com.codeit.playlist.domain.content.api.mapper.TmdbMapper;
 import com.codeit.playlist.domain.content.api.response.TheMovieResponse;
 import com.codeit.playlist.domain.content.api.service.TheMovieApiService;
@@ -26,14 +25,13 @@ public class MovieTasklet implements Tasklet {
     private final TmdbMapper theMovieMapper;
     private final ContentRepository contentRepository;
     private final TagService tagService;
-    private final ApiHandler apiHandler;
 
     @Override
     @Transactional
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
         log.info("[콘텐츠 데이터 관리] TMDB The Movie API 데이터 배치 수집 시작");
 
-        String query = "language=ko-KR&year=2025";
+        String query = "language=ko-KR";
         int invalidCount = 0;
         int existCount = 0;
         int languageCount = 0;
@@ -52,14 +50,6 @@ public class MovieTasklet implements Tasklet {
             TheMovieResponse movieResponse = movieResponseList.get(i);
             Content content = theMovieMapper.toContent(movieResponse, "movie");
             String thumbnailUrl = movieResponse.thumbnailUrl();
-            if(thumbnailUrl != null && !thumbnailUrl.isBlank()) {
-                content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
-            }
-
-            if(movieResponse.description() == null || movieResponse.description().isBlank()) { // 설명이 없음
-                invalidCount++;
-                continue;
-            }
 
             if(movieResponse.apiId() == null) { // tmdb id가 없음
                 continue;
@@ -71,10 +61,19 @@ public class MovieTasklet implements Tasklet {
                 continue;
             }
 
-            if(movieResponse.title() == null || !apiHandler.isKorean(movieResponse.title())) { // 한글이 한글자도 없음, false
-                languageCount++;
+            if(thumbnailUrl != null && !thumbnailUrl.isBlank()) {
+                content.setThumbnailUrl("https://image.tmdb.org/t/p/w500" + thumbnailUrl);
+            }
+
+            if(movieResponse.description() == null || movieResponse.description().isBlank()) { // 설명이 없음
+                invalidCount++;
                 continue;
             }
+
+            if(movieResponse.title() == null) { // 타이틀이 없음
+                continue;
+            }
+
             Content resultContent = contentRepository.save(content); // 썸네일까지 set된 content
 
             if(movieResponse.genreIds() != null && !movieResponse.genreIds().isEmpty()) {
