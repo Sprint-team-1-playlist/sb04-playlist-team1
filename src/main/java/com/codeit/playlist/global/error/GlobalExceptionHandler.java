@@ -2,6 +2,7 @@ package com.codeit.playlist.global.error;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,12 +41,15 @@ public class GlobalExceptionHandler {
                 ? fieldName.substring(fieldName.lastIndexOf('.') + 1)
                 : fieldName;
 
-            // 민감 정보는 값 노출 금지
+            // 민감 정보 필드 목록
+            Set<String> sensitiveFields = Set.of(
+                "password", "username", "email",
+                "token", "accesstoken", "refreshtoken",
+                "apikey", "secretkey", "secret"
+            );
 
-            if ("password".equalsIgnoreCase(simpleName)
-                || "username".equalsIgnoreCase(simpleName)
-                || "email".equalsIgnoreCase(simpleName)) {
-                details.put(fieldName, "invalid");
+            if (sensitiveFields.contains(simpleName.toLowerCase())) {
+                details.put(fieldName, "[REDACTED]");
             } else {
                 // 그 외 필드는 rejectedValue 허용
                 details.put(fieldName, fieldError.getRejectedValue());
