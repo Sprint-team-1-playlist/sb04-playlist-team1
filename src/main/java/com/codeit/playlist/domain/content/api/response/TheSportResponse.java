@@ -8,6 +8,7 @@ public record TheSportResponse(
     @JsonProperty("strFilename") String strFilename, // 설명
     @JsonProperty("strSport") String strSport, // 태그
     @JsonProperty("strHomeTeam") String strHomeTeam, // 태그2
+    @JsonProperty("strAwayTeam") String strAwayTeam, // 태그3
     @JsonProperty("dateEvent") String dateEvent,
     @JsonProperty("strPoster") String strPoster
 ) {
