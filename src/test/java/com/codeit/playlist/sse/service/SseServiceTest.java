@@ -146,10 +146,12 @@ public class SseServiceTest {
     // given
     Collection<UUID> emptyReceiverIds = Collections.emptyList();
 
-    // when & then
+    // when
+    assertDoesNotThrow(() -> sseService.send(emptyReceiverIds, TEST_EVENT_NAME, TEST_DATA));
+
+    // then
     verify(sseMessageRepository, never()).save(any());
     verify(sseEmitterRepository, never()).findAllByReceiverIdsIn(any());
-    assertDoesNotThrow(() -> sseService.send(emptyReceiverIds, TEST_EVENT_NAME, TEST_DATA));
   }
 
   @Test
