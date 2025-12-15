@@ -1,6 +1,6 @@
 package com.codeit.playlist.domain.content.batch;
 
-import com.codeit.playlist.domain.content.api.mapper.TheMovieMapper;
+import com.codeit.playlist.domain.content.api.mapper.TmdbMapper;
 import com.codeit.playlist.domain.content.api.response.TheMovieResponse;
 import com.codeit.playlist.domain.content.api.service.TheMovieApiService;
 import com.codeit.playlist.domain.content.entity.Content;
@@ -22,7 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ContentTasklet implements Tasklet {
     private final TheMovieApiService theMovieApiService;
-    private final TheMovieMapper theMovieMapper;
+    private final TmdbMapper theMovieMapper;
     private final ContentRepository contentRepository;
     private final TagService tagService;
 
