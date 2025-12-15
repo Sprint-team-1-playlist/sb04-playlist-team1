@@ -75,6 +75,17 @@ public class Content extends BaseUpdatableEntity {
     }
 
     /**
+     * 시청자수를 증감시키는 로직
+     */
+    public void increaseWatcherCount() {
+        this.watcherCount++;
+    }
+
+    public void decreaseWatcherCount() {
+        this.watcherCount--;
+    }
+
+    /**
      * 컨텐츠 편의 메서드(리뷰용)
      */
 
