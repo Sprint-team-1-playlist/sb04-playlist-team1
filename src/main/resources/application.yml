@@ -1,6 +1,9 @@
 spring:
   application:
     name: playlist
+  servlet:
+    multipart:
+      max-file-size: 10MB
 
   security:
     oauth2:
