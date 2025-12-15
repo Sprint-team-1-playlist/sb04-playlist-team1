@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -29,6 +28,7 @@ import com.codeit.playlist.domain.user.entity.Role;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.Field;
 import java.time.Instant;
@@ -248,7 +248,7 @@ public class BasicFollowServiceTest {
 
   @Test
   @DisplayName("팔로우 알림 직렬화 실패 시 예외 발생 없이 log.error 호출되고 Kafka 전송은 하지 않는다")
-  void createFollowNotificationJsonError() {
+  void createFollowNotificationJsonError() throws JsonProcessingException {
     // given
     UUID followeeId = UUID.randomUUID();
     User followee = new User("followee@test.com", "pw", "followee", null, Role.USER);
@@ -264,13 +264,14 @@ public class BasicFollowServiceTest {
 
     when(followMapper.toDto(any(Follow.class)))
         .thenReturn(new FollowDto(follow.getId(), followerId, followeeId));
+    when(objectMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("error") {});
 
     // when
     FollowDto dto = followService.create(followRequest);
 
     // then
     assertNotNull(dto);
-    verify(kafkaTemplate).send(any(), isNull());
+    verify(kafkaTemplate, never()).send(any(), any());
   }
 
   private void setId(Object entity, UUID id) {
