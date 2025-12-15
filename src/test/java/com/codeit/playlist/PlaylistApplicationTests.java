@@ -1,6 +1,5 @@
 package com.codeit.playlist;
 
-import com.codeit.playlist.domain.content.api.handler.TheSportsDateHandler;
 import com.codeit.playlist.domain.security.AdminInitializer;
 import com.codeit.playlist.domain.security.jwt.JwtTokenProvider;
 import com.codeit.playlist.global.config.TheSportsConfig;
@@ -21,9 +20,6 @@ class PlaylistApplicationTests {
 
     @MockitoBean
     private TheSportsConfig theSportsConfig;
-
-    @MockitoBean
-    private TheSportsDateHandler theSportsDateHandler;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;

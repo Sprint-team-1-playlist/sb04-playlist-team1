@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 import com.codeit.playlist.domain.auth.exception.AuthAccessDeniedException;
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.file.S3Uploader;
-import com.codeit.playlist.domain.file.exception.FileTooLargeException;
 import com.codeit.playlist.domain.file.exception.InvalidImageContentException;
 import com.codeit.playlist.domain.file.exception.InvalidImageTypeException;
 import com.codeit.playlist.domain.security.PlaylistUserDetails;
@@ -654,7 +653,6 @@ public class BasicUserServiceTest {
 
     when(mockFile.isEmpty()).thenReturn(false);
     when(mockFile.getContentType()).thenReturn("image/png");
-    when(mockFile.getSize()).thenReturn(1024L);
     when(mockFile.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[]{
         (byte) 0x89, (byte) 0x50, 0x00, 0x00
     }));
@@ -763,25 +761,6 @@ public class BasicUserServiceTest {
   }
 
   @Test
-  @DisplayName("프로필 변경 실패 - 파일 크기 초과")
-  void updateUserFailFileTooLarge() throws Exception {
-    setId(user, FIXED_ID);
-    when(authentication.getName()).thenReturn(user.getEmail());
-    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(userRepository.findById(FIXED_ID)).thenReturn(Optional.of(user));
-
-    MultipartFile file = mock(MultipartFile.class);
-    when(file.isEmpty()).thenReturn(false);
-    when(file.getContentType()).thenReturn("image/png");
-    when(file.getSize()).thenReturn(6L * 1024 * 1024); // MAX_FILE_SIZE 초과
-
-    UserUpdateRequest req = new UserUpdateRequest("NewName");
-
-    assertThrows(FileTooLargeException.class,
-        () -> userService.updateUser(FIXED_ID, req, file, authentication));
-  }
-
-  @Test
   @DisplayName("프로필 변경 실패 - 잘못된 이미지 헤더")
   void updateUserFailInvalidImageHeader() throws Exception {
     setId(user, FIXED_ID);
@@ -792,7 +771,6 @@ public class BasicUserServiceTest {
     MultipartFile file = mock(MultipartFile.class);
     when(file.isEmpty()).thenReturn(false);
     when(file.getContentType()).thenReturn("image/png");
-    when(file.getSize()).thenReturn(1024L);
     when(file.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[]{0x00, 0x00, 0x00, 0x00}));
 
     UserUpdateRequest req = new UserUpdateRequest("NewName");
@@ -815,7 +793,6 @@ public class BasicUserServiceTest {
     MultipartFile file = mock(MultipartFile.class);
     when(file.isEmpty()).thenReturn(false);
     when(file.getContentType()).thenReturn("image/png");
-    when(file.getSize()).thenReturn(1024L);
     when(file.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[]{(byte)0x89,(byte)0x50,0x00,0x00}));
 
     when(s3Properties.getProfileBucket()).thenReturn("bucket");
@@ -893,7 +870,6 @@ public class BasicUserServiceTest {
     MultipartFile file = mock(MultipartFile.class);
     when(file.isEmpty()).thenReturn(false);
     when(file.getContentType()).thenReturn("image/png");
-    when(file.getSize()).thenReturn(1024L);
 
     when(file.getInputStream())
         .thenReturn(new ByteArrayInputStream(new byte[]{1, 2}));
@@ -915,7 +891,6 @@ public class BasicUserServiceTest {
     MultipartFile file = mock(MultipartFile.class);
     when(file.isEmpty()).thenReturn(false);
     when(file.getContentType()).thenReturn("image/png");
-    when(file.getSize()).thenReturn(1024L);
 
     when(file.getInputStream()).thenThrow(new java.io.IOException());
 
@@ -936,7 +911,6 @@ public class BasicUserServiceTest {
     MultipartFile file = mock(MultipartFile.class);
     when(file.isEmpty()).thenReturn(false);
     when(file.getContentType()).thenReturn("image/jpeg");
-    when(file.getSize()).thenReturn(1024L);
 
     when(file.getInputStream()).thenReturn(
         new ByteArrayInputStream(new byte[]{(byte) 0xFF, (byte) 0xD8, 0x00, 0x00})
@@ -967,7 +941,6 @@ public class BasicUserServiceTest {
     MultipartFile file = mock(MultipartFile.class);
     when(file.isEmpty()).thenReturn(false);
     when(file.getContentType()).thenReturn("image/png");
-    when(file.getSize()).thenReturn(1024L);
     when(file.getInputStream()).thenReturn(
         new ByteArrayInputStream(new byte[]{(byte)0x89, (byte)0x50, 0x00, 0x00})
     );
