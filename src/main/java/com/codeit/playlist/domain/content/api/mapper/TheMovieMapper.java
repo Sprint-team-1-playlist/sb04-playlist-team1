@@ -7,6 +7,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface TheMovieMapper {
+    @Mapping(target = "apiId", source = "theMovieResponse.apiId")
     @Mapping(target = "type", source = "type")
     @Mapping(target = "title", source = "theMovieResponse.title")
     @Mapping(target = "description", source = "theMovieResponse.description")
