@@ -277,7 +277,9 @@ public class BasicContentService implements ContentService {
     }
 
     private void deleteImageFromS3(String key) {
-        s3Uploader.delete(s3Properties.getContentBucket(), key);
+        if(key != null && !key.isEmpty()) {
+            s3Uploader.delete(s3Properties.getContentBucket(), key);
+        }
     }
 
     private String s3Url(String s3ImageKey) {
