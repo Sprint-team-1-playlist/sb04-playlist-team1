@@ -20,16 +20,16 @@ public class BasicTagService implements TagService {
     private final TmdbTagApiService tmdbTagApiService;
 
     @Override
-    public void saveMovieTagToContent(Content content, List<Integer> genreIds) {
-        Map<Integer, String> movieGenreList = tmdbTagApiService.getApiMovieTag().block();
+    public void saveTmdbTagToContent(Content content, List<Integer> genreIds) {
+        Map<Integer, String> GenreList = tmdbTagApiService.getApiMovieTag().block();
 
-        if (movieGenreList == null || movieGenreList.isEmpty()) {
+        if (GenreList == null || GenreList.isEmpty()) {
             log.debug("[콘텐츠 데이터 관리] TMDB 장르 맵이 비어있습니다.");
             return;
         }
 
         for(Integer genreId : genreIds) {
-            String name = movieGenreList.get(genreId);
+            String name = GenreList.get(genreId);
             if(name == null) {
                 log.debug("[콘텐츠 데이터 관리] genreId {}에 해당하는 장르명을 찾을 수 없습니다", genreId);
             }
