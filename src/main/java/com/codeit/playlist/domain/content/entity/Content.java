@@ -19,8 +19,8 @@ public class Content extends BaseUpdatableEntity {
     /**
      * TMDB ID
      */
-    @Column(unique = true)
-    private Long tmdbId;
+    @Column(name = "api_id", nullable = false)
+    private Long apiId;
 
     /**
      * 컨텐츠 타입
