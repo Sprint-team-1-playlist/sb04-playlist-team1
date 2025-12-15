@@ -8,6 +8,15 @@ spring:
     password: ${RDS_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: "https://playlist-team1.me/login/oauth2/code/google"
+          kakao:
+            redirect-uri: "https://playlist-team1.me/login/oauth2/code/kakao"
+
   jpa:
     hibernate:
       ddl-auto: validate
