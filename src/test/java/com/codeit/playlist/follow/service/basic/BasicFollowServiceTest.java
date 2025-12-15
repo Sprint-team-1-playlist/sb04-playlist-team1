@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -269,7 +270,7 @@ public class BasicFollowServiceTest {
 
     // then
     assertNotNull(dto);
-    verify(kafkaTemplate, never()).send(any(), any());
+    verify(kafkaTemplate).send(any(), isNull());
   }
 
   private void setId(Object entity, UUID id) {
