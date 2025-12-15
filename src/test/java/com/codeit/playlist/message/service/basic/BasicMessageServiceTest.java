@@ -19,7 +19,6 @@ import com.codeit.playlist.domain.conversation.exception.ConversationNotFoundExc
 import com.codeit.playlist.domain.conversation.exception.NotConversationParticipantException;
 import com.codeit.playlist.domain.conversation.repository.ConversationRepository;
 import com.codeit.playlist.domain.message.dto.data.DirectMessageDto;
-import com.codeit.playlist.domain.message.dto.data.MessageSortBy;
 import com.codeit.playlist.domain.message.dto.request.DirectMessageSendRequest;
 import com.codeit.playlist.domain.message.dto.response.CursorResponseDirectMessageDto;
 import com.codeit.playlist.domain.message.entity.Message;
@@ -385,7 +384,7 @@ class BasicMessageServiceTest {
     when(messageRepository.countByConversationId(conversationId)).thenReturn(totalCount);
 
     // when
-    CursorResponseDirectMessageDto result = messageService.findAll(conversationId, null, null, limit, SortDirection.DESCENDING, MessageSortBy.createdAt, authentication);
+    CursorResponseDirectMessageDto result = messageService.findAll(conversationId, null, null, limit, SortDirection.DESCENDING, "createdAt", authentication);
 
     // then
     assertNotNull(result);
@@ -437,7 +436,7 @@ class BasicMessageServiceTest {
     when(messageRepository.countByConversationId(conversationId)).thenReturn(totalCount);
 
     // when
-    CursorResponseDirectMessageDto result = messageService.findAll(conversationId, null, null, limit, SortDirection.DESCENDING, MessageSortBy.createdAt, authentication);
+    CursorResponseDirectMessageDto result = messageService.findAll(conversationId, null, null, limit, SortDirection.DESCENDING, "createdAt", authentication);
 
     // then
     assertNotNull(result);
@@ -459,7 +458,7 @@ class BasicMessageServiceTest {
 
     // when & then
     assertThrows(ConversationNotFoundException.class, () ->
-        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt, authentication)
+        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, "createdAt", authentication)
     );
 
     verify(messageRepository, never())
@@ -490,7 +489,7 @@ class BasicMessageServiceTest {
 
     // when & then
     assertThrows(NotConversationParticipantException.class, () ->
-        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt, strangerAuth)
+        messageService.findAll(conversationId, null, null, 10, SortDirection.DESCENDING, "createdAt", strangerAuth)
     );
 
     verify(messageRepository, never())
@@ -508,7 +507,7 @@ class BasicMessageServiceTest {
 
     // when & then
     assertThrows(InvalidCursorException.class, () ->
-        messageService.findAll(conversationId, invalidCursor, null, 10, SortDirection.DESCENDING, MessageSortBy.createdAt, authentication)
+        messageService.findAll(conversationId, invalidCursor, null, 10, SortDirection.DESCENDING, "createdAt", authentication)
     );
 
     verify(messageRepository, never())
@@ -537,7 +536,7 @@ class BasicMessageServiceTest {
     when(messageRepository.countByConversationId(conversationId)).thenReturn(0L);
 
     // when
-    messageService.findAll(conversationId, validCursor, null, limit, SortDirection.DESCENDING, MessageSortBy.createdAt, authentication);
+    messageService.findAll(conversationId, validCursor, null, limit, SortDirection.DESCENDING, "createdAt", authentication);
 
     // then
     verify(messageRepository, times(1))

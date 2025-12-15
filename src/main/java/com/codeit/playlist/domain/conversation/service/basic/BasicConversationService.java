@@ -2,7 +2,6 @@ package com.codeit.playlist.domain.conversation.service.basic;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
-import com.codeit.playlist.domain.conversation.dto.data.ConversationSortBy;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.entity.Conversation;
@@ -93,7 +92,7 @@ public class BasicConversationService implements ConversationService {
       UUID idAfter,
       int limit,
       SortDirection sortDirection,
-      ConversationSortBy sortBy
+      String sortBy
   ) {
     log.debug("[Conversation] 대화 조회 시작");
 

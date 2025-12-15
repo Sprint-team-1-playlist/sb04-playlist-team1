@@ -2,7 +2,6 @@ package com.codeit.playlist.domain.conversation.controller;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.conversation.dto.data.ConversationDto;
-import com.codeit.playlist.domain.conversation.dto.data.ConversationSortBy;
 import com.codeit.playlist.domain.conversation.dto.request.ConversationCreateRequest;
 import com.codeit.playlist.domain.conversation.dto.response.CursorResponseConversationDto;
 import com.codeit.playlist.domain.conversation.service.ConversationService;
@@ -47,7 +46,7 @@ public class ConversationController {
       @RequestParam(required = false) UUID idAfter,
       @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit,
       @RequestParam(defaultValue = "ASCENDING") SortDirection sortDirection,
-      @RequestParam(defaultValue = "createdAt") ConversationSortBy sortBy
+      @RequestParam(defaultValue = "createdAt") String sortBy
   ){
     log.debug("[Conversation] 대화 조회 요청");
     CursorResponseConversationDto cursorConversationDto = conversationService.findAll(keywordLike,

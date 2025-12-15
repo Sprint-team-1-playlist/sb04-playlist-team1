@@ -12,7 +12,7 @@ public record CursorResponseDirectMessageDto(
     UUID nextIdAfter,
     boolean hasNext,
     long totalCount,
-    MessageSortBy sortBy,
+    String sortBy,
     SortDirection sortDirection
 
 ) {
