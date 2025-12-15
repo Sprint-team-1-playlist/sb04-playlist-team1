@@ -62,8 +62,18 @@ public class BasicTagService implements TagService {
 
     @Override
     public void saveTheSportTagToContent(Content content, List<String> tagNames) {
+        if(tagNames == null || tagNames.isEmpty()) {
+            log.debug("[콘텐츠 데이터 관리] Sport 태그 리스트가 비어있습니다.");
+            return;
+        }
+
         for(int i = 0; i < tagNames.size(); i++) {
             String tagName = tagNames.get(i);
+            if(tagName == null || tagName.isBlank()) {
+                log.debug("[콘텐츠 데이터 관리] Sport TagName이 비어있습니다.");
+                continue;
+            }
+
             Tag tag = new Tag(content, tagName);
             tagRepository.save(tag);
         }
