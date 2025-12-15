@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,7 +44,7 @@ public class ContentController {
     @PatchMapping(value = "/{contentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ContentDto> update(@PathVariable UUID contentId,
                                              @RequestPart("request") ContentUpdateRequest request,
-                                             @RequestPart("thumbnailUrl") MultipartFile thumbnail) {
+                                             @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail) {
         ContentDto updateContents = contentService.update(contentId, request, thumbnail);
         return ResponseEntity.ok(updateContents);
     }
