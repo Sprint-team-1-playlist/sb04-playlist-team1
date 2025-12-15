@@ -59,4 +59,13 @@ public class BasicTagService implements TagService {
             tagRepository.save(tag);
         }
     }
+
+    @Override
+    public void saveTheSportTagToContent(Content content, List<String> tagNames) {
+        for(int i = 0; i < tagNames.size(); i++) {
+            String tagName = tagNames.get(i);
+            Tag tag = new Tag(content, tagName);
+            tagRepository.save(tag);
+        }
+    }
 }
