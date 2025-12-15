@@ -52,7 +52,8 @@ public class BasicContentService implements ContentService {
             throw new ContentBadRequestException("썸네일은 필수입니다.");
         }
 
-        String strThumbnail = saveImageToS3(thumbnail);
+        String imageKey = saveImageToS3(thumbnail);
+        s3Uploader.upload(s3Properties.getContentBucket(), imageKey, thumbnail);
         Long uuid = UUID.randomUUID().getLeastSignificantBits();
 
         Content content = new Content(
@@ -60,7 +61,7 @@ public class BasicContentService implements ContentService {
                 request.type(),
                 request.title(),
                 request.description(),
-                strThumbnail,
+                imageKey,
                 0,
                 0,
                 0);
@@ -81,7 +82,9 @@ public class BasicContentService implements ContentService {
         log.info("[콘텐츠 데이터 관리] 태그 생성 완료 : tags = {}", tagList);
 
         log.info("[콘텐츠 데이터 관리] 컨텐츠 생성 완료, cotnent = {}, tag = {}", content, tagList);
-        return contentMapper.toDto(content, tagList);
+
+        ContentDto mapDto = contentMapper.toDtoUsingS3(content, tagList, s3Properties);
+        return mapDto;
     }
 
     @Transactional
@@ -91,9 +94,14 @@ public class BasicContentService implements ContentService {
         Content content = contentRepository.findById(contentId)
                 .orElseThrow(() -> ContentNotFoundException.withId(contentId));
 
-        String updateThumbnail = content.getThumbnailUrl(); // thumbnail이 들어오지 않는다면, 기존 값을 유지함
+        String currentImagekey = content.getThumbnailUrl(); // key
+        String updateImageKey = currentImagekey;
+
         if(thumbnail != null && !thumbnail.isEmpty()) { // 만약 썸네일이 들어왔다면, 저장함
-            updateThumbnail = saveImageToS3(thumbnail);
+            String newImageKey = saveImageToS3(thumbnail); // 새로운 썸네일 key를 생성하고,
+            s3Uploader.upload(s3Properties.getContentBucket(), newImageKey, thumbnail); // 업로드한다
+            deleteImageFromS3(currentImagekey); // 기존 이미지는 삭제한다
+            updateImageKey = newImageKey;// 이걸 업데이트 이미지에 넣어준다
         }
 
         List<Tag> oldtags = tagRepository.findByContentId(contentId);
@@ -118,11 +126,13 @@ public class BasicContentService implements ContentService {
         tagRepository.saveAll(tagList);
         log.info("[콘텐츠 데이터 관리] 태그 수정 완료 : tag = {}", tagList);
 
-        content.updateContent(request.title(), request.description(), updateThumbnail);
+        content.updateContent(request.title(), request.description(), updateImageKey);
 
         log.info("[콘텐츠 데이터 관리] 컨텐츠 수정 완료 : id = {}, tag = {}",
                 content.getId(), tagRepository.findByContentId(content.getId()));
-        return contentMapper.toDto(content, tagList);
+
+        ContentDto mapDto = contentMapper.toDtoUsingS3(content, tagList, s3Properties); // 맵핑을 통해 Dto로 변환
+        return mapDto;
     }
 
     @Transactional
@@ -193,7 +203,8 @@ public class BasicContentService implements ContentService {
         for(int i=0; i < actualLimitSize; i++) {
             Content content = contents.get(i);
             List<Tag> tags = tagsByContentId.getOrDefault(content.getId(), List.of());
-            data.add(contentMapper.toDto(content, tags));
+            ContentDto mapDto = contentMapper.toDtoUsingS3(content, tags, s3Properties);
+            data.add(mapDto);
         }
 
         String nextCursor = null;
@@ -238,7 +249,8 @@ public class BasicContentService implements ContentService {
                 .orElseThrow(() -> ContentNotFoundException.withId(contentId));
         List<Tag> tags = tagRepository.findByContentId(searchContent.getId());
         log.info("[콘텐츠 데이터 관리] 컨텐츠 데이터 단건 조회 완료, searchContent : {}", searchContent);
-        return contentMapper.toDto(searchContent,tags);
+        ContentDto mapDto = contentMapper.toDtoUsingS3(searchContent, tags, s3Properties);
+        return mapDto;
     }
 
     private String saveImageToS3(MultipartFile file) {
@@ -259,8 +271,18 @@ public class BasicContentService implements ContentService {
         if(originalFilename != null && originalFilename.contains(".")) {
             extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
-        String key = UUID.randomUUID() + extension;
+        String s3ImageKey = UUID.randomUUID() + extension;
 
-        return s3Uploader.upload(s3Properties.getContentBucket(), key, file);
+        return s3ImageKey;
+    }
+
+    private void deleteImageFromS3(String key) {
+        s3Uploader.delete(s3Properties.getContentBucket(), key);
+    }
+
+    private String s3Url(String s3ImageKey) {
+        // https://(버킷명).s3.(지역명).amazonaws.com/(이미지 키)
+        String url = "https://" + s3Properties.getContentBucket() + ".s3." + s3Properties.getRegion() + ".amazonaws.com/" + s3ImageKey;
+        return url;
     }
 }
