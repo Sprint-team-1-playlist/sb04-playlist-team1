@@ -1,5 +1,7 @@
 package com.codeit.playlist.global.error;
 
+import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,9 +10,6 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
@@ -37,11 +36,24 @@ public class GlobalExceptionHandler {
         Map<String, Object> details = new HashMap<>();
         e.getBindingResult().getFieldErrors().forEach(fieldError -> {
             String fieldName = fieldError.getField();
-            Object rejectedValue = fieldError.getRejectedValue();
-            details.put(fieldName, rejectedValue);
+
+            // 민감 정보는 값 노출 금지
+            if ("password".equalsIgnoreCase(fieldName)) {
+                details.put(fieldName, "invalid");
+            }
+            else if ("username".equalsIgnoreCase(fieldName)
+                || "email".equalsIgnoreCase(fieldName)) {
+                details.put(fieldName, "invalid");
+            }
+            else {
+                // 그 외 필드는 rejectedValue 허용
+                details.put(fieldName, fieldError.getRejectedValue());
+            }
         });
 
-        DomainException domainException = new DomainException(details);
+        DomainException domainException =
+            new DomainException(details);
+
         log.error("요청 유효성 커스텀 예외 발생: code={}, message={}", domainException.getErrorCode(), domainException.getMessage(), domainException);
 
         return ResponseEntity.status(domainException.getStatus())
