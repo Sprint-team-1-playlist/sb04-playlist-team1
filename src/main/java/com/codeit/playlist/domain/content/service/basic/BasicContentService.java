@@ -86,16 +86,14 @@ public class BasicContentService implements ContentService {
 
     @Transactional
     @Override
-    public ContentDto update(UUID contentId, ContentUpdateRequest request, String thumbnail) {
+    public ContentDto update(UUID contentId, ContentUpdateRequest request, MultipartFile thumbnail) {
         log.debug("[콘텐츠 데이터 관리] 컨텐츠 수정 시작 : id = {}", contentId);
         Content content = contentRepository.findById(contentId)
                 .orElseThrow(() -> ContentNotFoundException.withId(contentId));
 
-        if(thumbnail != null && !thumbnail.isBlank()) {
-            content.updateContent(request.title(), request.description(), thumbnail);
-        } else {
-            // 만약 썸네일이 업데이트 되지 않는다면, 제목과 설명만 업데이트하기
-            content.updateContent(request.title(), request.description(), content.getThumbnailUrl());
+        String updateThumbnail = content.getThumbnailUrl(); // thumbnail이 들어오지 않는다면, 기존 값을 유지함
+        if(thumbnail != null || !thumbnail.isEmpty()) {
+            updateThumbnail = saveImageToS3(thumbnail);
         }
 
         List<Tag> oldtags = tagRepository.findByContentId(contentId);
@@ -105,12 +103,12 @@ public class BasicContentService implements ContentService {
 
         log.info("[콘텐츠 데이터 관리] 태그 수정 시작 : tag = {}", request.tags());
 
-        List<String> newTags = request.tags();
+        List<String> updateTags = request.tags();
         if(request.tags() == null) {
-            newTags = List.of();
+            updateTags = List.of();
         }
 
-        List<Tag> tagList = newTags.stream()
+        List<Tag> tagList = updateTags.stream()
                         .map(String::trim)
                         .filter(s -> !s.isEmpty())
                         .distinct()
@@ -119,6 +117,8 @@ public class BasicContentService implements ContentService {
 
         tagRepository.saveAll(tagList);
         log.info("[콘텐츠 데이터 관리] 태그 수정 완료 : tag = {}", tagList);
+
+        content.updateContent(request.title(), request.description(), updateThumbnail);
 
         log.info("[콘텐츠 데이터 관리] 컨텐츠 수정 완료 : id = {}, tag = {}",
                 content.getId(), tagRepository.findByContentId(content.getId()));
