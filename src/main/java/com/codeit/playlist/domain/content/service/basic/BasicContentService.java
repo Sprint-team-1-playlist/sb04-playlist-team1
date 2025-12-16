@@ -279,7 +279,7 @@ public class BasicContentService implements ContentService {
         }
         String s3ImageKey = UUID.randomUUID() + extension;
 
-        return s3ImageKey;
+        return s3Url(s3ImageKey);
     }
 
     private void deleteImageFromS3(String key) {

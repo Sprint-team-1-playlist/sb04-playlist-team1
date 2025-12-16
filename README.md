@@ -38,7 +38,6 @@
 - 프로젝트 기간: 2025.11.10 ~ 2025.12.18
 - 대규모 트래픽이 예상되는 글로벌 컨텐츠 평점 및 큐레이션 플랫폼
 - 영화, 드라마, 스포츠 등 다양한 콘텐츠를 큐레이팅하고 공유하며, 실시간 같이 보기 기능까지 제공하는 소셜 서비스로, 사용자들은 자신만의 플레이리스트를 만들고, 다른 사용자와 소통하며 콘텐츠 경험을 확장할 수  있는 서비스
-
 ---
 
 ## **기술 스택**
@@ -128,9 +127,9 @@ AWS_REGION=
 
 # 콘텐츠 외부 API 관련
 TMDB_API_KEY=
-TMDB_BASE_URL=
-SPORTSDB_API_KEY=
-SPORTSDB_BASE_URL=
+TMDB_BASE_URL=https://api.themoviedb.org/3
+SPORTSDB_API_KEY=123
+SPORTSDB_BASE_URL=https://www.thesportsdb.com/api/v1/json
 
 # Kafka
 KAFKA_BOOTSTRAP_SERVERS=kafka:9092
@@ -168,9 +167,9 @@ CREATE EXTENSION pg_bigm;
 * 콘텐츠 데이터 수집을 위해 외부 API 사용
 
   * themoviedb
-  * thesportsdb
 * `.env`에 API Key 입력 필요
 
+* https://playlist-team1.me/#/contents/adminMovie 로 포스트맨에서 GET 요청시 콘텐츠를 가져올 수 있음
 
 ### 6. AWS (운영 환경)
 
@@ -179,7 +178,7 @@ CREATE EXTENSION pg_bigm;
   * S3: 파일 저장
   * EC2 / ECS: 배포
 * 로컬 실행 시 AWS 설정은 필수 아님
-
+* 프로필 수정 및 콘텐츠 생성은 S3가 운영환경에서만 연결되어 있어서 불가합니다.
 
 ### 7. 프로젝트 실행
 
@@ -193,6 +192,8 @@ CREATE EXTENSION pg_bigm;
 ```
 http://localhost:8080
 ```
+프로필 수정 및 콘텐츠 생성은 S3가 운영환경에서만 연결되어 있어서 불가합니다.
+
 --- 
 
 ## **파일 구조**
