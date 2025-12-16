@@ -4,6 +4,7 @@ import com.codeit.playlist.domain.base.BaseUpdatableEntity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -61,8 +62,9 @@ public class Content extends BaseUpdatableEntity {
     /**
      * 시청자 수
      */
+    @Transient
     @Column(nullable = false)
-    private int watcherCount;
+    private long watcherCount;
 
     public void updateContent(String title, String description, String thumbnailUrl) {
         this.title = title;
@@ -70,20 +72,12 @@ public class Content extends BaseUpdatableEntity {
         this.thumbnailUrl = thumbnailUrl;
     }
 
-    public static Content createSportsContent(String type, String description, String thumbnailUrl) {
-        Content content = new Content();
-        content.type = type;
-        content.title = "sport";
-        content.description = description;
-        content.thumbnailUrl = thumbnailUrl;
-        content.averageRating = 0.0;
-        content.reviewCount = 0;
-        content.watcherCount = 0;
-        return content;
-    }
-
     public void setThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public void setWatcherCount(long watcherCount) {
+        this.watcherCount = watcherCount;
     }
 
     /**

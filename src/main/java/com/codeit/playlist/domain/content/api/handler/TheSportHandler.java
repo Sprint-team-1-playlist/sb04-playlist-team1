@@ -5,12 +5,14 @@ import com.codeit.playlist.domain.content.api.response.TheSportResponse;
 import com.codeit.playlist.domain.content.api.service.TheSportApiService;
 import com.codeit.playlist.domain.content.entity.Content;
 import com.codeit.playlist.domain.content.repository.ContentRepository;
+import com.codeit.playlist.domain.content.service.TagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -19,6 +21,7 @@ public class TheSportHandler {
     private final ContentRepository contentRepository;
     private final TheSportApiService theSportApiService;
     private final TheSportMapper theSportsMapper;
+    private final TagService tagService;
 
     @Transactional
     public void save(int year, int month) {
@@ -53,7 +56,18 @@ public class TheSportHandler {
             }
 
             Content content = theSportsMapper.sportsResponseToContent(theSportResponse, "sport");
+
+            List<String> tags = Stream.of(
+                    theSportResponse.strSport(),
+                    theSportResponse.strHomeTeam(),
+                    theSportResponse.strAwayTeam())
+                    .filter(tag -> tag != null && !tag.isBlank())
+                    .toList();
+
             contentRepository.save(content);
+            if(!tags.isEmpty()) {
+                tagService.saveTheSportTagToContent(content, tags);
+            }
         }
     }
 }

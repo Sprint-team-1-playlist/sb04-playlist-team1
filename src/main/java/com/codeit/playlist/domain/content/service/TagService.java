@@ -8,4 +8,5 @@ public interface TagService {
 //    void saveMovieTag();
     void saveMovieTagToContent(Content content, List<Integer> genreIds);
     void saveTvSeriesTagToContent(Content content, List<Integer> genreIds);
+    void saveTheSportTagToContent(Content content, List<String> tagNames);
 }
