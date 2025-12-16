@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -102,7 +103,6 @@ public class BasicContentService implements ContentService {
         if(thumbnail != null && !thumbnail.isEmpty()) { // 만약 썸네일이 들어왔다면, 저장함
             String newImageKey = saveImageToS3(thumbnail); // 새로운 썸네일 key를 생성하고,
             s3Uploader.upload(s3Properties.getContentBucket(), newImageKey, thumbnail); // 업로드한다
-            deleteImageFromS3(currentImagekey); // 기존 이미지는 삭제한다
             updateImageKey = newImageKey;// 이걸 업데이트 이미지에 넣어준다
         }
 
@@ -129,6 +129,9 @@ public class BasicContentService implements ContentService {
         log.info("[콘텐츠 데이터 관리] 태그 수정 완료 : tag = {}", tagList);
 
         content.updateContent(request.title(), request.description(), updateImageKey);
+        if(!Objects.equals(updateImageKey, currentImagekey)) {
+            deleteImageFromS3(currentImagekey); // 기존 이미지는 삭제한다
+        }
 
         log.info("[콘텐츠 데이터 관리] 컨텐츠 수정 완료 : id = {}, tag = {}",
                 content.getId(), tagRepository.findByContentId(content.getId()));
