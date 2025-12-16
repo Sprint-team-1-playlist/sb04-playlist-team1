@@ -30,7 +30,7 @@ public class BasicEmailService implements EmailService {
       mailSender.send(message);
       log.info("[메일] : 임시 비밀번호 이메일 전송 완료 - 수신자: {}", toEmail);
     } catch (Exception e) {
-      log.error("[메일] 임시 비밀번호 이메일 전송 실패 - 수신자: {}", toEmail, e);
+      log.error("[메일] : 임시 비밀번호 이메일 전송 실패 - 수신자: {}", toEmail, e);
       throw e;
     }
   }
