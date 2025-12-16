@@ -31,7 +31,7 @@ public class BasicEmailService implements EmailService {
       log.info("[메일] : 임시 비밀번호 이메일 전송 완료 - 수신자: {}", toEmail);
     } catch (Exception e) {
       log.error("[메일] 임시 비밀번호 이메일 전송 실패 - 수신자: {}", toEmail, e);
-      throw e; // ← 이거 중요 (원하면 커스텀 예외)
+      throw e;
     }
   }
 
