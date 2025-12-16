@@ -62,7 +62,7 @@ public class Content extends BaseUpdatableEntity {
      * 시청자 수
      */
     @Column(nullable = false)
-    private int watcherCount;
+    private long watcherCount;
 
     public void updateContent(String title, String description, String thumbnailUrl) {
         this.title = title;
@@ -74,15 +74,8 @@ public class Content extends BaseUpdatableEntity {
         this.thumbnailUrl = thumbnailUrl;
     }
 
-    /**
-     * 시청자수를 증감시키는 로직
-     */
-    public void increaseWatcherCount() {
-        this.watcherCount++;
-    }
-
-    public void decreaseWatcherCount() {
-        this.watcherCount--;
+    public void setWatcherCount(long watcherCount) {
+        this.watcherCount = watcherCount;
     }
 
     /**
