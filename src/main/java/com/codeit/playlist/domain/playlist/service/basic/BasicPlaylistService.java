@@ -19,6 +19,7 @@ import com.codeit.playlist.domain.playlist.service.PlaylistService;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.codeit.playlist.global.constant.S3Properties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,7 @@ public class BasicPlaylistService implements PlaylistService {
     private final SubscribeRepository subscribeRepository;
     private final UserRepository userRepository;
     private final PlaylistMapper playlistMapper;
+    private final S3Properties s3Properties;
     private final FollowRepository followRepository;
     private final ObjectMapper objectMapper;                       // Kafka payload 직렬화
     private final KafkaTemplate<String, String> kafkaTemplate;    //  Kafka 발행
@@ -62,7 +64,7 @@ public class BasicPlaylistService implements PlaylistService {
 
         Playlist saved = playlistRepository.save(playlist);
 
-        PlaylistDto dto = playlistMapper.toDto(saved);
+        PlaylistDto dto = playlistMapper.toDto(saved, s3Properties);
 
         log.info("[플레이리스트] 생성 완료: id={}", dto.id());
 
@@ -114,7 +116,7 @@ public class BasicPlaylistService implements PlaylistService {
 
         log.info("[플레이리스트] 수정 성공: playlistId= {}", playlistId);
 
-        return playlistMapper.toDto(playlist);
+        return playlistMapper.toDto(playlist, s3Properties);
     }
 
     //플레이리스트 논리 삭제
@@ -212,7 +214,7 @@ public class BasicPlaylistService implements PlaylistService {
         boolean hasNext = playlists.hasNext();
 
         List<PlaylistDto> data = content.stream()
-                .map(playlistMapper::toDto)
+                .map(p -> playlistMapper.toDto(p, s3Properties))
                 .toList();
 
         // 6. nextCursor, nextIdAfter 계산
@@ -272,7 +274,7 @@ public class BasicPlaylistService implements PlaylistService {
 
 
         //Entity -> DTO
-        PlaylistDto dto = playlistMapper.toDto(playlist, tagMap);
+        PlaylistDto dto = playlistMapper.toDto(playlist, tagMap, s3Properties);
 
         PlaylistDto result = new PlaylistDto(
                 dto.id(),
