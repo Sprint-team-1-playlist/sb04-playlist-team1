@@ -83,7 +83,7 @@ public class BasicContentService implements ContentService {
         }
         log.info("[콘텐츠 데이터 관리] 태그 생성 완료 : tags = {}", tagList);
 
-        log.info("[콘텐츠 데이터 관리] 컨텐츠 생성 완료, cotnent = {}, tag = {}", content, tagList);
+        log.info("[콘텐츠 데이터 관리] 컨텐츠 생성 완료, cotnent = {}, tagList = {}", content, tagList);
 
         ContentDto mapDto = contentMapper.toDtoUsingS3(content, tagList, s3Properties);
         return mapDto;
