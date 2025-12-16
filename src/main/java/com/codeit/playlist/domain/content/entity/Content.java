@@ -4,6 +4,7 @@ import com.codeit.playlist.domain.base.BaseUpdatableEntity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -61,6 +62,7 @@ public class Content extends BaseUpdatableEntity {
     /**
      * 시청자 수
      */
+    @Transient
     @Column(nullable = false)
     private long watcherCount;
 
