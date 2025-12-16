@@ -38,6 +38,17 @@ public class AsyncConfig implements AsyncConfigurer {
     return executor;
   }
 
+  @Bean(name = "eventTaskExecutor")
+  public Executor eventTaskExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(5);
+    executor.setMaxPoolSize(10);
+    executor.setQueueCapacity(200);
+    executor.setThreadNamePrefix("event-");
+    executor.initialize();
+    return executor;
+  }
+
   @Override
   public Executor getAsyncExecutor() {
     return asyncExecutor();
