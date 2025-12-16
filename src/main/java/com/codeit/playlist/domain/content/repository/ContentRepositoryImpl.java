@@ -67,7 +67,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
                     break;
 
                 case "watcherCount":
-                    long cursorWatch = Integer.valueOf(cursor);
+                    long cursorWatch = Long.parseLong(cursor);
 
                     if (ascending) {
                         builder.and(qContent.watcherCount.gt(cursorWatch)
