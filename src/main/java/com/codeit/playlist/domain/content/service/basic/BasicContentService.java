@@ -14,6 +14,7 @@ import com.codeit.playlist.domain.content.repository.ContentRepository;
 import com.codeit.playlist.domain.content.repository.TagRepository;
 import com.codeit.playlist.domain.content.service.ContentService;
 import com.codeit.playlist.domain.file.S3Uploader;
+import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.global.constant.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ public class BasicContentService implements ContentService {
     private final ContentMapper contentMapper;
     private final S3Uploader s3Uploader;
     private final S3Properties s3Properties;
+    private final RedisWatchingSessionRepository redisWatchingSessionRepository;
 
     @Transactional
     @Override
@@ -202,6 +204,7 @@ public class BasicContentService implements ContentService {
 
         for(int i=0; i < actualLimitSize; i++) {
             Content content = contents.get(i);
+            content.setWatcherCount(redisWatchingSessionRepository.countWatchingSessionByContentId(content.getId()));
             List<Tag> tags = tagsByContentId.getOrDefault(content.getId(), List.of());
             ContentDto mapDto = contentMapper.toDtoUsingS3(content, tags, s3Properties);
             data.add(mapDto);
