@@ -113,9 +113,10 @@ jacocoTestReport {
             "**/entity/**",
             "**/dto/**",
             "**/exception/**",
-            "**/config/**",
             "**/error/**",
-            "**/repository/**"
+            "**/repository/**",
+            "**/security/**",
+            "**/global/**"
     ]
 
     afterEvaluate {
