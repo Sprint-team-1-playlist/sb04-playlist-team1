@@ -7,6 +7,7 @@ import com.codeit.playlist.global.constant.S3Properties;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,8 @@ public interface ContentMapper {
                 .toList();
     }
 
-    default String toS3Url(String key, S3Properties s3Properties) {
+    @Named("toS3Url")
+    default String toS3Url(String key, @Context S3Properties s3Properties) {
         if(key == null || key.isBlank()) {
             return null;
         }
