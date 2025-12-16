@@ -20,6 +20,7 @@ import com.codeit.playlist.domain.user.dto.data.UserSummary;
 import com.codeit.playlist.domain.user.entity.User;
 import com.codeit.playlist.domain.user.exception.UserNotFoundException;
 import com.codeit.playlist.domain.user.repository.UserRepository;
+import com.codeit.playlist.global.constant.S3Properties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,13 +94,17 @@ public class BasicPlaylistServiceTest {
     @Mock
     private KafkaTemplate<String, String> kafkaTemplate;
 
+    @Mock
+    private S3Properties s3Properties;
+
+
     @InjectMocks
     BasicPlaylistService basicPlaylistService;
 
     @BeforeEach
     void setUp() {
         basicPlaylistService = new BasicPlaylistService(playlistRepository, subscribeRepository, userRepository, playlistMapper,
-                                                        followRepository, objectMapper, kafkaTemplate, tagRepository);
+                                                        s3Properties, followRepository, objectMapper, kafkaTemplate, tagRepository);
     }
 
     @Test
@@ -119,7 +124,7 @@ public class BasicPlaylistServiceTest {
                 UUID.randomUUID(), null, "제목", "설명",
                 null, 0L, false, List.of()
         );
-        when(playlistMapper.toDto(saved)).thenReturn(expected);
+        when(playlistMapper.toDto(eq(saved), eq(s3Properties))).thenReturn(expected);
 
         // when
         PlaylistDto actual = basicPlaylistService.createPlaylist(request, ownerId);
@@ -128,7 +133,7 @@ public class BasicPlaylistServiceTest {
         assertSame(expected, actual);
         verify(userRepository).findById(ownerId);
         verify(playlistRepository).save(any(Playlist.class));
-        verify(playlistMapper).toDto(saved);
+        verify(playlistMapper).toDto(eq(saved), eq(s3Properties));
         verifyNoMoreInteractions(userRepository, playlistRepository, playlistMapper);
     }
 
@@ -172,7 +177,7 @@ public class BasicPlaylistServiceTest {
                 UUID.randomUUID(), null, "플리제목", "플리설명",
                 null, 0L, false, List.of()
         );
-        when(playlistMapper.toDto(saved)).thenReturn(expected);
+        when(playlistMapper.toDto(eq(saved), eq(s3Properties))).thenReturn(expected);
 
         UUID follower1 = UUID.randomUUID();
         UUID follower2 = UUID.randomUUID();
@@ -192,7 +197,7 @@ public class BasicPlaylistServiceTest {
         assertSame(expected, actual);
         verify(userRepository).findById(ownerId);
         verify(playlistRepository).save(any(Playlist.class));
-        verify(playlistMapper).toDto(saved);
+        verify(playlistMapper).toDto(eq(saved), eq(s3Properties));
 
         verify(followRepository).findFollowerIdsByFolloweeId(ownerId);
         verify(objectMapper, times(2))
@@ -226,7 +231,7 @@ public class BasicPlaylistServiceTest {
                 UUID.randomUUID(), null, "플리제목", "플리설명",
                 null, 0L, false, List.of()
         );
-        when(playlistMapper.toDto(saved)).thenReturn(expected);
+        when(playlistMapper.toDto(eq(saved), eq(s3Properties))).thenReturn(expected);
 
         UUID followerId = UUID.randomUUID();
         when(followRepository.findFollowerIdsByFolloweeId(ownerId))
@@ -242,7 +247,7 @@ public class BasicPlaylistServiceTest {
         assertSame(expected, actual);
         verify(userRepository).findById(ownerId);
         verify(playlistRepository).save(any(Playlist.class));
-        verify(playlistMapper).toDto(saved);
+        verify(playlistMapper).toDto(eq(saved), eq(s3Properties));
 
         verify(followRepository).findFollowerIdsByFolloweeId(ownerId);
         verify(objectMapper).writeValueAsString(any(NotificationDto.class));
@@ -283,7 +288,7 @@ public class BasicPlaylistServiceTest {
         );
 
         given(playlistRepository.findById(playlistId)).willReturn(Optional.of(playlist));
-        given(playlistMapper.toDto(playlist)).willReturn(expectedDto);
+        given(playlistMapper.toDto(eq(playlist), eq(s3Properties))).willReturn(expectedDto);
 
         // when
         PlaylistDto result = basicPlaylistService.updatePlaylist(playlistId, request, currentUserId);
@@ -296,7 +301,7 @@ public class BasicPlaylistServiceTest {
         assertThat(playlist.getDescription()).isEqualTo("new description");
 
         then(playlistRepository).should().findById(playlistId);
-        then(playlistMapper).should().toDto(playlist);
+        then(playlistMapper).should().toDto(eq(playlist), eq(s3Properties));
     }
 
     @Test
@@ -371,8 +376,8 @@ public class BasicPlaylistServiceTest {
                 List.of()
         );
 
-        when(playlistMapper.toDto(playlist1)).thenReturn(dto1);
-        when(playlistMapper.toDto(playlist2)).thenReturn(dto2);
+        when(playlistMapper.toDto(eq(playlist1), eq(s3Properties))).thenReturn(dto1);
+        when(playlistMapper.toDto(eq(playlist2), eq(s3Properties))).thenReturn(dto2);
 
         when(playlistRepository.countPlaylists(any(), any(), any()))
                 .thenReturn(10L);
@@ -571,7 +576,7 @@ public class BasicPlaylistServiceTest {
         PlaylistDto mappedDto = new PlaylistDto(playlistId, ownerSummary, "테스트 플리", "테스트용",
                 Instant.now(), 2L, false, List.of(content1, content2));
 
-        given(playlistMapper.toDto(eq(playlist), anyMap())).willReturn(mappedDto);
+        given(playlistMapper.toDto(eq(playlist), anyMap(), eq(s3Properties))).willReturn(mappedDto);
 
         //when
         PlaylistDto result = basicPlaylistService.getPlaylist(playlistId, currentUserId);
@@ -590,7 +595,7 @@ public class BasicPlaylistServiceTest {
         assertThat(result.subscribedByMe()).isFalse();
 
         then(playlistRepository).should().findWithDetailsById(playlistId);
-        then(playlistMapper).should().toDto(eq(playlist), anyMap());
+        then(playlistMapper).should().toDto(eq(playlist), anyMap(), eq(s3Properties));
     }
 
     @Test

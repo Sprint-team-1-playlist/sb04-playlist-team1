@@ -21,7 +21,7 @@ public class TempPasswordEventHandler {
       phase = TransactionPhase.AFTER_COMMIT
   )
   public void handle(TempPasswordIssuedEvent event) {
-    log.info("📩 임시 비밀번호 핸들러 실행 → {}", event.email());
+    log.info("임시 비밀번호 핸들러 실행 -> {}", event.email());
     tempPasswordMailSender.sendEmailWithRetry(event);
   }
 }
