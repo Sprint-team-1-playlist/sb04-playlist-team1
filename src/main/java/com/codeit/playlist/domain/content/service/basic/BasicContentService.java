@@ -151,9 +151,7 @@ public class BasicContentService implements ContentService {
         if(contentRepository.existsById(contentId)) {
             reviewRepository.deleteAllByContent_Id(contentId);
             playlistContentRepository.deleteAllByContent_Id(contentId);
-            log.debug("[콘텐츠 데이터 관리] 태그 삭제 시작 : tag = {}", tagRepository.findByContentId(contentId));
             tagRepository.deleteAllByContentId(contentId); // contentId와 연결된 tags 리스트를 삭제함
-            log.info("[콘텐츠 데이터 관리] 태그 삭제 완료 : tag = {}", tagRepository.findByContentId(contentId));
 
             contentRepository.deleteById(contentId);
             log.info("[콘텐츠 데이터 관리] 컨텐츠 삭제 완료 : id = {}", contentId);
