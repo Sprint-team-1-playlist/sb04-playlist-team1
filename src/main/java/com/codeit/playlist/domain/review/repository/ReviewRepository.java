@@ -12,4 +12,6 @@ public interface ReviewRepository extends JpaRepository<Review, UUID>, ReviewRep
 
     // 콘텐츠 기준 전체 개수
     long countByContent_Id(UUID contentId);
+    void deleteAllByContent_Id(UUID contentId);
+
 }
