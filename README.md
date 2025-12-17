@@ -26,7 +26,7 @@
   <img src="https://github.com/user-attachments/assets/3700f539-d6fe-40b7-869b-e5a4c0a01463" width="30" height="30" valign="middle" />
   배포 링크 ( ~ 26.01.18  )
 </a><br><br>
-<a href="https://github.com/user-attachments/files/24206721/playlist.pdf">
+<a href="https://github.com/user-attachments/files/24217068/playlist.pdf">
   <img src="https://raw.githubusercontent.com/Sprint-team-1-playlist/sb04-playlist-team1/refs/heads/develop/src/main/resources/static/vite.svg" width="30" height="30" valign="middle" />
   포트폴리오(pdf)
 </a><br>
@@ -352,10 +352,10 @@ src/main
 
 ## **팀원 구성** 
 
-| 이름   | 이메일                       | 담당 기능 | 개인 회고록 |
-|--------|---------------------------|-----------|-------------|
-| 김찬호 | cheis11@naver.com         | 프로필 관리, Kafka, SSE | [🦖](https://docs.google.com/document/d/1OHjWLT_i-iKscc_SW_PjWkYaNotDdbGBrM0eMv7blaE/edit?usp=sharing) |
-| 강은혁 | dmsgur7370@gmail.com      | 사용자 관리 | [🦖]() |
-| 신은수 | sin9801@naver.com         | 팀장, 콘텐츠 평가 및 큐레이팅, 알림 | [⚙️]() |
-| 안중원 | anjoongwon517@gmail.com   | 실시간 같이 보기, Redis, CI/CD, 배포 | [😎]() |
-| 신동진 | index.librorum.prohibitorum27@gmail.com                  | 콘텐츠 데이터 관리 | [⛱️]() |
+| 이름   | 이메일                       | 담당 기능                      | 개인 회고록 |
+|--------|---------------------------|----------------------------|-------------|
+| 김찬호 | cheis11@naver.com         | 프로필 관리, Kafka, SSE         | [🦖](https://docs.google.com/document/d/1OHjWLT_i-iKscc_SW_PjWkYaNotDdbGBrM0eMv7blaE/edit?usp=sharing) |
+| 강은혁 | dmsgur7370@gmail.com      | 사용자 관리, Security           | [🦖](https://www.notion.so/2cc6496ee2a380d0bcebf178dfe0b4bc?source=copy_link) |
+| 신은수 | sin9801@naver.com         | 팀장, 콘텐츠 평가 및 큐레이팅, 알림      | [⚙️](https://beginner-development.tistory.com/45) |
+| 안중원 | anjoongwon517@gmail.com   | 실시간 같이 보기, Redis, CI/CD, 배포 | [😎](https://www.notion.so/2cba7ba35b11803daf6ced53e7238bfd?source=copy_link) |
+| 신동진 | index.librorum.prohibitorum27@gmail.com                  | 콘텐츠 데이터 관리                 | [⛱️](https://b1uffer.tistory.com/275) |
