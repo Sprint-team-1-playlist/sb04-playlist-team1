@@ -26,7 +26,7 @@
   <img src="https://github.com/user-attachments/assets/3700f539-d6fe-40b7-869b-e5a4c0a01463" width="30" height="30" valign="middle" />
   배포 링크 ( ~ 26.01.18  )
 </a><br><br>
-<a href="https://github.com/user-attachments/files/22457754/2._Monew_.pdf">
+<a href="https://github.com/user-attachments/files/24206721/playlist.pdf">
   <img src="https://raw.githubusercontent.com/Sprint-team-1-playlist/sb04-playlist-team1/refs/heads/develop/src/main/resources/static/vite.svg" width="30" height="30" valign="middle" />
   포트폴리오(pdf)
 </a><br>
@@ -57,7 +57,7 @@
 | **Security** | <img src="https://img.shields.io/badge/Spring Security-6DB33F?logo=springsecurity&logoColor=white"> <img src="https://img.shields.io/badge/Cloudflare-F38020?logo=cloudflare&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                 |
 | **Database** | <img src="https://img.shields.io/badge/PostgreSQL-17.5-4169E1?logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/Amazon RDS-527FFF?logo=amazonrds&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                      |
 | **Infra & Cache** | <img src="https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| **Messaging** | <img src="https://img.shields.io/badge/Apache Kafka-231F20?logo=apachekafka&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **Messaging** | <img src="https://img.shields.io/badge/Apache Kafka-231F20?logo=apachekafka&logoColor=white"> <img src="https://img.shields.io/badge/Confluent Kafka-0052CC?logo=confluent&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | **Build & Dependency** | <img src="https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **Deployment & CI/CD** | <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white"> <img src="https://img.shields.io/badge/GitHub Actions-2088FF?logo=githubactions&logoColor=white"> <img src="https://img.shields.io/badge/Amazon EC2-FF9900?logo=amazonec2&logoColor=white"> <img src="https://img.shields.io/badge/Amazon ECS-FF9900?logo=amazon-ecs&logoColor=white"> <img src="https://img.shields.io/badge/Amazon ECR-FF9900?logo=amazon-ecr&logoColor=white">                                                                                           |
 | **Storage** | <img src="https://img.shields.io/badge/Amazon S3-569A31?logo=amazons3&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -136,16 +136,11 @@ KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 ```
 > ⚠️ `.env` 파일은 민감 정보가 포함되어 있으므로 Git에 커밋하지 마세요.
 
-### 3. 인프라 서비스 실행 (Redis, Kafka)
-
-```bash
-docker compose up -d
-```
 
 * Redis: 캐시 및 세션 관리
 * Kafka: 이벤트/비동기 메시징 처리
 
-### 4. 데이터베이스 설정 (PostgreSQL)
+### 3. 데이터베이스 설정 (PostgreSQL)
 
 #### 기본
 
@@ -153,16 +148,17 @@ docker compose up -d
 * DB 생성 후 `.env`에 접속 정보 입력
 
 
-### 5. 외부 API
+### 4. 외부 API
 
 * 콘텐츠 데이터 수집을 위해 외부 API 사용
 
-  * themoviedb
+  * themoviedb : https://www.themoviedb.org/
+  * thesportsdb : https://www.thesportsdb.com/
 * `.env`에 API Key 입력 필요
 
 * https://playlist-team1.me/#/contents/adminMovie 로 포스트맨에서 GET 요청시 콘텐츠를 가져올 수 있음
 
-### 6. AWS (운영 환경)
+### 5. AWS (운영 환경)
 
 * 운영 환경에서만 사용
 
@@ -171,11 +167,10 @@ docker compose up -d
 * 로컬 실행 시 AWS 설정은 필수 아님
 * 프로필 수정 및 콘텐츠 생성은 S3가 운영환경에서만 연결되어 있어서 불가합니다.
 
-### 7. 프로젝트 실행
+### 6. 인프라 서비스 및 프로젝트 실행
 
 ```bash
-./gradlew clean build
-./gradlew bootRun
+docker compose up -d
 ```
 
 브라우저 접속:
