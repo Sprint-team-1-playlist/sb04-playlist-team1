@@ -1,0 +1,128 @@
+package com.codeit.playlist.domain.user.controller;
+
+import com.codeit.playlist.domain.auth.service.AuthService;
+import com.codeit.playlist.domain.base.SortDirection;
+import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.user.dto.request.ChangePasswordRequest;
+import com.codeit.playlist.domain.user.dto.request.UserCreateRequest;
+import com.codeit.playlist.domain.user.dto.request.UserLockUpdateRequest;
+import com.codeit.playlist.domain.user.dto.request.UserRoleUpdateRequest;
+import com.codeit.playlist.domain.user.dto.request.UserUpdateRequest;
+import com.codeit.playlist.domain.user.dto.response.CursorResponseUserDto;
+import com.codeit.playlist.domain.user.service.UserService;
+import jakarta.validation.Valid;
+import java.nio.file.AccessDeniedException;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+@Slf4j
+public class UserController {
+
+  private final UserService userService;
+  private final AuthService authService;
+
+  @PostMapping
+  public ResponseEntity<UserDto> register(@Valid @RequestBody UserCreateRequest userCreateRequest) {
+    log.debug("[사용자 관리] 사용자 등록 시작 : name ={}, email = {}", userCreateRequest.name(), userCreateRequest.email());
+    UserDto userDto = userService.registerUser(userCreateRequest);
+    log.info("[사용자 관리] 사용자 등록 완료 : name ={}, email = {}", userCreateRequest.name(), userCreateRequest.email());
+    return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
+  }
+
+  @GetMapping("/{userId}")
+  public ResponseEntity<UserDto> find(@PathVariable UUID userId) {
+    log.debug("[사용자 관리] 사용자 상세 조회 시작 : id = {} ", userId);
+    UserDto user = userService.find(userId);
+    log.info("[사용자 관리] 사용자 상세 조회 완료 : id = {} ", userId);
+    return ResponseEntity.ok(user);
+  }
+
+  @PatchMapping(
+      value = "/{userId}",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+  )
+  public ResponseEntity<UserDto> updateUser(
+      @PathVariable UUID userId,
+      @Valid @RequestPart("request") UserUpdateRequest request,
+      @RequestPart(value = "image", required = false) MultipartFile image,
+      Authentication authentication
+  ) {
+    UserDto updated = userService.updateUser(userId, request, image, authentication);
+    return ResponseEntity.ok(updated);
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @GetMapping
+  public ResponseEntity<CursorResponseUserDto> searchUsers(
+      @RequestParam(required = false) String emailLike,
+      @RequestParam(required = false) String roleEqual,
+      @RequestParam(required = false) Boolean isLocked,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(required = false) UUID idAfter,
+      @RequestParam(defaultValue = "10") int limit,
+      @RequestParam(defaultValue = "createdAt") String sortBy,
+      @RequestParam(defaultValue = "ASCENDING") SortDirection sortDirection
+  ) {
+
+    CursorResponseUserDto response = userService.findUserList(
+        emailLike,
+        roleEqual,
+        isLocked,
+        cursor,
+        idAfter,
+        limit,
+        sortBy,
+        sortDirection
+    );
+
+    return ResponseEntity.ok(response);
+  }
+
+  @PatchMapping("/{userId}/password")
+  public ResponseEntity<Void> changePassword(@PathVariable UUID userId,
+      @RequestBody ChangePasswordRequest changePasswordRequest) throws AccessDeniedException {
+    log.debug("[사용자 관리] 사용자 패스워드 변경 시작 : id = {} ", userId);
+    userService.changePassword(userId, changePasswordRequest);
+    log.info("[사용자 관리] 사용자 패스워드 변경 완료 : id = {} ", userId);
+    return ResponseEntity.ok().build();
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @PatchMapping("/{userId}/role")
+  public ResponseEntity<Void> updateRole(@PathVariable UUID userId,
+      @Valid @RequestBody UserRoleUpdateRequest updateRequest) {
+    log.debug("[사용자 관리] 사용자 권한 변경 시작 : id = {}, newRole(변경 후) = {} ", userId, updateRequest.role());
+    authService.updateRole(updateRequest, userId);
+    log.info("[사용자 관리] 사용자 권한 변경 완료 : id = {}, newRole(변경 후) = {} ", userId, updateRequest.role());
+    return ResponseEntity.ok().build();
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @PatchMapping("/{userId}/locked")
+  public ResponseEntity<Void> updatedUserLocked(@PathVariable UUID userId,
+      @Valid @RequestBody UserLockUpdateRequest userLockUpdateRequest) {
+    log.debug("[사용자 관리] 사용자 잠금 상태 변경 시작 : id = {}, locked(변경 후) = {} ", userId, userLockUpdateRequest.locked());
+    userService.updateUserLocked(userId, userLockUpdateRequest);
+    log.info("[사용자 관리] 사용자 잠금 상태 변경 완료 : id = {}, locked(변경 후) = {} ", userId, userLockUpdateRequest.locked());
+    return ResponseEntity.ok().build();
+  }
+}

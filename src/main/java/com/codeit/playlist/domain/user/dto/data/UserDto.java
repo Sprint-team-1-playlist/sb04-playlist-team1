@@ -1,14 +1,19 @@
 package com.codeit.playlist.domain.user.dto.data;
 
 
+import com.codeit.playlist.domain.user.entity.Role;
+
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.UUID;
+
 public record UserDto (
-    String id,
-    String createdAt,
+    UUID id,
+    Instant createdAt,
     String email,
     String name,
     String profileImageUrl,
-    String role,
+    Role role,
     boolean locked
-){
-
+) implements Serializable {
 }

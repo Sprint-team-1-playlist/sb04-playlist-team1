@@ -1,0 +1,119 @@
+package com.codeit.playlist.watching.fixture;
+
+import com.codeit.playlist.domain.content.dto.data.ContentDto;
+import com.codeit.playlist.domain.content.entity.Content;
+import com.codeit.playlist.domain.content.entity.Tag;
+import com.codeit.playlist.domain.user.dto.data.UserDto;
+import com.codeit.playlist.domain.user.dto.data.UserSummary;
+import com.codeit.playlist.domain.user.entity.Role;
+import com.codeit.playlist.domain.user.entity.User;
+import com.codeit.playlist.domain.watching.dto.data.ChangeType;
+import com.codeit.playlist.domain.watching.dto.data.RawContentChat;
+import com.codeit.playlist.domain.watching.dto.data.RawWatchingSession;
+import com.codeit.playlist.domain.watching.dto.data.RawWatchingSessionPage;
+import com.codeit.playlist.domain.watching.dto.data.WatchingSessionDto;
+import com.codeit.playlist.domain.watching.dto.response.WatchingSessionChange;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.Mockito.mock;
+
+public class WatchingSessionFixtures {
+    public static final UUID FIXED_ID = UUID.randomUUID();
+    public static final Instant FIXED_TIME = Instant.now();
+    public static final long FIXED_LONG_TIME = System.currentTimeMillis();
+    public static final String FIXED_SESSION_ID = "session-id";
+
+
+    public static Content content() {
+        return mock(Content.class);
+    }
+
+    public static ContentDto contentDto() {
+        return new ContentDto(
+                FIXED_ID,
+                "type",
+                "title",
+                "description",
+                "thumbnailUrl",
+                tags(),
+                3.5,
+                3,
+                3
+        );
+    }
+
+    public static User user() {
+        return mock(User.class);
+    }
+
+    public static UserDto userDto() {
+        return new UserDto(
+                FIXED_ID,
+                FIXED_TIME,
+                "email@test.com",
+                "name",
+                "profileImageUrl",
+                Role.ADMIN,
+                false
+        );
+    }
+
+    public static UserSummary userSummary() {
+        return new UserSummary(
+                FIXED_ID,
+                userDto().name(),
+                userDto().profileImageUrl()
+        );
+    }
+
+    public static List<String> tags() {
+        return List.of("tag1", "tag2");
+    }
+
+    public static List<Tag> tagList() {
+        return List.of(mock(Tag.class));
+    }
+
+    public static WatchingSessionDto watchingSessionDto() {
+        return new WatchingSessionDto(
+                FIXED_ID,
+                FIXED_TIME,
+                userSummary(),
+                contentDto()
+        );
+    }
+
+    public static WatchingSessionChange watchingSessionChange() {
+        return new WatchingSessionChange(
+                ChangeType.JOIN,
+                watchingSessionDto(),
+                3
+        );
+    }
+
+    public static RawWatchingSession rawWatchingSession() {
+        return new RawWatchingSession(
+                FIXED_ID,
+                FIXED_ID,
+                FIXED_ID,
+                FIXED_LONG_TIME
+        );
+    }
+
+    public static RawWatchingSessionPage rawWatchingSessionPage() {
+        return new RawWatchingSessionPage(
+                List.of(rawWatchingSession()),
+                true
+        );
+    }
+
+    public static RawContentChat rawContentChat() {
+        return new RawContentChat(
+                FIXED_ID,
+                "content"
+        );
+    }
+}

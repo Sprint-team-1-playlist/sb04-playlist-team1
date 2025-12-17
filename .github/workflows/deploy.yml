@@ -1,0 +1,133 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout source # 소스코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials # AWS 권한 구성
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsECSRole
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR # ECR 로그인
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image # 도커 이미지 빌드
+        run: |
+          docker build -t ${{ secrets.ECR_REPO }}:${{ github.sha }} .
+
+      - name: Tag Docker image # 태그 붙이기
+        run: |
+          docker tag ${{ secrets.ECR_REPO }}:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
+
+      - name: Push Docker image to ECR # ECR 로 push
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
+
+      - name: Replace placeholders in task-definition.json # task-definition.json에 ACCOUNT_ID 대입
+        run: |
+          jq \
+            --arg ACCOUNT_ID "${{ secrets.AWS_ACCOUNT_ID }}" \
+            '
+            .executionRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)
+            | .taskRoleArn |= sub("ACCOUNT_ID_PLACEHOLDER"; $ACCOUNT_ID)
+            ' \
+            task-definition.json > tmp.json && mv tmp.json task-definition.json
+
+      - name: Update image and env vars using jq # 이미지 + 환경변수 치환
+        run: |
+          jq \
+            --arg IMAGE "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}" \
+            --arg RDS_URL "${{ secrets.RDS_URL }}" \
+            --arg RDS_USERNAME "${{ secrets.RDS_USERNAME }}" \
+            --arg RDS_PASSWORD "${{ secrets.RDS_PASSWORD }}" \
+            --arg JWT_ACCESS_TOKEN_SECRET "${{ secrets.JWT_ACCESS_TOKEN_SECRET }}" \
+            --arg JWT_ACCESS_TOKEN_EXPIRATION_MS "${{ secrets.JWT_ACCESS_TOKEN_EXPIRATION_MS }}" \
+            --arg JWT_REFRESH_TOKEN_SECRET "${{ secrets.JWT_REFRESH_TOKEN_SECRET }}" \
+            --arg JWT_REFRESH_TOKEN_EXPIRATION_MS "${{ secrets.JWT_REFRESH_TOKEN_EXPIRATION_MS }}" \
+            --arg LOGS_BUCKET "${{ secrets.LOGS_BUCKET }}" \
+            --arg PROFILE_BUCKET "${{ secrets.PROFILE_BUCKET }}" \
+            --arg CONTENT_BUCKET "${{ secrets.CONTENT_BUCKET }}" \
+            --arg REDIS_HOST "${{ secrets.REDIS_HOST }}" \
+            --arg SPRING_MAIL_HOST "${{ secrets.SPRING_MAIL_HOST }}" \
+            --arg SPRING_MAIL_PASSWORD "${{ secrets.SPRING_MAIL_PASSWORD }}" \
+            --arg SPRING_MAIL_PORT "${{ secrets.SPRING_MAIL_PORT }}" \
+            --arg SPRING_MAIL_USERNAME "${{ secrets.SPRING_MAIL_USERNAME }}" \
+            --arg WEBSOCKET_ALLOWED_ORIGINS "${{ secrets.WEBSOCKET_ALLOWED_ORIGINS }}" \
+            --arg SPORTSDB_API_KEY "${{ secrets.SPORTSDB_API_KEY }}" \
+            --arg SPORTSDB_BASE_URL "${{ secrets.SPORTSDB_BASE_URL }}" \
+            --arg TMDB_API_KEY "${{ secrets.TMDB_API_KEY }}" \
+            --arg TMDB_BASE_URL "${{ secrets.TMDB_BASE_URL }}" \
+            --arg ADMIN_USER "${{ secrets.ADMIN_USER }}" \
+            --arg ADMIN_EMAIL "${{ secrets.ADMIN_EMAIL }}" \
+            --arg ADMIN_PASSWORD "${{ secrets.ADMIN_PASSWORD }}" \
+            --arg GOOGLE_CLIENT_ID "${{ secrets.GOOGLE_CLIENT_ID }}" \
+            --arg GOOGLE_CLIENT_PASSWORD "${{ secrets.GOOGLE_CLIENT_PASSWORD }}" \
+            --arg KAKAO_REST_API_KEY "${{ secrets.KAKAO_REST_API_KEY }}" \
+            --arg KAKAO_CLIENT_SECRET "${{ secrets.KAKAO_CLIENT_SECRET }}" \
+            --arg KAFKA_BOOTSTRAP_SERVERS "${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}" \
+            --arg KAFKA_USERNAME "${{ secrets.KAFKA_USERNAME }}" \
+            --arg KAFKA_PASSWORD "${{ secrets.KAFKA_PASSWORD }}" \
+            --arg OAUTH2_REDIRECT_BASE_URL "${{ secrets.OAUTH2_REDIRECT_BASE_URL }}" \
+            '
+            .containerDefinitions[0].image = $IMAGE
+            | .containerDefinitions[0].environment = [
+                {"name": "SPRING_PROFILES_ACTIVE", "value": "prod"},
+                {"name": "RDS_URL", "value": $RDS_URL},
+                {"name": "RDS_USERNAME", "value": $RDS_USERNAME},
+                {"name": "RDS_PASSWORD", "value": $RDS_PASSWORD},
+                {"name": "JWT_ACCESS_TOKEN_SECRET", "value": $JWT_ACCESS_TOKEN_SECRET},
+                {"name": "JWT_ACCESS_TOKEN_EXPIRATION_MS", "value": $JWT_ACCESS_TOKEN_EXPIRATION_MS},
+                {"name": "JWT_REFRESH_TOKEN_SECRET", "value": $JWT_REFRESH_TOKEN_SECRET},
+                {"name": "JWT_REFRESH_TOKEN_EXPIRATION_MS", "value": $JWT_REFRESH_TOKEN_EXPIRATION_MS},
+                {"name": "LOGS_BUCKET", "value": $LOGS_BUCKET},
+                {"name": "PROFILE_BUCKET", "value": $PROFILE_BUCKET},
+                {"name": "CONTENT_BUCKET", "value": $CONTENT_BUCKET},
+                {"name": "REDIS_HOST", "value": $REDIS_HOST},
+                {"name": "REDIS_PORT", "value": "6379"},
+                {"name": "SPRING_MAIL_HOST", "value": $SPRING_MAIL_HOST},
+                {"name": "SPRING_MAIL_PASSWORD", "value": $SPRING_MAIL_PASSWORD},
+                {"name": "SPRING_MAIL_PORT", "value": $SPRING_MAIL_PORT},
+                {"name": "SPRING_MAIL_USERNAME", "value": $SPRING_MAIL_USERNAME},
+                {"name": "WEBSOCKET_ALLOWED_ORIGINS", "value": $WEBSOCKET_ALLOWED_ORIGINS},
+                {"name": "SPORTSDB_API_KEY", "value": $SPORTSDB_API_KEY},
+                {"name": "SPORTSDB_BASE_URL", "value": $SPORTSDB_BASE_URL},
+                {"name": "TMDB_API_KEY", "value": $TMDB_API_KEY},
+                {"name": "TMDB_BASE_URL", "value": $TMDB_BASE_URL},
+                {"name": "ADMIN_USER", "value": $ADMIN_USER},
+                {"name": "ADMIN_EMAIL", "value": $ADMIN_EMAIL},
+                {"name": "ADMIN_PASSWORD", "value": $ADMIN_PASSWORD},
+                {"name": "GOOGLE_CLIENT_ID", "value": $GOOGLE_CLIENT_ID},
+                {"name": "GOOGLE_CLIENT_PASSWORD", "value": $GOOGLE_CLIENT_PASSWORD},
+                {"name": "KAKAO_REST_API_KEY", "value": $KAKAO_REST_API_KEY},
+                {"name": "KAKAO_CLIENT_SECRET", "value": $KAKAO_CLIENT_SECRET},
+                {"name": "KAFKA_BOOTSTRAP_SERVERS", "value": $KAFKA_BOOTSTRAP_SERVERS},
+                {"name": "KAFKA_USERNAME", "value": $KAFKA_USERNAME},
+                {"name": "KAFKA_PASSWORD", "value": $KAFKA_PASSWORD},
+                {"name": "OAUTH2_REDIRECT_BASE_URL", "value": $OAUTH2_REDIRECT_BASE_URL}
+              ]
+            ' \
+            task-definition.json > tmp.json && mv tmp.json task-definition.json
+
+      - name: Deploy to ECS # ECS 배포
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: task-definition.json
+          service: ${{ secrets.SERVICE_NAME }}
+          cluster: ${{ secrets.CLUSTER_NAME }}
+          wait-for-service-stability: true

@@ -1,0 +1,35 @@
+{
+  "family": "playlist-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID_PLACEHOLDER:role/PlaylistAppExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID_PLACEHOLDER:role/PlaylistAppTaskRole",
+  "enableExecuteCommand": true,
+  "containerDefinitions": [
+    {
+      "name": "playlist-app",
+      "image": "dummy",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "environment": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/playlist-task",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

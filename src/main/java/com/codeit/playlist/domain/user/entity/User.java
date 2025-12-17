@@ -1,14 +1,11 @@
 package com.codeit.playlist.domain.user.entity;
 
 import com.codeit.playlist.domain.base.BaseUpdatableEntity;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import java.util.ArrayList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,7 +19,7 @@ public class User extends BaseUpdatableEntity {
   @Column(nullable = false, unique = true)
   private String email;
 
-  @Column(nullable = false, length = 50)
+  @Column(nullable = false, length = 100)
   private String password;
 
   @Column (nullable = false)
@@ -33,47 +30,79 @@ public class User extends BaseUpdatableEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 10)
-  private Role role;
+  private Role role = Role.USER;
 
   @Column(name = "is_locked", nullable = false)
-  private boolean isLocked;
+  private boolean locked;
 
-  @Column(name = "follow_count")
+  @Column(name = "follow_count", nullable = false)
   private Long followCount;
 
-  // 여기부터 연관관계, 초반 설계단계 에러 방지를 위해 주석처리, 각 개발 과정에서 필요한부분 주석 제거하여 사용할것
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private AuthProvider provider = AuthProvider.LOCAL;
 
-  //  @OneToMany(mappedBy = "user")
-  //  private List<UserToken> tokens;
+  public User(String email, String password, String name, String profileImageUrl, Role role) {
+    this.email = email;
+    this.password = password;
+    this.name = name;
+    this.profileImageUrl = profileImageUrl;
+    this.role = role;
+    this.locked = false;
+    this.followCount = 0L;
+    this.provider = AuthProvider.LOCAL;
+  }
 
-  // reviews (1:N)
-  //  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  //  private List<Review> reviews = new ArrayList<>();
+  public void increaseFollowCount() {
+    if (followCount == null) {
+      followCount = 0L;
+    }
+    followCount++;
+  }
 
-  // subscribes (1:N)
-  //  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  //  private List<Subscribe> subscriptions = new ArrayList<>();
+  public void decreaseFollowCount() {
+    if (followCount == null || followCount <= 0) {
+      followCount = 0L;
+    } else {
+      followCount--;
+    }
+  }
 
-  // notifications (1:N)
-  //  @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
-  //  private List<Notification> notifications = new ArrayList<>();
+  public void updateUsername(String name) {
+    this.name = name;
+  }
 
-  // play_lists (1:N)
-  //  @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
-  //  private List<PlayList> playLists = new ArrayList<>();
+  public void updateProfileImageUrl(String profileImageUrl) {
+    this.profileImageUrl = profileImageUrl;
+  }
 
-  // follows (1:N) — 팔로워 / 팔로잉
-  //  @OneToMany(mappedBy = "follower", cascade = CascadeType.ALL, orphanRemoval = true)
-  //  private List<Follow> followings = new ArrayList<>();
 
-  //  @OneToMany(mappedBy = "following", cascade = CascadeType.ALL, orphanRemoval = true)
-  //  private List<Follow> followers = new ArrayList<>();
+  public void updatePassword(String password) {
+    this.password = password;
+  }
 
-  // direct_messages (1:N, sender_id / receiver_id 두 개)
-  //  @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
-  //  private List<DirectMessage> sentMessages = new ArrayList<>();
+  public void updateRole(Role newRole) {
+    if (this.role != newRole) {
+      this.role = newRole;
+    }
+  }
 
-  //  @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
-  //  private List<DirectMessage> receivedMessages = new ArrayList<>();
+  public void setLocked(boolean locked) {
+    this.locked = locked;
+  }
 
+  // Oauth 소셜 로그인을 위함 정적 팩토리 메서드
+  public static User createOAuthUser(String name, String email,  String imageUrl, AuthProvider provider) {
+    java.util.Objects.requireNonNull(provider, "AuthProvider must not be null for OAuth user");
+    User user = new User();
+    user.name = name;
+    user.email = email;
+    user.profileImageUrl = imageUrl;
+    user.password = java.util.UUID.randomUUID().toString();      // 소셜 유저는 로그인 불가능한 랜덤 패스워드
+    user.provider = provider;
+    user.role = Role.USER;
+    user.locked = false;
+    user.followCount = 0L;
+    return user;
+  }
 }

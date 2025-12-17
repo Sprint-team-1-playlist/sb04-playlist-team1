@@ -1,0 +1,158 @@
+package com.codeit.playlist.domain.playlist.service.basic;
+
+import com.codeit.playlist.domain.content.entity.Content;
+import com.codeit.playlist.domain.content.exception.ContentNotFoundException;
+import com.codeit.playlist.domain.content.repository.ContentRepository;
+import com.codeit.playlist.domain.notification.dto.data.NotificationDto;
+import com.codeit.playlist.domain.notification.entity.Level;
+import com.codeit.playlist.domain.playlist.entity.Playlist;
+import com.codeit.playlist.domain.playlist.entity.PlaylistContent;
+import com.codeit.playlist.domain.playlist.exception.PlaylistAccessDeniedException;
+import com.codeit.playlist.domain.playlist.exception.PlaylistContentAlreadyExistsException;
+import com.codeit.playlist.domain.playlist.exception.PlaylistContentNotFoundException;
+import com.codeit.playlist.domain.playlist.exception.PlaylistNotFoundException;
+import com.codeit.playlist.domain.playlist.repository.PlaylistContentRepository;
+import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
+import com.codeit.playlist.domain.playlist.repository.SubscribeRepository;
+import com.codeit.playlist.domain.playlist.service.PlaylistContentService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class BasicPlaylistContentService implements PlaylistContentService {
+
+    private final PlaylistRepository playlistRepository;
+    private final ContentRepository contentRepository;
+    private final PlaylistContentRepository playlistContentRepository;
+    private final SubscribeRepository subscribeRepository;
+
+    private final ObjectMapper objectMapper;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+
+    @Override
+    public void addContentToPlaylist(UUID playlistId, UUID contentId, UUID currentUserId) {
+
+        log.debug("[플레이리스트] 콘텐츠 추가 시작 : playlistId= {}, contentId= {}, userId= {}",
+                playlistId, contentId, currentUserId);
+
+        //삭제되지 않은 플레이리스트 조회
+        Playlist playlist = playlistRepository.findByIdAndDeletedAtIsNull(playlistId)
+                .orElseThrow(() -> {
+                    log.error("[플레이리스트] 콘텐츠 추가 실패 : 존재하지 않는 playlistId= {}", playlistId);
+                    return PlaylistNotFoundException.withId(playlistId);
+                });
+
+        //소유자 검증
+        validateOwner(playlist, currentUserId);
+
+        //컨텐츠 조회
+        Content content = contentRepository.findById(contentId)
+                .orElseThrow(() -> {
+                    log.error("[플레이리스트] 콘텐츠 추가 실패 : 존재하지 않는 contentId= {}", contentId);
+                    return ContentNotFoundException.withId(contentId);
+                });
+
+        boolean exists = playlistContentRepository.existsByPlaylist_IdAndContent_Id(playlistId, contentId);
+
+        //콘텐츠 중복 검사
+        if (exists) {
+            log.error("[플레이리스트] 콘텐츠 추가 실패 : 이미 존재하는 콘텐츠 playlistId= {}, contentId= {}",
+                    playlistId, contentId);
+            throw PlaylistContentAlreadyExistsException.withIds(playlistId, contentId);
+        }
+
+        try {
+            PlaylistContent playlistContent = new PlaylistContent(playlist, content);
+            playlistContentRepository.save(playlistContent);
+
+        } catch (DataIntegrityViolationException e) {
+            log.error("[플레이리스트] 콘텐츠 추가 실패 : DB unique 제약조건 위반 playlistId= {}, contentId= {}",
+                    playlistId, contentId, e);
+            throw PlaylistContentAlreadyExistsException.withIds(playlistId, contentId);
+        }
+
+        //플레이리스트를 구독 중인 모든 사용자에게 알림
+        List<UUID> subscriberIds = subscribeRepository.findSubscriberIdByPlaylistId(playlistId);
+
+        if (!subscriberIds.isEmpty()) {
+            String title = "구독중인 플레이리스트에 새 콘텐츠가 추가됐습니다.";
+            String contentMsg = String.format("구독 중인 '%s' 플레이리스트에 '%s' 콘텐츠가 추가되었습니다.",
+                    playlist.getTitle(), content.getTitle());
+
+            for (UUID subscriberId : subscriberIds) {
+                NotificationDto notificationDto = new NotificationDto(null, null, subscriberId,
+                                                                        title, contentMsg, Level.INFO);
+
+                try {
+                    String payload = objectMapper.writeValueAsString(notificationDto);
+                    kafkaTemplate.send("playlist.NotificationDto", payload);
+                } catch (JsonProcessingException e) {
+                    log.error("[플레이리스트] 구독자 알림 이벤트 직렬화 실패 : subscriberId= {}, playlistId= {}, contentId= {}",
+                            subscriberId, playlistId, contentId, e);
+                }
+            }
+            log.info("[플레이리스트] 구독자 알림 이벤트 발행 완료 : playlistId= {}, subscriberCount= {}",
+                    playlistId, subscriberIds.size());
+        }
+
+
+        log.info("[플레이리스트] 콘텐츠 추가 : 저장 완료 및 종료 playlistId= {}, contentId= {}, userId= {}",
+                playlistId, contentId, currentUserId);
+    }
+
+    @Override
+    public void removeContentFromPlaylist(UUID playlistId, UUID contentId, UUID currentUserId) {
+
+        log.debug("[플레이리스트] 콘텐츠 삭제 시작 - playlistId= {}, contentId= {}, currentUserId= {}",
+                playlistId, contentId, currentUserId);
+
+        //삭제되지 않은 플레이리스트 조회
+        Playlist playlist = playlistRepository.findByIdAndDeletedAtIsNull(playlistId)
+                .orElseThrow(() -> {
+                    log.error("[플레이리스트] 콘텐츠 삭제 실패 : 존재하지 않는 playlistId= {}", playlistId);
+                    return PlaylistNotFoundException.withId(playlistId);
+                });
+
+        //소유자 검증
+        validateOwner(playlist, currentUserId);
+
+        //플레이리스트-콘텐츠 매핑 조회
+        PlaylistContent playlistContent = playlistContentRepository
+                .findByPlaylist_IdAndContent_Id(playlistId, contentId)
+                .orElseThrow(() -> {
+                    log.error("[플레이리스트] 콘텐츠 삭제 매핑 조회 실패 - playlistId= {}, contentId= {}",
+                            playlistId, contentId);
+                    return PlaylistContentNotFoundException.withIds(playlistId, contentId);
+                });
+
+        //삭제
+        playlistContentRepository.delete(playlistContent);
+
+        log.info("[플레이리스트] 콘텐츠 삭제 : 삭제 완료 playlistId= {}, contentId= {}",
+                playlistId, contentId);
+    }
+
+    //소유자 검증 로직
+    private void validateOwner(Playlist playlist, UUID currentUserId) {
+        UUID ownerId = playlist.getOwner().getId();
+        if (!ownerId.equals(currentUserId)) {
+            log.error("[플레이리스트] 소유자 검증 실패 - playlistOwnerId= {}, currentUserId= {}",
+                    ownerId, currentUserId);
+            throw PlaylistAccessDeniedException.withIds(playlist.getId(),ownerId, currentUserId);
+        }
+        log.debug("[플레이리스트] 소유자 검증 성공 : playlistOwnerId= {}, currentUserId= {}",
+                playlist.getOwner().getId(), currentUserId);
+    }
+}

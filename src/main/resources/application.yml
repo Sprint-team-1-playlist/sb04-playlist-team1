@@ -1,18 +1,85 @@
 spring:
   application:
     name: playlist
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 15MB
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_PASSWORD}
+            scope:
+              - email
+              - profile
+          kakao:
+            client-id: ${KAKAO_REST_API_KEY}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            client-authentication-method: client_secret_post
+            client-name: kakao
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+            authorization-grant-type: authorization_code
+            scope:
+              - profile_nickname
+              - profile_image
+              - account_email
+
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      ssl:
+        enabled: true
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 60000
 
   datasource:
     driver-class-name: org.postgresql.Driver
   jpa:
-    hibernate:
-      ddl-auto: create
     show-sql: true
   profiles:
-    active:
-      - dev
+    active: ${SPRING_PROFILES_ACTIVE}
   config:
     import: optional:file:.env[.properties]
+
+  mail:
+    host: smtp.gmail.com        # SMTP 서버 호스트
+    port: 587                   # SMTP 서버 포트
+    username: ${SPRING_MAIL_USERNAME}                # SMTP 서버 로그인 아이디
+    password: ${SPRING_MAIL_PASSWORD}                # SMTP 서버 로그인 비밀번호
+    properties:
+      mail:
+        smtp:
+          auth: true            # 사용자 인증 시도 여부
+          starttls:
+            enable: true
+
+  batch:
+    jdbc:
+      initialize-schema: NEVER
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-postgres.sql
+
+  jackson:
+    time-zone: Asia/Seoul
 
 management:
   endpoints:
@@ -25,3 +92,47 @@ management:
   observations:
     annotations:
       enabled: true
+
+oauth2:
+  redirect:
+    base-url: ${OAUTH2_REDIRECT_BASE_URL:http://localhost:8080}
+
+  jwt:
+    cookie:
+      secure: false
+
+websocket:
+  allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:8080}
+
+sse:
+  timeout: 300_000
+
+cloud:
+  aws:
+    s3:
+      content-bucket: ${CONTENT_BUCKET}
+      profile-bucket: ${PROFILE_BUCKET}
+      logs-bucket: ${LOGS_BUCKET}
+      region: ${AWS_REGION}
+
+api:
+  tmdb:
+    base-url: ${TMDB_BASE_URL}
+    key: ${TMDB_API_KEY}
+  sportsdb:
+    key: ${SPORTSDB_API_KEY}
+    base-url: ${SPORTSDB_BASE_URL}
+
+playlist:
+  jwt:
+    access-token:
+      secret: ${JWT_ACCESS_TOKEN_SECRET}
+      expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000} # 1시간
+    refresh-token:
+      secret: ${JWT_REFRESH_TOKEN_SECRET}
+      expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7일
+    cookie:
+      secure: true
+
+server:
+  forward-headers-strategy: framework
