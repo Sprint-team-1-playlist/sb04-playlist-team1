@@ -15,7 +15,7 @@ import com.codeit.playlist.domain.content.repository.TagRepository;
 import com.codeit.playlist.domain.content.service.ContentService;
 import com.codeit.playlist.domain.file.S3Uploader;
 import com.codeit.playlist.domain.playlist.repository.PlaylistContentRepository;
-import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
+import com.codeit.playlist.domain.review.repository.ReviewRepository;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.global.constant.S3Properties;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +41,8 @@ public class BasicContentService implements ContentService {
     private final S3Uploader s3Uploader;
     private final S3Properties s3Properties;
     private final RedisWatchingSessionRepository redisWatchingSessionRepository;
-    private final PlaylistRepository playlistRepository;
     private final PlaylistContentRepository playlistContentRepository;
+    private final ReviewRepository reviewRepository;
 
     @Transactional
     @Override
@@ -149,6 +149,7 @@ public class BasicContentService implements ContentService {
     public void delete(UUID contentId) {
         log.debug("[콘텐츠 데이터 관리] 컨텐츠 삭제 시작 : id = {}", contentId);
         if(contentRepository.existsById(contentId)) {
+            reviewRepository.deleteAllByContent_Id(contentId);
             playlistContentRepository.deleteAllByContent_Id(contentId);
             log.debug("[콘텐츠 데이터 관리] 태그 삭제 시작 : tag = {}", tagRepository.findByContentId(contentId));
             tagRepository.deleteAllByContentId(contentId); // contentId와 연결된 tags 리스트를 삭제함
