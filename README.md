@@ -20,11 +20,11 @@
 ## 링크
 <a href="https://www.notion.so/2a7a7ba35b118194a38ad50d87f51905">
   <img src="https://github.com/user-attachments/assets/b8d5ff15-4c53-49ea-83d4-97b08af86455" width="30" height="30" valign="middle" />
-  MoNew 팀 노션
+  모두의플리 팀 노션
 </a><br><br>
 <a href="https://playlist-team1.me/#/sign-in">
   <img src="https://github.com/user-attachments/assets/3700f539-d6fe-40b7-869b-e5a4c0a01463" width="30" height="30" valign="middle" />
-  배포 링크 ( ~26.01.01 / 25.12.18 ~ 26.06.30  )
+  배포 링크 ( ~ 26.01.18  )
 </a><br><br>
 <a href="https://github.com/user-attachments/files/22457754/2._Monew_.pdf">
   <img src="https://raw.githubusercontent.com/Sprint-team-1-playlist/sb04-playlist-team1/refs/heads/develop/src/main/resources/static/vite.svg" width="30" height="30" valign="middle" />
@@ -51,20 +51,20 @@
 - 협업 Tool: Git & Github, Discord, Notion
  -->
 
-| Category | Stacks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| :--- |:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Backend** | <img src="https://img.shields.io/badge/Java-17-007396?logo=java&logoColor=white"> <img src="https://img.shields.io/badge/SpringBoot-3.3.5-6DB33F?logo=springboot&logoColor=white"> <img src="https://img.shields.io/badge/Spring Data JPA-6DB33F?logo=spring&logoColor=white"> <img src="https://img.shields.io/badge/Spring Batch-6DB33F?logo=spring&logoColor=white"> <img src="https://img.shields.io/badge/Spring WebFlux-6DB33F?logo=spring&logoColor=white"> <img src="https://img.shields.io/badge/Spring Actuator-6DB33F?logo=spring&logoColor=white"> <img src="https://img.shields.io/badge/Jsoup-FB8C00?logo=java&logoColor=white"> |
-| **Security** | <img src="https://img.shields.io/badge/Spring Security-6DB33F?logo=springsecurity&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| **Database** | <img src="https://img.shields.io/badge/PostgreSQL-17.5-4169E1?logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/Amazon RDS-527FFF?logo=amazonrds&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| **Infra & Cache** | <img src="https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white"> |
-| **Messaging** | <img src="https://img.shields.io/badge/Apache Kafka-231F20?logo=apachekafka&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| **Build & Dependency** | <img src="https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **Deployment & CI/CD** | <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white"> <img src="https://img.shields.io/badge/GitHub Actions-2088FF?logo=githubactions&logoColor=white"> <img src="https://img.shields.io/badge/Amazon EC2-FF9900?logo=amazonec2&logoColor=white"> <img src="https://img.shields.io/badge/Amazon ECS-FF9900?logo=amazon-ecs&logoColor=white"> <img src="https://img.shields.io/badge/Amazon ECR-FF9900?logo=amazon-ecr&logoColor=white">                                                                                                                                                                           |
-| **Storage** | <img src="https://img.shields.io/badge/Amazon S3-569A31?logo=amazons3&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| **Monitoring** | <img src="https://img.shields.io/badge/Micrometer-1081C2?logo=micrometer&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| **Testing** | <img src="https://img.shields.io/badge/JUnit5-25A162?logo=junit5&logoColor=white"> <img src="https://img.shields.io/badge/Mockito-8A2BE2?logo=mockito&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| **Collaboration** | <img src="https://img.shields.io/badge/Git-F05032?logo=git&logoColor=white"> <img src="https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white"> <img src="https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white"> <img src="https://img.shields.io/badge/Notion-000000?logo=notion&logoColor=white">                                                                                                                                                                                                                                                                                                        |
-| **IDE** | <img src="https://img.shields.io/badge/IntelliJ IDEA-000000?logo=intellijidea&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Category | Stacks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| :--- |:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Backend** | <img src="https://img.shields.io/badge/Java-17-007396?logo=java&logoColor=white"> <img src="https://img.shields.io/badge/SpringBoot-3.3.5-6DB33F?logo=springboot&logoColor=white"> <img src="https://img.shields.io/badge/Spring Data JPA-6DB33F?logo=spring&logoColor=white"> <img src="https://img.shields.io/badge/Spring Batch-6DB33F?logo=spring&logoColor=white"> <img src="https://img.shields.io/badge/Spring WebFlux-6DB33F?logo=spring&logoColor=white"> <img src="https://img.shields.io/badge/Spring Actuator-6DB33F?logo=spring&logoColor=white"> |
+| **Security** | <img src="https://img.shields.io/badge/Spring Security-6DB33F?logo=springsecurity&logoColor=white"> <img src="https://img.shields.io/badge/Cloudflare-F38020?logo=cloudflare&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                 |
+| **Database** | <img src="https://img.shields.io/badge/PostgreSQL-17.5-4169E1?logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/Amazon RDS-527FFF?logo=amazonrds&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                      |
+| **Infra & Cache** | <img src="https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Messaging** | <img src="https://img.shields.io/badge/Apache Kafka-231F20?logo=apachekafka&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **Build & Dependency** | <img src="https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Deployment & CI/CD** | <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white"> <img src="https://img.shields.io/badge/GitHub Actions-2088FF?logo=githubactions&logoColor=white"> <img src="https://img.shields.io/badge/Amazon EC2-FF9900?logo=amazonec2&logoColor=white"> <img src="https://img.shields.io/badge/Amazon ECS-FF9900?logo=amazon-ecs&logoColor=white"> <img src="https://img.shields.io/badge/Amazon ECR-FF9900?logo=amazon-ecr&logoColor=white">                                                                                           |
+| **Storage** | <img src="https://img.shields.io/badge/Amazon S3-569A31?logo=amazons3&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| **Monitoring** | <img src="https://img.shields.io/badge/Micrometer-1081C2?logo=micrometer&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **Testing** | <img src="https://img.shields.io/badge/JUnit5-25A162?logo=junit5&logoColor=white"> <img src="https://img.shields.io/badge/Mockito-8A2BE2?logo=mockito&logoColor=white"> <img src="https://img.shields.io/badge/JaCoCo-Code%20Coverage-BE312E?logo=java&logoColor=white">                                                                                                                                                                                                                                                                                       |
+| **Collaboration** | <img src="https://img.shields.io/badge/Git-F05032?logo=git&logoColor=white"> <img src="https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white"> <img src="https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white"> <img src="https://img.shields.io/badge/Notion-000000?logo=notion&logoColor=white">                                                                                                                                                                                                                        |
+| **IDE** | <img src="https://img.shields.io/badge/IntelliJ IDEA-000000?logo=intellijidea&logoColor=white">                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 --- 
 
@@ -81,7 +81,7 @@
 2. 다음을 참고하여 `.env` 파일 채우기
 ```
 # 기타
-SPRING_PROFILES_ACTIVE=
+SPRING_PROFILES_ACTIVE=dev
 
 WEBSOCKET_ALLOWED_ORIGINS=http://localhost:8080
 
@@ -94,20 +94,20 @@ POSTGRES_USER=
 POSTGRES_PASSWORD=
 
 # Redis 관련
-REDIS_HOST=
-REDIS_PORT=
+REDIS_HOST=playlist-redis
+REDIS_PORT=6379
 
 # Admin 관련
-ADMIN_USER=
-ADMIN_EMAIL=
-ADMIN_PASSWORD=
+ADMIN_USER=admin
+ADMIN_EMAIL=admin@playlist.com
+ADMIN_PASSWORD=testtest
 
 # jwt 관련
-JWT_ACCESS_TOKEN_SECRET=
-JWT_REFRESH_TOKEN_SECRET=
+JWT_ACCESS_TOKEN_SECRET=mySuperSecureSecret12313@@!$!@$!@$@!!@1215135636
+JWT_REFRESH_TOKEN_SECRET=mySuperSecureSecretKeyF!@!%&sandoaneoOFDFNrasndo
 
-JWT_ACCESS_TOKEN_EXPIRATION_MS=
-JWT_REFRESH_TOKEN_EXPIRATION_MS=
+JWT_ACCESS_TOKEN_EXPIRATION_MS=3600000
+JWT_REFRESH_TOKEN_EXPIRATION_MS=604800000
 
 # 소셜 로그인에서 이메일 발송을 위한 환경변수
 SPRING_MAIL_HOST=
@@ -152,15 +152,6 @@ docker compose up -d
 * PostgreSQL 실행
 * DB 생성 후 `.env`에 접속 정보 입력
 
-#### (선택) `pg_bigm` 확장 사용 시
-
-```sql
-CREATE EXTENSION pg_bigm;
-```
-
-> ⚠️ `pg_bigm`은 검색 성능 향상을 위한 선택 기능이며,
-> 로컬 개발 환경에서는 필수가 아닙니다.
-
 
 ### 5. 외부 API
 
@@ -192,7 +183,10 @@ CREATE EXTENSION pg_bigm;
 ```
 http://localhost:8080
 ```
-프로필 수정 및 콘텐츠 생성은 S3가 운영환경에서만 연결되어 있어서 불가합니다.
+
+- 어드민 계정으로 로그인 (Admin 관련에서 수정가능)
+  - 이메일: admin@playlist.com
+  - 비밀번호: testest
 
 --- 
 
