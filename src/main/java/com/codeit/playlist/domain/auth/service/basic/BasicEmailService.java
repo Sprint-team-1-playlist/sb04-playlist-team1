@@ -18,6 +18,7 @@ public class BasicEmailService implements EmailService {
     try {
       log.debug("[메일] : 임시 비밀번호 이메일 전송 시작 - 수신자: {}", toEmail);
       SimpleMailMessage message = new SimpleMailMessage();
+      message.setFrom("dkswnddnjs517@gmail.com"); // SES Verified Email
       message.setTo(toEmail);
       message.setSubject("[Playlist] 임시 비밀번호 안내");
       message.setText(
