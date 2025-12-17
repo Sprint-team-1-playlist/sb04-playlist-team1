@@ -2,7 +2,6 @@ package com.codeit.playlist.domain.content.api.service;
 
 import com.codeit.playlist.domain.content.api.response.TheMovieTagListResponse;
 import com.codeit.playlist.domain.content.api.response.TheMovieTagResponse;
-import com.codeit.playlist.domain.content.api.response.TvSeriesListResponse;
 import com.codeit.playlist.domain.content.api.response.TvSeriesTagListResponse;
 import com.codeit.playlist.domain.content.api.response.TvSeriesTagResponse;
 import lombok.RequiredArgsConstructor;
