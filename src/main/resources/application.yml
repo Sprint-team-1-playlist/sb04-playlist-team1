@@ -58,7 +58,7 @@ spring:
     import: optional:file:.env[.properties]
 
   mail:
-    host: smtp.gmail.com        # SMTP 서버 호스트
+    host: ${SPRING_MAIL_HOST}   # SMTP 서버 호스트
     port: 587                   # SMTP 서버 포트
     username: ${SPRING_MAIL_USERNAME}                # SMTP 서버 로그인 아이디
     password: ${SPRING_MAIL_PASSWORD}                # SMTP 서버 로그인 비밀번호
