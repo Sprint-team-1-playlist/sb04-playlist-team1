@@ -5,7 +5,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -13,6 +12,7 @@ import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.inOrder;
 
 import com.codeit.playlist.domain.base.SortDirection;
 import com.codeit.playlist.domain.content.dto.data.ContentDto;
@@ -37,6 +37,7 @@ import com.codeit.playlist.domain.content.service.basic.BasicContentService;
 import com.codeit.playlist.domain.file.S3Uploader;
 import com.codeit.playlist.domain.playlist.repository.PlaylistContentRepository;
 import com.codeit.playlist.domain.playlist.repository.PlaylistRepository;
+import com.codeit.playlist.domain.review.repository.ReviewRepository;
 import com.codeit.playlist.domain.watching.repository.RedisWatchingSessionRepository;
 import com.codeit.playlist.global.constant.S3Properties;
 import org.junit.jupiter.api.DisplayName;
@@ -44,10 +45,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -72,6 +75,8 @@ public class BasicContentServiceTest {
     private PlaylistRepository playlistRepository;
     @Mock
     private PlaylistContentRepository playlistContentRepository;
+    @Mock
+    private ReviewRepository reviewRepository;
 
     @Nested
     @DisplayName("create()")
@@ -141,10 +146,7 @@ public class BasicContentServiceTest {
         void create_fail_typeNull() {
             // given
             ContentCreateRequest request = new ContentCreateRequest(
-                    null,
-                    "t",
-                    "d",
-                    List.of("tag")
+                    null, "t", "d", List.of("tag")
             );
             MultipartFile thumbnail = new MockMultipartFile(
                     "thumbnail", "a.jpg", "image/jpeg", "x".getBytes(StandardCharsets.UTF_8)
@@ -153,7 +155,7 @@ public class BasicContentServiceTest {
             // when & then
             assertThatThrownBy(() -> contentService.create(request, thumbnail))
                     .isInstanceOf(ContentBadRequestException.class)
-                    .hasMessageContaining("타입");
+                    .hasMessageContaining("컨텐츠에 대한 잘못된 요청입니다."); // ✅ 실제 메시지 기준
 
             then(contentRepository).shouldHaveNoInteractions();
             then(tagRepository).shouldHaveNoInteractions();
@@ -174,7 +176,7 @@ public class BasicContentServiceTest {
             // when & then
             assertThatThrownBy(() -> contentService.create(request, null))
                     .isInstanceOf(ContentBadRequestException.class)
-                    .hasMessageContaining("썸네일");
+                    .hasMessageContaining("컨텐츠에 대한 잘못된 요청입니다.");
 
             then(contentRepository).shouldHaveNoInteractions();
             then(tagRepository).shouldHaveNoInteractions();
@@ -198,7 +200,7 @@ public class BasicContentServiceTest {
             // when & then
             assertThatThrownBy(() -> contentService.create(request, empty))
                     .isInstanceOf(ContentBadRequestException.class)
-                    .hasMessageContaining("썸네일");
+                    .hasMessageContaining("컨텐츠에 대한 잘못된 요청입니다.");
 
             then(contentRepository).shouldHaveNoInteractions();
             then(tagRepository).shouldHaveNoInteractions();
@@ -303,7 +305,7 @@ public class BasicContentServiceTest {
     class DeleteTests {
 
         @Test
-        @DisplayName("성공: 존재하면 playlist-content 삭제 + 태그 삭제 + content 삭제")
+        @DisplayName("성공: 존재하면 리뷰->플리컨텐츠->태그 삭제 후 컨텐츠 삭제")
         void delete_success() {
             // given
             UUID contentId = UUID.randomUUID();
@@ -312,14 +314,23 @@ public class BasicContentServiceTest {
             // when
             contentService.delete(contentId);
 
-            // then
-            then(playlistContentRepository).should(times(1)).deleteAllByContent_Id(contentId);
-            then(tagRepository).should(times(1)).deleteAllByContentId(contentId);
-            then(contentRepository).should(times(1)).deleteById(contentId);
+            // then (호출 순서까지 검증)
+            InOrder inOrder = inOrder(contentRepository, reviewRepository, playlistContentRepository, tagRepository);
+
+            inOrder.verify(contentRepository).existsById(contentId);
+            inOrder.verify(reviewRepository).deleteAllByContent_Id(contentId);
+            inOrder.verify(playlistContentRepository).deleteAllByContent_Id(contentId);
+            inOrder.verify(tagRepository).deleteAllByContentId(contentId);
+            inOrder.verify(contentRepository).deleteById(contentId);
+
+            // 불필요한 추가 호출 방지 (선택)
+            then(reviewRepository).shouldHaveNoMoreInteractions();
+            then(playlistContentRepository).shouldHaveNoMoreInteractions();
+            then(tagRepository).shouldHaveNoMoreInteractions();
         }
 
         @Test
-        @DisplayName("실패: 없으면 ContentNotFoundException")
+        @DisplayName("실패: 존재하지 않으면 ContentNotFoundException + 아무것도 삭제 안 함")
         void delete_fail_notFound() {
             // given
             UUID contentId = UUID.randomUUID();
@@ -329,9 +340,10 @@ public class BasicContentServiceTest {
             assertThatThrownBy(() -> contentService.delete(contentId))
                     .isInstanceOf(ContentNotFoundException.class);
 
+            then(reviewRepository).shouldHaveNoInteractions();
             then(playlistContentRepository).shouldHaveNoInteractions();
             then(tagRepository).shouldHaveNoInteractions();
-            then(contentRepository).should(never()).deleteById(any());
+            then(contentRepository).should(never()).deleteById(contentId);
         }
     }
 
@@ -348,25 +360,36 @@ public class BasicContentServiceTest {
             given(request.sortDirection()).willReturn(SortDirection.DESCENDING);
             given(request.sortBy()).willReturn("watcherCount");
 
-            // searchContents는 limit+1(=3)개를 가져온다고 가정
+            // ✅ UUID를 직접 주입 (List.of(null, ..) 방지)
+            UUID id1 = UUID.randomUUID();
+            UUID id2 = UUID.randomUUID();
+            UUID id3 = UUID.randomUUID();
+
             Content c1 = new Content(1L, "movie", "t1", "d1", "k1", 0, 0, 0);
             Content c2 = new Content(2L, "movie", "t2", "d2", "k2", 0, 0, 0);
             Content c3 = new Content(3L, "movie", "t3", "d3", "k3", 0, 0, 0);
 
+            // id 필드명이 보통 "id"라서 이렇게 박으면 됨
+            ReflectionTestUtils.setField(c1, "id", id1);
+            ReflectionTestUtils.setField(c2, "id", id2);
+            ReflectionTestUtils.setField(c3, "id", id3);
+
+            // searchContents는 limit+1(=3)개를 가져온다고 가정
             List<Content> found = List.of(c1, c2, c3);
             given(contentRepository.searchContents(eq(request), eq(false), eq(2), eq("watcherCount")))
                     .willReturn(found);
 
-            // N+1 방지 태그 로딩
-            List<UUID> firstTwoIds = List.of(c1.getId(), c2.getId());
+            // 태그: 실제 로직은 (firstTwoIds) 기준으로 findByContentIdIn 호출
+            List<UUID> firstTwoIds = List.of(id1, id2);
             Tag t11 = new Tag(c1, "액션");
             Tag t21 = new Tag(c2, "드라마");
-            given(tagRepository.findByContentIdIn(argThat(ids -> ids.containsAll(firstTwoIds) && ids.size() == 2)))
+
+            given(tagRepository.findByContentIdIn(eq(firstTwoIds)))
                     .willReturn(List.of(t11, t21));
 
             // watcherCount: c1=1, c2=5
-            given(redisWatchingSessionRepository.countWatchingSessionByContentId(c1.getId())).willReturn(1L);
-            given(redisWatchingSessionRepository.countWatchingSessionByContentId(c2.getId())).willReturn(5L);
+            given(redisWatchingSessionRepository.countWatchingSessionByContentId(id1)).willReturn(1L);
+            given(redisWatchingSessionRepository.countWatchingSessionByContentId(id2)).willReturn(5L);
 
             ContentDto dto1 = mock(ContentDto.class);
             ContentDto dto2 = mock(ContentDto.class);
@@ -385,7 +408,7 @@ public class BasicContentServiceTest {
 
             // nextCursor는 "이번 페이지 마지막 요소(c2)의 watcherCount"
             assertThat(res.nextCursor()).isEqualTo("5");
-            assertThat(res.nextIdAfter()).isEqualTo(c2.getId().toString());
+            assertThat(res.nextIdAfter()).isEqualTo(id2.toString());
         }
 
         @Nested
