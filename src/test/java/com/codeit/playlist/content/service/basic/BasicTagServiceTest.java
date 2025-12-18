@@ -13,6 +13,7 @@ import org.mockito.*;
 
 import reactor.core.publisher.Mono;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -181,12 +182,20 @@ class BasicTagServiceTest {
         void saveSportTag_success_filtersNullBlank() {
             // given
             Content content = content();
+            List<String> tagNames = Arrays.asList("Soccer", " ", null, "EPL");
 
             // when
-            tagService.saveTheSportTagToContent(content, List.of("Soccer", " ", null, "EPL"));
+            tagService.saveTheSportTagToContent(content, tagNames);
 
-            // then: "Soccer", "EPL"만 저장
-            then(tagRepository).should(times(2)).save(any(Tag.class));
+            // then
+            ArgumentCaptor<Tag> captor = ArgumentCaptor.forClass(Tag.class);
+            then(tagRepository).should(times(2)).save(captor.capture());
+
+            List<String> savedNames = captor.getAllValues().stream()
+                    .map(Tag::getName)   // ⚠️ Tag의 getter 이름이 다르면 맞춰줘 (예: getTagName)
+                    .toList();
+
+            assertThat(savedNames).containsExactly("Soccer", "EPL");
         }
 
         @Test
