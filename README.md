@@ -26,7 +26,7 @@
   <img src="https://github.com/user-attachments/assets/3700f539-d6fe-40b7-869b-e5a4c0a01463" width="30" height="30" valign="middle" />
   배포 링크 ( ~ 26.01.18  )
 </a><br><br>
-<a href="https://github.com/user-attachments/files/24217068/playlist.pdf">
+<a href="https://github.com/user-attachments/files/24227969/1._._.pdf">
   <img src="https://raw.githubusercontent.com/Sprint-team-1-playlist/sb04-playlist-team1/refs/heads/develop/src/main/resources/static/vite.svg" width="30" height="30" valign="middle" />
   포트폴리오(pdf)
 </a><br>
